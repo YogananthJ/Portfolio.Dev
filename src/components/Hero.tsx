@@ -27,7 +27,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenTerminal, onExploreWork, onLau
   const btnSimulatorRef = useRef<HTMLButtonElement | null>(null);
 
   const [copiedEmail, setCopiedEmail] = useState(false);
-  const [activeSnippetTab, setActiveSnippetTab] = useState<'ml' | 'web' | 'cv'>('ml');
+  const [activeSnippetTab, setActiveSnippetTab] = useState<'agent' | 'rag' | 'cognitive'>('agent');
 
   // Live IST Clock
   const [currentTime, setCurrentTime] = useState<string>('');
@@ -182,40 +182,42 @@ export const Hero: React.FC<HeroProps> = ({ onOpenTerminal, onExploreWork, onLau
   };
 
   const codeSnippets = {
-    ml: `# Train & Explain Underwriting Model
-import xgboost as xgb
-import shap
+    agent: `# CrewAI Multi-Agent Task Orchestration
+from crewai import Agent, Task, Crew, Process
 
-model = xgb.XGBClassifier(n_estimators=300, max_depth=5, learning_rate=0.03)
-model.fit(X_train, y_train)
+extractor = Agent(
+    role="Resume Extractor",
+    goal="Parse structured competencies from candidate text",
+    backstory="Deterministic AST entity parser specialized in technical resumes"
+)
+matcher = Agent(
+    role="Semantic Role Matcher",
+    goal="Score candidate alignment against job requisitions",
+    backstory="Evaluates vector distances and foundational skillset bounds"
+)
+crew = Crew(agents=[extractor, matcher], process=Process.sequential)
+result = crew.kickoff()`,
+    rag: `# Hybrid Vector Retrieval (FAISS + BM25)
+from langchain_community.vectorstores import FAISS
+from langchain_huggingface import HuggingFaceEmbeddings
 
-# Calculate SHAP explainability values
-explainer = shap.TreeExplainer(model)
-shap_values = explainer(X_test)
-print(f"ROC-AUC: {roc_auc_score(y_test, model.predict_proba(X_test)[:,1]):.3f}")`,
-    web: `// Full-Stack Ticket Reservation Pipeline
-export async function reserveTicket(req: Request) {
-  const { eventId, tier, userId } = await req.json();
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ['card'],
-    line_items: [{ price_data: { currency: 'usd', unit_amount: 4900 }, quantity: 1 }],
-    metadata: { eventId, userId, tier },
-    success_url: \`\${APP_URL}/ticket/success\`,
-  });
-  return Response.json({ checkoutUrl: session.url });
-}`,
-    cv: `# Real-Time Wildfire Thermal Segmentation
-import torch
-import torchvision.models as models
+embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-large-en-v1.5")
+vectorstore = FAISS.load_local("index_faiss", embeddings)
 
-backbone = models.densenet121(weights='IMAGENET1K_V1')
-backbone.classifier = torch.nn.Linear(1024, 2) # Binary hotspot class
+def retrieve_grounded_chunks(query: str, top_k=3):
+    docs = vectorstore.similarity_search_with_score(query, k=top_k)
+    # Cosine threshold prevents hallucinations
+    return [d[0] for d in docs if d[1] >= 0.88]`,
+    cognitive: `# Adaptive Cadence & Sentiment Modulator
+from transformers import pipeline
 
-def predict_hotspot_bands(nir_band, swir_band):
-    spectral_tensor = normalize_satellite_bands(nir_band, swir_band)
-    with torch.no_grad():
-        anomaly_mask = backbone(spectral_tensor).sigmoid()
-    return anomaly_mask > 0.85 # High confidence active fire`,
+sentiment_pipe = pipeline("text-classification", model="roberta-base-go_emotions")
+
+def adapt_system_prompt(user_text: str, cadence_pause_ms: int):
+    emotion = sentiment_pipe(user_text)[0]["label"]
+    if cadence_pause_ms > 700 or emotion in ["confusion", "annoyance"]:
+        return "Tone: Step-by-step empathetic guidance with simplified analogies."
+    return "Tone: Concise senior engineering response."`,
   };
 
   return (
@@ -255,20 +257,20 @@ def predict_hotspot_bands(nir_band, swir_band):
         <div ref={headlineRef} className="relative mb-6">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div>
-              <div className="text-[11px] font-mono tracking-widest text-[#E11D48] uppercase font-bold mb-2">
-                Engineering Machine Learning · Modern Web · Scalable Automation
+              <div className="text-[11px] font-mono tracking-widest text-[var(--accent)] uppercase font-bold mb-2">
+                Developer &amp; Aspiring AI Engineer · LLMs · Agents · Web Systems
               </div>
-              <h1 className="font-display text-5xl sm:text-7xl md:text-8xl lg:text-[104px] leading-[0.88] tracking-tight uppercase text-[#121212] select-none">
+              <h1 className="font-display text-5xl sm:text-7xl md:text-8xl lg:text-[104px] leading-[0.88] tracking-tight uppercase text-[var(--text-main)] select-none">
                 YOGANANTH
               </h1>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm sm:text-base font-semibold text-[#121212]/80 mt-3 max-w-2xl">
-                <span>Autonomous ML Pipelines</span>
-                <span className="text-[#E11D48] font-bold">·</span>
-                <span>Vision &amp; Thermal Classifiers</span>
-                <span className="text-[#E11D48] font-bold">·</span>
-                <span>Full-Stack Web Architecture</span>
-                <span className="text-[#E11D48] font-bold">·</span>
-                <span>Enterprise RAG Systems</span>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm sm:text-base font-semibold text-[var(--text-muted)] mt-3 max-w-2xl">
+                <span>Multi-Agent Orchestration (CrewAI)</span>
+                <span className="text-[var(--accent)] font-bold">·</span>
+                <span>Hybrid Vector RAG</span>
+                <span className="text-[var(--accent)] font-bold">·</span>
+                <span>Vibeathon 6.0 Top 60 Finalist</span>
+                <span className="text-[var(--accent)] font-bold">·</span>
+                <span>Certified Claude Developer</span>
               </div>
             </div>
 
@@ -277,7 +279,7 @@ def predict_hotspot_bands(nir_band, swir_band):
               ref={portraitRef}
               className="relative shrink-0 flex items-center justify-center self-start lg:self-center"
             >
-              <div className="relative w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56 bg-[#EBE6DC] border-4 border-[#121212] rounded-xs shadow-[8px_8px_0px_0px_#E11D48] overflow-hidden group">
+              <div className="relative w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56 bg-[var(--bg-surface)] border-4 border-[var(--border-color)] shadow-xl overflow-hidden group">
                 <img
                   src="/assets/aistudio/favicon_507da8ac.png"
                   alt="Portrait illustration of Yogananth"
@@ -286,14 +288,14 @@ def predict_hotspot_bands(nir_band, swir_band):
                 />
 
                 {/* Status sticker */}
-                <div className="absolute bottom-2 left-2 right-2 px-2 py-1 bg-[#121212]/90 backdrop-blur-xs text-[#F5F2EB] text-[10px] font-mono font-bold tracking-wider border border-white/20 text-center uppercase">
-                  Available 2026
+                <div className="absolute bottom-2 left-2 right-2 px-2 py-1 bg-[var(--bg-card)]/90 backdrop-blur-xs text-[var(--text-main)] text-[10px] font-mono font-bold tracking-wider border border-[var(--border-color)] text-center uppercase">
+                  Open to Opportunities
                 </div>
               </div>
 
               {/* Decorative neo-brutalist badge */}
-              <div className="absolute -top-3 -right-3 px-2 py-1 bg-[#E11D48] text-white text-[10px] font-mono font-bold uppercase tracking-wider border-2 border-[#121212] shadow-[2px_2px_0px_0px_#121212]">
-                AI Engineer
+              <div className="absolute -top-3 -right-3 px-2 py-1 bg-[var(--accent)] text-white text-[10px] font-mono font-bold uppercase tracking-wider border-2 border-[var(--border-color)] shadow-sm">
+                AI &amp; Web Dev
               </div>
             </div>
           </div>
@@ -302,52 +304,58 @@ def predict_hotspot_bands(nir_band, swir_band):
         {/* Hero Split: Bio + Interactive Code Console */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch mt-4">
           {/* Left Column: Biography & Action Cluster */}
-          <div className="lg:col-span-6 flex flex-col justify-between bg-[#EBE6DC] border-2 border-[#121212] p-6 sm:p-8 shadow-[6px_6px_0px_0px_#121212]">
+          <div className="lg:col-span-6 flex flex-col justify-between bg-[var(--bg-card)] border-2 border-[var(--border-color)] p-6 sm:p-8 shadow-sm">
             <div>
-              <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#121212]/60 mb-3 font-semibold">
-                <Sparkles className="w-3.5 h-3.5 text-[#E11D48]" />
-                Executive Summary
+              <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[var(--text-muted)] mb-3 font-semibold">
+                <Sparkles className="w-3.5 h-3.5 text-[var(--accent)]" />
+                Developer Profile &amp; Focus
               </div>
-              <p className="text-base sm:text-lg text-[#121212] leading-relaxed mb-6 font-medium">
+              <p className="text-sm sm:text-base text-[var(--text-main)] leading-relaxed mb-4 font-medium">
                 {PERSONAL_INFO.bio}
               </p>
-              <div className="p-3 bg-[#F5F2EB] border border-[#121212]/15 text-xs text-[#121212]/80 mb-6 font-mono flex items-center justify-between">
-                <span><strong className="text-[#E11D48]">Status:</strong> {PERSONAL_INFO.availability}</span>
-                <span className="text-[10px] text-emerald-700 font-bold uppercase">● Open to Offers</span>
+              <div className="p-2.5 bg-amber-500/10 border border-amber-500/30 text-xs text-amber-600 dark:text-amber-400 mb-4 font-mono">
+                {PERSONAL_INFO.statusNote}
               </div>
             </div>
 
             {/* CTA Buttons */}
-            <div className="space-y-4 pt-4 border-t border-[#121212]/15">
-              <div className="flex flex-wrap items-center gap-3">
+            <div className="space-y-4 pt-4 border-t border-[var(--border-color)]">
+              <div className="flex flex-wrap items-center gap-2.5">
                 <button
                   ref={btnExploreRef}
                   onClick={onExploreWork}
                   type="button"
-                  className="flex items-center gap-2 px-5 py-3 text-sm font-bold uppercase tracking-wider text-[#F5F2EB] bg-[#121212] hover:bg-[#E11D48] transition-all shadow-[3px_3px_0px_0px_#121212]"
+                  className="flex items-center gap-2 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white bg-[var(--accent)] hover:opacity-90 transition-all shadow-sm"
                 >
-                  <span>Explore 7 Shipped Projects</span>
-                  <ArrowDown className="w-4 h-4" />
+                  <span>Explore 10 Projects</span>
+                  <ArrowDown className="w-3.5 h-3.5" />
                 </button>
+
+                <a
+                  href="#architecture"
+                  className="flex items-center gap-1.5 px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-[var(--text-main)] bg-[var(--bg-surface)] hover:border-[var(--accent)] border border-[var(--border-color)] transition-all"
+                >
+                  <span>Architecture</span>
+                </a>
 
                 <button
                   ref={btnSimulatorRef}
-                  onClick={() => onLaunchSimulator('loan-approval')}
+                  onClick={() => onLaunchSimulator('cognitive-ai')}
                   type="button"
-                  className="flex items-center gap-2 px-4 py-3 text-sm font-bold uppercase tracking-wider text-[#121212] bg-[#F5F2EB] hover:bg-[#121212] hover:text-[#F5F2EB] border-2 border-[#121212] transition-all"
+                  className="flex items-center gap-1.5 px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-[var(--text-main)] bg-[var(--bg-surface)] hover:border-[var(--accent)] border border-[var(--border-color)] transition-all"
                 >
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  <span>Launch Live Simulators</span>
+                  <Play className="w-3 h-3 fill-current text-[var(--accent)]" />
+                  <span>AI Labs</span>
                 </button>
 
                 <button
                   onClick={() => setLayoutMode('split')}
                   type="button"
-                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-mono font-bold uppercase text-[#121212] bg-white hover:bg-[#E11D48] hover:text-white border border-[#121212]/30 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-mono font-bold uppercase text-[var(--text-main)] bg-[var(--bg-surface)] hover:border-[var(--accent)] border border-[var(--border-color)] transition-colors"
                   title="Switch to Dual-Pane Split-Screen Workbench"
                 >
-                  <Columns2 className="w-3.5 h-3.5" />
-                  <span>Split-Screen View</span>
+                  <Columns2 className="w-3.5 h-3.5 text-[var(--accent)]" />
+                  <span>Split View</span>
                 </button>
               </div>
 
@@ -406,18 +414,18 @@ def predict_hotspot_bands(nir_band, swir_band):
                 <span className="ml-2 font-mono text-xs text-white/60">yogananth_workspace_v26.py</span>
               </div>
               <div className="flex items-center gap-1">
-                {(['ml', 'web', 'cv'] as const).map((tab) => (
+                {(['agent', 'rag', 'cognitive'] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveSnippetTab(tab)}
                     type="button"
                     className={`px-2.5 py-1 text-xs font-mono uppercase transition-colors ${
                       activeSnippetTab === tab
-                        ? 'bg-[#E11D48] text-white font-bold'
+                        ? 'bg-[var(--accent)] text-white font-bold'
                         : 'text-white/60 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    {tab === 'ml' ? 'ML Engine' : tab === 'web' ? 'Full-Stack' : 'Vision'}
+                    {tab === 'agent' ? 'AI Agents' : tab === 'rag' ? 'RAG Search' : 'Cognitive'}
                   </button>
                 ))}
               </div>

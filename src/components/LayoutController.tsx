@@ -5,15 +5,17 @@ import {
   LayoutGrid, 
   List, 
   Grid3X3, 
-  Maximize2, 
   Sliders, 
-  Eye, 
   PanelLeftClose, 
   PanelLeft, 
   Layers,
-  Sparkles,
-  ChevronDown
+  ChevronDown,
+  Sun,
+  Moon,
+  Laptop,
+  Palette
 } from 'lucide-react';
+import { AccentTheme } from '../types/layout';
 
 export const LayoutController: React.FC = () => {
   const {
@@ -27,9 +29,20 @@ export const LayoutController: React.FC = () => {
     toggleSidebar,
     splitRatio,
     setSplitRatio,
+    appearance,
+    setAppearance,
+    accentTheme,
+    setAccentTheme,
   } = useLayout();
 
   const [expanded, setExpanded] = useState<boolean>(false);
+
+  const ACCENT_OPTIONS: { id: AccentTheme; label: string; bg: string }[] = [
+    { id: 'signal-red', label: 'Signal Red', bg: '#E11D48' },
+    { id: 'electric-blue', label: 'Electric Blue', bg: '#2563EB' },
+    { id: 'forest-green', label: 'Forest Green', bg: '#059669' },
+    { id: 'violet', label: 'Violet', bg: '#7C3AED' },
+  ];
 
   return (
     <aside
@@ -38,18 +51,78 @@ export const LayoutController: React.FC = () => {
     >
       {/* Expanded Controls Card */}
       {expanded && (
-        <div className="mb-2 p-4 bg-[#121212] text-[#F5F2EB] border-2 border-[#121212] shadow-[6px_6px_0px_0px_#E11D48] w-72 sm:w-80 font-mono text-xs space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
-          <div className="flex items-center justify-between border-b border-white/15 pb-2">
-            <span className="font-bold flex items-center gap-1.5 text-white">
-              <Sliders className="w-3.5 h-3.5 text-[#E11D48]" />
+        <div className="mb-2 p-4 bg-[var(--bg-surface)] text-[var(--text-main)] border-2 border-[var(--border-color)] shadow-xl w-72 sm:w-80 font-mono text-xs space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-2">
+            <span className="font-bold flex items-center gap-1.5 text-[var(--text-main)] uppercase tracking-wide">
+              <Sliders className="w-3.5 h-3.5 text-[var(--accent)]" />
               Workspace Controls
             </span>
-            <span className="text-[10px] text-white/50">Layout Studio</span>
+            <span className="text-[10px] text-[var(--text-muted)] font-mono">Layout Studio</span>
           </div>
 
-          {/* 1. Layout Mode Switcher */}
+          {/* 1. Appearance Mode (Light / Dark / System) */}
           <div>
-            <label className="block text-white/60 text-[10px] uppercase tracking-wider mb-1.5 font-bold">
+            <label className="block text-[var(--text-muted)] text-[10px] uppercase tracking-wider mb-1.5 font-bold">
+              Theme &amp; Appearance
+            </label>
+            <div className="grid grid-cols-3 gap-1">
+              {[
+                { id: 'light', label: 'Light', icon: Sun },
+                { id: 'dark', label: 'Dark', icon: Moon },
+                { id: 'system', label: 'System', icon: Laptop },
+              ].map((item) => {
+                const Icon = item.icon;
+                const isSelected = appearance === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setAppearance(item.id as any)}
+                    type="button"
+                    className={`py-1.5 px-2 text-center border font-bold uppercase transition-colors flex items-center justify-center gap-1 text-[11px] ${
+                      isSelected
+                        ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
+                        : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-main)] hover:border-[var(--text-main)]'
+                    }`}
+                  >
+                    <Icon className="w-3 h-3" />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 2. Color Accent Palettes */}
+          <div>
+            <label className="block text-[var(--text-muted)] text-[10px] uppercase tracking-wider mb-1.5 font-bold flex items-center gap-1">
+              <Palette className="w-3 h-3 text-[var(--accent)]" />
+              Accent Palette
+            </label>
+            <div className="grid grid-cols-2 gap-1.5">
+              {ACCENT_OPTIONS.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setAccentTheme(item.id)}
+                  type="button"
+                  className={`flex items-center gap-2 p-1.5 border text-[11px] font-mono text-left transition-all ${
+                    accentTheme === item.id
+                      ? 'border-[var(--text-main)] bg-[var(--bg-card)] ring-1 ring-[var(--accent)] font-bold'
+                      : 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-muted)] hover:border-[var(--text-main)]'
+                  }`}
+                >
+                  <span
+                    className="w-3 h-3 rounded-full shrink-0"
+                    style={{ backgroundColor: item.bg }}
+                  />
+                  <span className="truncate">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 3. Layout Mode Switcher */}
+          <div>
+            <label className="block text-[var(--text-muted)] text-[10px] uppercase tracking-wider mb-1.5 font-bold">
               Layout Architecture
             </label>
             <div className="grid grid-cols-2 gap-1.5">
@@ -58,8 +131,8 @@ export const LayoutController: React.FC = () => {
                 type="button"
                 className={`py-1.5 px-2 text-center border font-bold uppercase transition-colors flex items-center justify-center gap-1.5 ${
                   layoutMode === 'standard'
-                    ? 'bg-[#E11D48] text-white border-[#E11D48]'
-                    : 'bg-white/5 text-white/70 border-white/10 hover:text-white hover:bg-white/10'
+                    ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
+                    : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-main)] hover:border-[var(--text-main)]'
                 }`}
               >
                 <Layers className="w-3 h-3" />
@@ -70,8 +143,8 @@ export const LayoutController: React.FC = () => {
                 type="button"
                 className={`py-1.5 px-2 text-center border font-bold uppercase transition-colors flex items-center justify-center gap-1.5 ${
                   layoutMode === 'split'
-                    ? 'bg-[#E11D48] text-white border-[#E11D48]'
-                    : 'bg-white/5 text-white/70 border-white/10 hover:text-white hover:bg-white/10'
+                    ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
+                    : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-main)] hover:border-[var(--text-main)]'
                 }`}
               >
                 <Columns2 className="w-3 h-3" />
@@ -80,10 +153,10 @@ export const LayoutController: React.FC = () => {
             </div>
           </div>
 
-          {/* 2. Split Ratio (Only visible if split mode active) */}
+          {/* 4. Split Ratio (Only visible if split mode active) */}
           {layoutMode === 'split' && (
             <div>
-              <label className="block text-white/60 text-[10px] uppercase tracking-wider mb-1.5 font-bold">
+              <label className="block text-[var(--text-muted)] text-[10px] uppercase tracking-wider mb-1.5 font-bold">
                 Split Screen Ratio
               </label>
               <div className="grid grid-cols-3 gap-1 text-center">
@@ -98,8 +171,8 @@ export const LayoutController: React.FC = () => {
                     type="button"
                     className={`py-1 border text-[11px] font-bold ${
                       splitRatio === item.ratio
-                        ? 'bg-white text-black border-white'
-                        : 'bg-white/5 text-white/70 border-white/10 hover:bg-white/10'
+                        ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
+                        : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-color)] hover:border-[var(--text-main)]'
                     }`}
                   >
                     {item.label}
@@ -109,9 +182,9 @@ export const LayoutController: React.FC = () => {
             </div>
           )}
 
-          {/* 3. Project Display View Mode */}
+          {/* 5. Project Display View Mode */}
           <div>
-            <label className="block text-white/60 text-[10px] uppercase tracking-wider mb-1.5 font-bold">
+            <label className="block text-[var(--text-muted)] text-[10px] uppercase tracking-wider mb-1.5 font-bold">
               Project Display Format
             </label>
             <div className="grid grid-cols-3 gap-1">
@@ -128,8 +201,8 @@ export const LayoutController: React.FC = () => {
                     type="button"
                     className={`py-1.5 border font-bold uppercase transition-colors flex items-center justify-center gap-1 ${
                       viewMode === view.id
-                        ? 'bg-white text-black border-white'
-                        : 'bg-white/5 text-white/70 border-white/10 hover:text-white hover:bg-white/10'
+                        ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
+                        : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-main)] hover:border-[var(--text-main)]'
                     }`}
                   >
                     <Icon className="w-3 h-3" />
@@ -140,9 +213,9 @@ export const LayoutController: React.FC = () => {
             </div>
           </div>
 
-          {/* 4. Density & Element Sizing */}
+          {/* 6. Spacing Density */}
           <div>
-            <label className="block text-white/60 text-[10px] uppercase tracking-wider mb-1.5 font-bold">
+            <label className="block text-[var(--text-muted)] text-[10px] uppercase tracking-wider mb-1.5 font-bold">
               Spacing Density
             </label>
             <div className="grid grid-cols-3 gap-1">
@@ -153,8 +226,8 @@ export const LayoutController: React.FC = () => {
                   type="button"
                   className={`py-1 border text-[11px] font-bold capitalize ${
                     density === d
-                      ? 'bg-[#E11D48] text-white border-[#E11D48]'
-                      : 'bg-white/5 text-white/70 border-white/10 hover:bg-white/10'
+                      ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
+                      : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-color)] hover:border-[var(--text-main)]'
                   }`}
                 >
                   {d}
@@ -163,13 +236,13 @@ export const LayoutController: React.FC = () => {
             </div>
           </div>
 
-          {/* 5. Sidebar Toggle */}
-          <div className="pt-2 border-t border-white/10 flex items-center justify-between">
-            <span className="text-white/70 text-[11px]">Directory Sidebar:</span>
+          {/* 7. Directory Sidebar Toggle */}
+          <div className="pt-2 border-t border-[var(--border-color)] flex items-center justify-between">
+            <span className="text-[var(--text-muted)] text-[11px]">Directory Sidebar:</span>
             <button
               onClick={toggleSidebar}
               type="button"
-              className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold border border-white/20 bg-white/5 hover:bg-white/20 text-white"
+              className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold border border-[var(--border-color)] bg-[var(--bg-card)] hover:bg-[var(--bg-canvas)] text-[var(--text-main)]"
             >
               {sidebarOpen ? <PanelLeftClose className="w-3 h-3" /> : <PanelLeft className="w-3 h-3" />}
               <span>{sidebarOpen ? 'Hide' : 'Show'}</span>
@@ -178,16 +251,16 @@ export const LayoutController: React.FC = () => {
         </div>
       )}
 
-      {/* Floating Trigger Pill */}
+      {/* Floating Trigger Bar */}
       <div className="flex items-center gap-2">
         {/* Quick layout toggle button */}
         <button
           onClick={() => setLayoutMode(layoutMode === 'split' ? 'standard' : 'split')}
           type="button"
-          className="flex items-center gap-1.5 px-3 py-2 text-xs font-mono font-bold uppercase bg-[#EBE6DC] text-[#121212] hover:bg-[#121212] hover:text-white border-2 border-[#121212] shadow-[3px_3px_0px_0px_#121212] transition-all"
+          className="flex items-center gap-1.5 px-3 py-2 text-xs font-mono font-bold uppercase bg-[var(--bg-card)] text-[var(--text-main)] hover:bg-[var(--bg-surface)] border-2 border-[var(--border-color)] shadow-md transition-all"
           title="Toggle Split-Screen Workspace Mode"
         >
-          <Columns2 className="w-3.5 h-3.5 text-[#E11D48]" />
+          <Columns2 className="w-3.5 h-3.5 text-[var(--accent)]" />
           <span className="hidden sm:inline">
             {layoutMode === 'split' ? 'Exit Split View' : 'Split-Screen'}
           </span>
@@ -199,9 +272,9 @@ export const LayoutController: React.FC = () => {
           type="button"
           aria-expanded={expanded}
           aria-label="Toggle Layout Options Panel"
-          className="flex items-center gap-2 px-3.5 py-2 text-xs font-mono font-bold uppercase bg-[#121212] text-white hover:bg-[#E11D48] border-2 border-[#121212] shadow-[3px_3px_0px_0px_#121212] transition-all"
+          className="flex items-center gap-2 px-3.5 py-2 text-xs font-mono font-bold uppercase bg-[var(--bg-surface)] text-[var(--text-main)] hover:border-[var(--accent)] border-2 border-[var(--border-color)] shadow-md transition-all"
         >
-          <Sliders className="w-3.5 h-3.5" />
+          <Sliders className="w-3.5 h-3.5 text-[var(--accent)]" />
           <span>Layout Options</span>
           <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
         </button>

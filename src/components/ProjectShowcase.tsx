@@ -6,15 +6,15 @@ import { useLayout } from '../context/LayoutContext';
 import { initScrollStagger } from '../utils/gsapAnimations';
 import { 
   Search, 
-  SlidersHorizontal, 
   LayoutGrid, 
   List, 
   Grid3X3, 
   Play, 
   Github, 
   ArrowUpRight,
-  Activity,
-  Layers
+  ExternalLink,
+  Layers,
+  Code
 } from 'lucide-react';
 
 interface ProjectShowcaseProps {
@@ -28,18 +28,20 @@ export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal })
   const gridContainerRef = useRef<HTMLDivElement | null>(null);
 
   const categories: { id: ProjectCategory; label: string }[] = [
-    { id: 'all', label: 'All Projects (7)' },
-    { id: 'machine-learning', label: 'Machine Learning' },
-    { id: 'computer-vision', label: 'Computer Vision' },
-    { id: 'full-stack', label: 'Full-Stack Web' },
-    { id: 'data-analytics', label: 'Data Analytics' },
-    { id: 'genai-nlp', label: 'Generative AI & NLP' },
+    { id: 'all', label: 'All Projects (10)' },
+    { id: 'genai-agent', label: 'GenAI & Agents (4)' },
+    { id: 'academic', label: 'Academic Coursework (4)' },
+    { id: 'hackathon', label: 'Hackathon (1)' },
+    { id: 'full-stack', label: 'Full-Stack Web (2)' },
+    { id: 'computer-vision', label: 'Computer Vision (2)' },
   ];
 
   const filteredProjects = useMemo(() => {
     return PROJECTS.filter((proj) => {
       const matchesCategory =
-        selectedCategory === 'all' || proj.category === selectedCategory;
+        selectedCategory === 'all' ||
+        proj.category === selectedCategory ||
+        proj.projectKind === selectedCategory;
       const query = searchQuery.toLowerCase().trim();
       const matchesSearch =
         !query ||
@@ -54,38 +56,40 @@ export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal })
   useEffect(() => {
     if (gridContainerRef.current) {
       const cards = Array.from(gridContainerRef.current.querySelectorAll('.project-card-item')) as HTMLElement[];
-      initScrollStagger(cards, 0.1);
+      initScrollStagger(cards, 0.08);
     }
   }, [filteredProjects, viewMode]);
 
   // Spacing density classes
   const densityGapClass =
-    density === 'compact' ? 'gap-4' : density === 'spacious' ? 'gap-10' : 'gap-6 sm:gap-8';
+    density === 'compact' ? 'gap-4' : density === 'spacious' ? 'gap-10' : 'gap-6';
   const densityPadClass =
-    density === 'compact' ? 'py-14 sm:py-20' : density === 'spacious' ? 'py-28 sm:py-36' : 'py-20 sm:py-28';
+    density === 'compact' ? 'py-14' : density === 'spacious' ? 'py-28' : 'py-20';
 
   return (
-    <section id="projects" className={`${densityPadClass} bg-[#F5F2EB] border-b-2 border-[#121212] relative transition-all`}>
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="projects" className={`${densityPadClass} bg-[var(--bg-canvas)] border-t border-[var(--border-color)] relative transition-all`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b-2 border-[#121212] mb-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-[var(--border-color)] mb-8">
           <div>
-            <div className="text-xs font-mono font-bold tracking-widest text-[#E11D48] uppercase mb-2">
-              01 — Selected Works &amp; Applications
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 text-xs font-mono font-semibold uppercase tracking-wider bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/30 mb-3">
+              <Code className="w-3.5 h-3.5" />
+              Verified Codebases &amp; Prototypes
             </div>
-            <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-[#121212]">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight text-[var(--text-main)]">
               Engineered Systems
             </h2>
           </div>
 
           {/* View Mode Toggle Controls */}
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-1 bg-[#EBE6DC] p-1 border border-[#121212]/20">
+            <div className="hidden sm:flex items-center gap-1 bg-[var(--bg-surface)] p-1 border border-[var(--border-color)]">
               <button
                 onClick={() => setViewMode('grid')}
                 type="button"
                 className={`p-1.5 transition-colors ${
-                  viewMode === 'grid' ? 'bg-[#121212] text-white' : 'text-[#121212]/70 hover:text-[#121212]'
+                  viewMode === 'grid' ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                 }`}
                 title="Grid Card View"
               >
@@ -95,7 +99,7 @@ export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal })
                 onClick={() => setViewMode('list')}
                 type="button"
                 className={`p-1.5 transition-colors ${
-                  viewMode === 'list' ? 'bg-[#121212] text-white' : 'text-[#121212]/70 hover:text-[#121212]'
+                  viewMode === 'list' ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                 }`}
                 title="Compact Table / List View"
               >
@@ -105,7 +109,7 @@ export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal })
                 onClick={() => setViewMode('bento')}
                 type="button"
                 className={`p-1.5 transition-colors ${
-                  viewMode === 'bento' ? 'bg-[#121212] text-white' : 'text-[#121212]/70 hover:text-[#121212]'
+                  viewMode === 'bento' ? 'bg-[var(--accent)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                 }`}
                 title="Editorial Bento View"
               >
@@ -113,8 +117,8 @@ export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal })
               </button>
             </div>
 
-            <p className="max-w-xs text-xs font-mono text-[#121212]/60 hidden lg:block">
-              Showing {filteredProjects.length} projects · Layout: <span className="font-bold text-[#E11D48] uppercase">{viewMode}</span>
+            <p className="max-w-xs text-xs font-mono text-[var(--text-muted)] hidden lg:block">
+              Showing {filteredProjects.length} projects · Layout: <span className="font-bold text-[var(--accent)] uppercase">{viewMode}</span>
             </p>
           </div>
         </div>
@@ -122,16 +126,16 @@ export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal })
         {/* Filter Controls & Search Bar */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
           {/* Functional category segmented filter buttons */}
-          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-[#EBE6DC] border border-[#121212]/20 rounded-xs">
+          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-[var(--bg-surface)] border border-[var(--border-color)]">
             {categories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
                 type="button"
-                className={`px-3 py-1.5 text-xs font-mono font-bold uppercase transition-colors rounded-xs whitespace-nowrap ${
+                className={`px-3 py-1.5 text-xs font-mono font-bold uppercase transition-colors whitespace-nowrap ${
                   selectedCategory === cat.id
-                    ? 'bg-[#121212] text-white shadow-xs'
-                    : 'text-[#121212]/70 hover:text-[#121212] hover:bg-white/40'
+                    ? 'bg-[var(--accent)] text-white'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
                 }`}
               >
                 {cat.label}
@@ -141,19 +145,19 @@ export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal })
 
           {/* Search Input */}
           <div className="relative min-w-[240px] sm:min-w-[300px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#121212]/40" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Filter by tech (e.g. XGBoost, PyTorch, React)..."
-              className="w-full pl-9 pr-4 py-2 text-xs font-mono bg-white border border-[#121212]/30 text-[#121212] placeholder:text-[#121212]/40 focus:outline-[#E11D48]"
+              placeholder="Filter by tech (e.g. CrewAI, Llama, PyTorch)..."
+              className="w-full pl-9 pr-4 py-2 text-xs font-mono bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
                 type="button"
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-[#121212]/50 hover:text-[#121212]"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-[var(--text-muted)] hover:text-[var(--text-main)]"
               >
                 Clear
               </button>
@@ -178,64 +182,76 @@ export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal })
 
         {/* --- VIEW MODE 2: COMPACT LIST / LEDGER VIEW --- */}
         {viewMode === 'list' && (
-          <div ref={gridContainerRef} className="bg-[#EBE6DC] border-2 border-[#121212] shadow-[6px_6px_0px_0px_#121212] overflow-x-auto font-mono">
-            <table className="w-full text-left text-xs border-collapse">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-color)] overflow-x-auto shadow-sm">
+            <table className="w-full text-left border-collapse text-xs font-mono">
               <thead>
-                <tr className="bg-[#121212] text-white border-b-2 border-[#121212] text-[11px] uppercase tracking-wider">
+                <tr className="bg-[var(--bg-surface)] border-b border-[var(--border-color)] text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
                   <th className="py-3 px-4">#</th>
                   <th className="py-3 px-4">System Title</th>
-                  <th className="py-3 px-4">Category</th>
-                  <th className="py-3 px-4">Key Benchmark Metric</th>
-                  <th className="py-3 px-4">Core Tech Stack</th>
+                  <th className="py-3 px-4">Taxonomy</th>
+                  <th className="py-3 px-4">Key Metrics Context</th>
+                  <th className="py-3 px-4">Tech Stack</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#121212]/15">
-                {filteredProjects.map((p, idx) => (
-                  <tr
-                    key={p.id}
-                    className="project-card-item hover:bg-white/60 transition-colors cursor-pointer"
-                    onClick={() => onOpenModal(p)}
-                  >
-                    <td className="py-3.5 px-4 font-bold text-[#E11D48]">0{idx + 1}</td>
-                    <td className="py-3.5 px-4">
-                      <div className="font-display text-sm font-black text-[#121212] uppercase tracking-tight">
-                        {p.title}
-                      </div>
-                      <div className="text-[11px] text-[#121212]/60 line-clamp-1">{p.tagline}</div>
+              <tbody className="divide-y divide-[var(--border-color)] text-[var(--text-main)]">
+                {filteredProjects.map((proj, i) => (
+                  <tr key={proj.id} className="hover:bg-[var(--bg-surface)] transition-colors">
+                    <td className="py-3 px-4 text-[var(--text-muted)]">0{i + 1}</td>
+                    <td className="py-3 px-4 font-bold">
+                      <div className="text-sm text-[var(--text-main)]">{proj.title}</div>
+                      <div className="text-[11px] text-[var(--text-muted)] font-normal line-clamp-1">{proj.tagline}</div>
                     </td>
-                    <td className="py-3.5 px-4">
-                      <span className="font-semibold text-[#121212]">{p.categoryLabel}</span>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span className="font-bold text-emerald-800 tabular-nums">
-                        {p.metrics[0].label}: {p.metrics[0].value}
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      <span className="px-2 py-0.5 bg-[var(--bg-surface)] border border-[var(--border-color)] text-[10px] uppercase font-bold text-[var(--accent)]">
+                        {proj.projectKind}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4">
-                      <div className="flex flex-wrap gap-1 text-[10px] text-[#121212]/70">
-                        {p.tags.slice(0, 3).join(' · ')}
+                    <td className="py-3 px-4">
+                      {proj.metrics[0] && (
+                        <div>
+                          <span className="font-bold text-[var(--accent)]">{proj.metrics[0].value}</span>
+                          <span className="text-[10px] text-[var(--text-muted)] block">{proj.metrics[0].label}</span>
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex flex-wrap gap-1 max-w-xs">
+                        {proj.tags.slice(0, 3).map((t) => (
+                          <span key={t} className="px-1.5 py-0.5 bg-[var(--bg-surface)] border border-[var(--border-color)] text-[10px] text-[var(--text-muted)]">
+                            {t}
+                          </span>
+                        ))}
                       </div>
                     </td>
-                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={() => onOpenModal(p)}
-                          type="button"
-                          className="px-2.5 py-1 text-[11px] font-bold uppercase bg-[#121212] text-white hover:bg-[#E11D48] transition-colors flex items-center gap-1"
-                        >
-                          <Play className="w-3 h-3 fill-current" />
-                          <span>Simulator</span>
-                        </button>
+                    <td className="py-3 px-4 text-right whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-2">
+                        {proj.demoUrl && (
+                          <a
+                            href={proj.demoUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-1.5 text-[var(--accent)] hover:underline font-bold"
+                            title="Open Live App"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        )}
                         <a
-                          href={p.githubUrl}
+                          href={proj.githubUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="p-1 border border-[#121212]/30 hover:bg-white text-[#121212] transition-colors"
+                          className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-main)]"
                           title="View Repository"
                         >
                           <Github className="w-3.5 h-3.5" />
                         </a>
+                        <button
+                          onClick={() => onOpenModal(proj)}
+                          className="px-2 py-1 bg-[var(--bg-surface)] hover:bg-[var(--accent)] hover:text-white border border-[var(--border-color)] font-bold transition-colors"
+                        >
+                          Details
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -245,16 +261,17 @@ export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal })
           </div>
         )}
 
-        {/* --- VIEW MODE 3: ASYMMETRIC BENTO GRID --- */}
+        {/* --- VIEW MODE 3: BENTO VIEW --- */}
         {viewMode === 'bento' && (
-          <div ref={gridContainerRef} className="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {filteredProjects.map((project, index) => {
-              // Asymmetric bento span logic
               const isLarge = index === 0 || index === 3;
               return (
                 <div
                   key={project.id}
-                  className={`project-card-item ${isLarge ? 'md:col-span-7' : 'md:col-span-5'}`}
+                  className={`project-card-item ${
+                    isLarge ? 'md:col-span-2' : 'md:col-span-1'
+                  }`}
                 >
                   <ProjectCard
                     project={project}
@@ -267,28 +284,6 @@ export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal })
           </div>
         )}
 
-        {/* Empty Search State */}
-        {filteredProjects.length === 0 && (
-          <div className="p-12 text-center bg-[#EBE6DC] border-2 border-dashed border-[#121212]/20">
-            <SlidersHorizontal className="w-8 h-8 text-[#121212]/40 mx-auto mb-3" />
-            <div className="font-display text-lg font-bold text-[#121212] uppercase mb-1">
-              No matching projects found
-            </div>
-            <p className="text-xs font-mono text-[#121212]/60 mb-4">
-              Try adjusting your search criteria or reset filters.
-            </p>
-            <button
-              onClick={() => {
-                setSelectedCategory('all');
-                setSearchQuery('');
-              }}
-              type="button"
-              className="px-4 py-2 text-xs font-mono font-bold uppercase bg-[#121212] text-white hover:bg-[#E11D48] transition-colors"
-            >
-              Reset All Filters
-            </button>
-          </div>
-        )}
       </div>
     </section>
   );

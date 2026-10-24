@@ -17,7 +17,8 @@ import {
   Compass,
   FileText
 } from 'lucide-react';
-import { PERSONAL_INFO, PROJECTS, SKILL_CATEGORIES, TIMELINE } from '../data/portfolioData';
+import { PERSONAL_INFO, PROJECTS, SKILL_CATEGORIES, TIMELINE, CERTIFICATIONS } from '../data/portfolioData';
+import { ARCHITECTURE_DATA } from '../data/architectureData';
 import { 
   TERMINAL_THEMES, 
   ASCII_BANNER, 
@@ -239,6 +240,7 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
       }
 
       // 2. PROFILE & IDENTITY
+      case 'about':
       case 'whoami': {
         outputNode = (
           <div className="space-y-2 text-xs">
@@ -247,10 +249,97 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
             <div className="p-3 bg-white/5 border border-white/10 text-white/85 leading-relaxed">
               {PERSONAL_INFO.bio}
             </div>
+            <div className="p-2 bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-300">
+              {PERSONAL_INFO.statusNote}
+            </div>
             <div className="flex flex-wrap gap-4 text-white/60 text-[11px]">
               <span>Location: <strong className="text-white">{PERSONAL_INFO.location}</strong></span>
               <span>Status: <strong className="text-emerald-400">{PERSONAL_INFO.availability}</strong></span>
               <span>Email: <strong className="text-[#E11D48]">{PERSONAL_INFO.email}</strong></span>
+            </div>
+          </div>
+        );
+        break;
+      }
+
+      case 'certifications': {
+        outputNode = (
+          <div className="space-y-3 text-xs">
+            <div className="text-amber-400 font-bold uppercase tracking-wider">
+              VERIFIED INDUSTRY CERTIFICATIONS (3)
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {CERTIFICATIONS.map((cert) => (
+                <div key={cert.id} className="p-2.5 bg-white/5 border border-white/10 space-y-1">
+                  <div className="flex items-center justify-between text-[10px] text-white/50">
+                    <span className="text-[#E11D48] font-bold">{cert.issuer}</span>
+                    <span>{cert.issueDate}</span>
+                  </div>
+                  <div className="font-bold text-white text-xs">{cert.title}</div>
+                  <p className="text-[11px] text-white/70">{cert.description}</p>
+                  <div className="text-[10px] text-emerald-400 font-mono pt-1">
+                    [Code: {cert.badgeCode}]
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+        break;
+      }
+
+      case 'education': {
+        outputNode = (
+          <div className="space-y-2 text-xs">
+            <div className="text-cyan-400 font-bold uppercase tracking-wider">
+              ACADEMIC EDUCATION &amp; FOUNDATIONS
+            </div>
+            <div className="p-3 bg-white/5 border border-white/10 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-white text-sm">Computer Science &amp; Engineering</span>
+                <span className="text-cyan-300 font-mono">India</span>
+              </div>
+              <p className="text-white/80 leading-relaxed">
+                Rigorous grounding in Data Structures, Algorithms, Object-Oriented System Design, Database Systems (RDBMS &amp; Document Store), Machine Learning Foundations, and Deep Learning Architectures.
+              </p>
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {['Data Structures', 'Algorithms', 'Deep Learning', 'Computer Networks', 'Database Engineering'].map((item) => (
+                  <span key={item} className="px-2 py-0.5 bg-white/10 text-white/90 text-[10px]">
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+        break;
+      }
+
+      case 'socials': {
+        outputNode = (
+          <div className="space-y-2 text-xs">
+            <div className="text-emerald-400 font-bold uppercase tracking-wider">
+              DEVELOPER CONTACT &amp; VERIFIED SOCIALS:
+            </div>
+            <div className="space-y-1.5 pl-2">
+              <div>
+                <span className="text-white/60">GitHub: </span>
+                <a href={PERSONAL_INFO.github} target="_blank" rel="noreferrer" className="text-blue-400 underline font-bold">
+                  {PERSONAL_INFO.github}
+                </a>
+              </div>
+              <div>
+                <span className="text-white/60">LinkedIn: </span>
+                <a href={PERSONAL_INFO.linkedin} target="_blank" rel="noreferrer" className="text-blue-400 underline font-bold">
+                  {PERSONAL_INFO.linkedin}
+                </a>
+              </div>
+              <div>
+                <span className="text-white/60">Direct Email: </span>
+                <a href={`mailto:${PERSONAL_INFO.email}`} className="text-[#E11D48] underline font-bold">
+                  {PERSONAL_INFO.email}
+                </a>
+              </div>
             </div>
           </div>
         );
@@ -278,16 +367,17 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
         outputNode = (
           <div className="space-y-3 text-xs">
             <div className="text-cyan-400 font-bold uppercase tracking-wider">
-              DEVELOPER TIMELINE &amp; MILESTONES
+              DEVELOPER TIMELINE &amp; MILESTONES (HONEST &amp; TRANSPARENT)
             </div>
             {TIMELINE.map((t) => (
               <div key={t.period} className="border-l-2 border-cyan-400 pl-3 py-1 space-y-1">
                 <div className="flex items-center justify-between text-white font-bold">
-                  <span>{t.role} — {t.organization}</span>
-                  <span className="text-cyan-300">{t.period}</span>
+                  <span>{t.title}</span>
+                  <span className="text-cyan-300 font-mono">{t.period}</span>
                 </div>
-                <p className="text-white/70">{t.summary}</p>
-                <div className="flex flex-wrap gap-1 text-[10px] text-white/50">
+                <div className="text-xs text-white/50">{t.subtitle}</div>
+                <p className="text-white/80">{t.summary}</p>
+                <div className="flex flex-wrap gap-1 text-[10px] text-white/50 pt-1">
                   {t.technologies.join(' · ')}
                 </div>
               </div>
@@ -472,43 +562,81 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
       }
 
       case 'architecture': {
-        outputNode = (
-          <div className="space-y-3 text-xs font-mono">
-            <div className="text-cyan-400 font-bold uppercase">
-              HIGH-PRECISION SYSTEM ARCHITECTURE // XGBOOST + SHAP PIPELINE
+        const cleanArg = arg.trim().toLowerCase();
+        const archEntry = cleanArg
+          ? Object.entries(ARCHITECTURE_DATA).find(([k, v]) => k.includes(cleanArg) || v.projectTitle.toLowerCase().includes(cleanArg))
+          : null;
+
+        if (archEntry) {
+          const [key, arch] = archEntry;
+          outputNode = (
+            <div className="space-y-3 text-xs font-mono">
+              <div className="text-cyan-400 font-bold uppercase flex items-center justify-between border-b border-white/10 pb-1">
+                <span>SYSTEM ARCHITECTURE // {arch.projectTitle.toUpperCase()}</span>
+                <span className="text-[10px] text-white/50">{arch.nodes.length} Nodes · {arch.edges.length} Flows</span>
+              </div>
+              <p className="text-white/80">{arch.overview}</p>
+              
+              <div className="space-y-1.5 p-3 bg-black/50 border border-white/10">
+                <span className="text-amber-400 font-bold text-[10px] uppercase block">Component Pipeline:</span>
+                {arch.nodes.map((n, i) => (
+                  <div key={n.id} className="flex items-start gap-2 text-white/90 text-[11px]">
+                    <span className="text-cyan-400 font-bold">{i + 1}.</span>
+                    <span><strong>{n.label}</strong> ({n.subtitle}) — <em className="text-white/60">{n.technologies.join(', ')}</em></span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
+                <button
+                  onClick={() => {
+                    onNavigateSection?.('architecture');
+                    document.getElementById('architecture')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-white font-bold"
+                >
+                  Inspect in Visual Explorer &rarr;
+                </button>
+              </div>
             </div>
-            <pre className="p-3 bg-black/60 border border-cyan-500/40 text-cyan-300 text-[10px] leading-snug overflow-x-auto">
-{`+-----------------------------------------------------------------------+
-|                       CLIENT / INGESTION LAYER                        |
-|   Applicant Feature Vector (FICO, DTI, Income, Collateral, Assets)    |
-+-----------------------------------+-----------------------------------+
-                                    |
-                                    v
-+-----------------------------------------------------------------------+
-|                    SCIKIT-LEARN PREPROCESSING                         |
-|   * Quantile Transformation     * Outlier Clipping                    |
-|   * Categorical Weight Encoding * Imputation Pipeline                 |
-+-----------------------------------+-----------------------------------+
-                                    |
-                                    v
-+-----------------------------------------------------------------------+
-|                    XGBOOST GRADIENT ENSEMBLE                          |
-|   * 300 Trees, Depth 5, Eta 0.03  * Threshold-Tuned Decision Boundary |
-|   * Classification Output: Approved / Review / Denied (ROC-AUC 94.2%) |
-+------------------+--------------------------------+-------------------+
-                   |                                |
-                   v                                v
-+-------------------------------------+ +-------------------------------+
-|      SHAP EXPLAINABILITY ENGINE     | |    FASTAPI / REST ENDPOINT    |
-|   * Real-time TreeSHAP contribution | |   * Underwriting telemetry    |
-|   * Transparent feature waterfall   | |   * JSON payload (<25ms P99)  |
-+-------------------------------------+ +-------------------------------+`}
-            </pre>
-            <div className="text-white/70 text-[11px]">
-              Every model is designed for explainability, sub-50ms inference, and robust validation against synthetic drift.
+          );
+        } else {
+          outputNode = (
+            <div className="space-y-3 text-xs font-mono">
+              <div className="text-cyan-400 font-bold uppercase flex items-center justify-between border-b border-white/10 pb-1">
+                <span>SYSTEM SCHEMATICS DIRECTORY (6 SYSTEMS)</span>
+                <span className="text-white/50 text-[10px]">Type 'architecture &lt;name&gt;'</span>
+              </div>
+              <p className="text-white/80">Select any system to inspect its component nodes and data pipelines:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {Object.entries(ARCHITECTURE_DATA).map(([key, arch]) => (
+                  <button
+                    key={key}
+                    onClick={() => runCommand(`architecture ${key}`)}
+                    className="p-2 text-left bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-between"
+                  >
+                    <div>
+                      <div className="font-bold text-white text-xs">{arch.projectTitle}</div>
+                      <div className="text-[10px] text-white/50">{arch.nodes.length} Nodes · {arch.edges.length} Flows</div>
+                    </div>
+                    <span className="text-cyan-400 font-bold">&rarr;</span>
+                  </button>
+                ))}
+              </div>
+              <div className="pt-2 border-t border-white/10">
+                <button
+                  onClick={() => {
+                    onNavigateSection?.('architecture');
+                    document.getElementById('architecture')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="text-cyan-400 underline font-bold"
+                >
+                  Open Visual Architecture Explorer section &darr;
+                </button>
+              </div>
             </div>
-          </div>
-        );
+          );
+        }
         break;
       }
 
@@ -1056,6 +1184,15 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
         break;
       }
 
+      case 'echo': {
+        outputNode = (
+          <div className="text-xs text-white/90 font-mono">
+            {arg || ''}
+          </div>
+        );
+        break;
+      }
+
       case 'date': {
         const now = new Date();
         outputNode = (
@@ -1199,6 +1336,7 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    e.stopPropagation();
     if (e.key === 'Enter') {
       handleCommand(inputVal);
     } else if (e.key === 'Escape') {

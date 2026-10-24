@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { ProjectShowcase } from './components/ProjectShowcase';
+import { ArchitectureExplorer } from './components/ArchitectureExplorer';
 import { SimulatorsSection } from './components/SimulatorsSection';
 import { SkillsSection } from './components/SkillsSection';
 import { ExperienceSection } from './components/ExperienceSection';
@@ -25,6 +26,7 @@ function PortfolioMainContent() {
   // Global Keyboard Shortcuts (Cmd+K / Ctrl+K for Terminal)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // If user is focused inside an input/textarea and it's not the terminal shortcut, don't interfere
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setIsTerminalOpen((prev) => !prev);
@@ -37,7 +39,7 @@ function PortfolioMainContent() {
   // Active section scroll spy (standard layout)
   useEffect(() => {
     if (layoutMode !== 'standard') return;
-    const sectionIds = ['overview', 'projects', 'simulators', 'skills', 'experience', 'contact'];
+    const sectionIds = ['overview', 'projects', 'architecture', 'simulators', 'skills', 'experience', 'contact'];
     const handleScroll = () => {
       const scrollPosition = window.scrollY + 200;
       for (let i = sectionIds.length - 1; i >= 0; i--) {
@@ -70,7 +72,7 @@ function PortfolioMainContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F2EB] text-[#121212] flex flex-col font-sans selection:bg-[#E11D48] selection:text-white relative">
+    <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-main)] flex flex-col font-sans selection:bg-[var(--accent)] selection:text-white relative">
       {/* 3-Zone Sticky Navigation */}
       <Header
         activeSection={activeSection}
@@ -105,13 +107,16 @@ function PortfolioMainContent() {
           {/* Selected Works & Engineered Systems (Grid / List / Bento View) */}
           <ProjectShowcase onOpenModal={handleOpenProjectModal} />
 
-          {/* Dedicated Live Interactive Model Lab & Simulators */}
+          {/* Interactive Architecture Explorer (Node & Edge Schematics) */}
+          <ArchitectureExplorer initialProjectId="cognitive-ai" />
+
+          {/* Dedicated Live Interactive Model Lab & Simulators (AI Projects Only) */}
           <SimulatorsSection />
 
           {/* Core Toolkit & Competencies */}
           <SkillsSection />
 
-          {/* Timeline & Professional Experience */}
+          {/* Verified Milestones & Certifications */}
           <ExperienceSection />
 
           {/* Contact & Inquiries */}
@@ -134,7 +139,6 @@ function PortfolioMainContent() {
         onClose={() => setIsTerminalOpen(false)}
         onNavigateSection={(sectionId) => {
           if (layoutMode === 'split') {
-            // If in split mode and navigating to non-split section, switch to standard
             setLayoutMode('standard');
           }
           setTimeout(() => {

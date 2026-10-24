@@ -1,15 +1,23 @@
 export type ProjectCategory = 
   | 'all'
-  | 'machine-learning'
+  | 'academic'
+  | 'personal'
+  | 'hackathon'
+  | 'genai-agent'
   | 'computer-vision'
-  | 'full-stack'
-  | 'data-analytics'
-  | 'genai-nlp';
+  | 'machine-learning'
+  | 'full-stack';
+
+export type ProjectKind = 'academic' | 'personal' | 'hackathon';
 
 export interface ProjectSimulatorConfig {
-  type: 'loan' | 'food' | 'event' | 'wildfire' | 'supply-chain' | 'rag' | 'cognitive';
-  title: string;
-  description: string;
+  hasSimulator: boolean;
+  type?: 'pdf-rag' | 'resume-parser' | 'cognitive-ai' | 'careerpilot-ai' | 'wildfire';
+  title?: string;
+  description?: string;
+  isIllustrative?: boolean;
+  externalLiveUrl?: string;
+  externalLabel?: string;
 }
 
 export interface ProjectItem {
@@ -19,8 +27,9 @@ export interface ProjectItem {
   description: string;
   category: ProjectCategory;
   categoryLabel: string;
+  projectKind: ProjectKind;
   tags: string[];
-  metrics: { label: string; value: string }[];
+  metrics: { label: string; value: string; context?: string }[];
   githubUrl: string;
   demoUrl?: string;
   year: string;
@@ -29,25 +38,45 @@ export interface ProjectItem {
   simulatorConfig: ProjectSimulatorConfig;
   gradientTheme: string;
   accentColor: string;
+  methodologyNote?: string;
+}
+
+export interface SkillItem {
+  name: string;
+  level: 'Core' | 'Proficient' | 'Exploring';
+  usedIn: string[];
+  highlight?: boolean;
 }
 
 export interface SkillCategoryItem {
   category: string;
   description: string;
-  skills: {
-    name: string;
-    level: string;
-    icon?: string;
-    usedIn: string[];
-  }[];
+  skills: SkillItem[];
 }
 
-export interface ExperienceItem {
-  period: string;
-  role: string;
-  organization: string;
-  location: string;
-  summary: string;
-  achievements: string[];
-  technologies: string[];
+export interface CertificationItem {
+  id: string;
+  title: string;
+  issuer: string;
+  issueDate: string;
+  credentialUrl?: string;
+  skillsLearned: string[];
+  description: string;
+  badgeCode: string;
 }
+
+export interface MilestoneItem {
+  period: string;
+  type: 'academic' | 'personal' | 'hackathon' | 'learning' | 'certification';
+  typeLabel: string;
+  title: string;
+  subtitle: string;
+  summary: string;
+  bullets: string[];
+  technologies: string[];
+  proofUrl?: string;
+  proofLabel?: string;
+}
+
+// Keep backward compatibility
+export type ExperienceItem = MilestoneItem;

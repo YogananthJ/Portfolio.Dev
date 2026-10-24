@@ -5,13 +5,60 @@
     --font-display: "Archivo Black", sans-serif;
     --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
     --font-mono: "JetBrains Mono", monospace;
+
+    /* Default Theme: Light Mode, Signal Red Accent */
+    --accent: #E11D48;
+    --accent-hover: #BE123C;
+    --accent-light: #FFE4E6;
+    --bg-canvas: #F5F2EB;
+    --bg-surface: #EBE6DC;
+    --bg-card: #FFFFFF;
+    --border-color: #121212;
+    --text-main: #121212;
+    --text-muted: #4B463E;
+  }
+
+  /* Accent Theme Variations */
+  :root.theme-signal-red {
+    --accent: #E11D48;
+    --accent-hover: #BE123C;
+    --accent-light: #FFE4E6;
+  }
+
+  :root.theme-electric-blue {
+    --accent: #2563EB;
+    --accent-hover: #1D4ED8;
+    --accent-light: #DBEAFE;
+  }
+
+  :root.theme-forest-green {
+    --accent: #059669;
+    --accent-hover: #047857;
+    --accent-light: #D1FAE5;
+  }
+
+  :root.theme-violet {
+    --accent: #7C3AED;
+    --accent-hover: #6D28D9;
+    --accent-light: #EDE9FE;
+  }
+
+  /* Dark Mode */
+  :root.dark {
+    --bg-canvas: #0F0F11;
+    --bg-surface: #18181B;
+    --bg-card: #202024;
+    --border-color: #3F3F46;
+    --text-main: #F4F4F5;
+    --text-muted: #A1A1AA;
   }
 
   body {
     font-family: var(--font-sans);
-    background-color: #f5f2eb;
-    color: #121212;
+    background-color: var(--bg-canvas);
+    color: var(--text-main);
     overflow-x: hidden;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 
   h1, h2, h3, .font-display {
@@ -32,6 +79,13 @@
   background-size: 28px 28px;
 }
 
+:root.dark .paper-grid {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
 .paper-grid-dark {
   background-image: 
     linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
@@ -45,12 +99,12 @@
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #ebe6dc;
+  background: var(--bg-surface);
 }
 ::-webkit-scrollbar-thumb {
-  background: #121212;
+  background: var(--text-main);
   border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #e11d48;
+  background: var(--accent);
 }

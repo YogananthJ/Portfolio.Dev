@@ -210,11 +210,11 @@ export const CHANGELOG_ENTRIES = [
 ];
 
 export const ALL_COMMAND_NAMES = [
-  'help', 'whoami', 'manifesto', 'timeline', 'currently', 'funfact',
+  'help', 'about', 'whoami', 'manifesto', 'timeline', 'currently', 'funfact',
   'projects', 'project', 'featured', 'architecture', 'casestudy',
-  'github', 'live', 'lab', 'changelog',
+  'github', 'live', 'lab', 'changelog', 'certifications', 'education', 'socials',
   'skills', 'stack', 'ml', 'webdev', 'toolbox', 'learning', 'roadmap',
   'matrix', 'quote', 'joke', 'motd', 'fortune', 'theme', 'sudo hire', 'secret', 'hack', 'ping', 'status',
   'contact', 'hire', 'resume', 'linkedin', 'collaborate', 'availability', 'services',
-  'history', 'date', 'uptime', 'clear', 'banner', 'neofetch', 'ls', 'cat', 'open', 'exit'
+  'history', 'date', 'uptime', 'clear', 'banner', 'neofetch', 'ls', 'cat', 'open', 'exit', 'echo'
 ];

@@ -1,35 +1,48 @@
 import React, { useState } from 'react';
 import { PROJECTS } from '../data/portfolioData';
 import { ProjectSimulator } from './ProjectSimulator';
-import { Play, Sparkles, Terminal, ArrowUpRight } from 'lucide-react';
+import { Play, Sparkles, Terminal, ArrowUpRight, AlertTriangle, ExternalLink, Cpu } from 'lucide-react';
 
 export const SimulatorsSection: React.FC = () => {
-  const [selectedProjectId, setSelectedProjectId] = useState<string>('loan-approval');
+  // Only projects with active AI simulators
+  const aiSimulatorProjects = PROJECTS.filter((p) => p.simulatorConfig.hasSimulator);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('cognitive-ai');
 
-  const selectedProject = PROJECTS.find((p) => p.id === selectedProjectId) || PROJECTS[0];
+  const selectedProject =
+    aiSimulatorProjects.find((p) => p.id === selectedProjectId) || aiSimulatorProjects[0];
 
   return (
-    <section id="simulators" className="py-20 sm:py-28 bg-[#121212] text-[#F5F2EB] border-b-2 border-[#121212] relative overflow-hidden paper-grid-dark">
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <section id="simulators" className="py-20 border-t border-[var(--border-color)] bg-[var(--bg-canvas)]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-white/15 mb-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-[var(--border-color)] mb-8">
           <div>
-            <div className="text-xs font-mono font-bold tracking-widest text-[#E11D48] uppercase mb-2">
-              02 — Live Interactive Lab &amp; Sandboxes
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 text-xs font-mono font-semibold uppercase tracking-wider bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/30 mb-3">
+              <Cpu className="w-3.5 h-3.5" />
+              Interactive AI Sandboxes
             </div>
-            <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-white">
-              Model Simulators
+            <h2 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-[var(--text-main)]">
+              AI Project Labs &amp; Simulators
             </h2>
+            <p className="max-w-2xl text-xs sm:text-sm text-[var(--text-muted)] mt-1">
+              Explore interactive client-side sandboxes for AI agent workflows, retrieval-augmented generation (RAG), emotion cadence detection, and multi-spectral computer vision.
+            </p>
           </div>
-          <p className="max-w-md text-sm text-white/70 font-medium">
-            Test and interact directly with algorithms, computer vision pipelines, underwriting parameters, and NLP cadence evaluators in real-time.
-          </p>
+
+          {/* Recruiter Transparency Badge */}
+          <div className="flex items-center gap-2 self-start md:self-auto px-3 py-2 bg-amber-500/10 border border-amber-500/30 text-[11px] font-mono text-amber-600 dark:text-amber-400 max-w-sm">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>
+              <strong>Recruiter Notice:</strong> Client-side simulators illustrate pipeline mechanics and parameter reactivity; real inference links are highlighted with external buttons.
+            </span>
+          </div>
         </div>
 
         {/* Project Selector Tabs */}
-        <div className="flex flex-wrap gap-2 mb-8 border-b border-white/10 pb-4">
-          {PROJECTS.map((proj) => {
-            const isSelected = proj.id === selectedProjectId;
+        <div className="flex flex-wrap gap-2 mb-6 border-b border-[var(--border-color)] pb-4">
+          {aiSimulatorProjects.map((proj) => {
+            const isSelected = proj.id === selectedProject.id;
             return (
               <button
                 key={proj.id}
@@ -37,8 +50,8 @@ export const SimulatorsSection: React.FC = () => {
                 type="button"
                 className={`flex items-center gap-2 px-3 py-2 text-xs font-mono font-bold uppercase transition-all border ${
                   isSelected
-                    ? 'bg-[#E11D48] text-white border-[#E11D48] shadow-[2px_2px_0px_0px_#ffffff]'
-                    : 'bg-[#1C1C1E] text-white/75 border-white/10 hover:text-white hover:bg-white/10'
+                    ? 'bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm'
+                    : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-main)] hover:border-[var(--text-main)]'
                 }`}
               >
                 <Play className="w-3 h-3 fill-current" />
@@ -49,25 +62,41 @@ export const SimulatorsSection: React.FC = () => {
         </div>
 
         {/* Active Simulator Container */}
-        <div className="bg-[#F5F2EB] text-[#121212] p-2 sm:p-4 rounded-xs border-2 border-white/20 shadow-[6px_6px_0px_0px_#E11D48]">
-          <div className="p-3 bg-[#EBE6DC] border border-[#121212]/15 flex flex-wrap items-center justify-between gap-3 text-xs font-mono mb-4">
+        <div className="bg-[var(--bg-card)] border border-[var(--border-color)] p-4 sm:p-6 shadow-sm">
+          {/* Header bar */}
+          <div className="p-3 bg-[var(--bg-surface)] border border-[var(--border-color)] flex flex-wrap items-center justify-between gap-3 text-xs font-mono mb-6">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-[#121212]">Active Model:</span>
-              <span className="text-[#E11D48] font-bold">{selectedProject.title}</span>
-              <span className="text-[#121212]/40">·</span>
-              <span className="text-[#121212]/75">{selectedProject.categoryLabel}</span>
+              <span className="font-bold text-[var(--text-main)]">Active Lab:</span>
+              <span className="text-[var(--accent)] font-bold">{selectedProject.title}</span>
+              <span className="text-[var(--border-color)]">·</span>
+              <span className="text-[var(--text-muted)]">{selectedProject.categoryLabel}</span>
             </div>
-            <a
-              href={selectedProject.githubUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#121212] hover:text-[#E11D48] font-bold flex items-center gap-1 underline underline-offset-2"
-            >
-              <span>GitHub Repo</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </a>
+
+            <div className="flex items-center gap-3">
+              {selectedProject.demoUrl && (
+                <a
+                  href={selectedProject.demoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[var(--accent)] hover:underline font-bold flex items-center gap-1"
+                >
+                  <span>Live App / Bot</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              )}
+              <a
+                href={selectedProject.githubUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--text-main)] hover:text-[var(--accent)] font-bold flex items-center gap-1 underline underline-offset-2"
+              >
+                <span>GitHub Source</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </a>
+            </div>
           </div>
 
+          {/* Render Active Simulator */}
           <ProjectSimulator project={selectedProject} />
         </div>
       </div>
