@@ -35,6 +35,7 @@ import {
 } from '../data/terminalData';
 import { TerminalTheme } from '../types/terminal';
 import { MatrixRainCanvas } from './MatrixRainCanvas';
+import { WhyHireCard } from './WhyHireCard';
 
 interface TerminalDrawerProps {
   isOpen: boolean;
@@ -164,6 +165,65 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
     const cmd = parts[0].toLowerCase();
     const arg = parts.slice(1).join(' ').toLowerCase();
 
+    // Natural Language Query Normalization & Hiring / Fresher Intent Detection
+    const normalizedQuery = trimmed
+      .toLowerCase()
+      .replace(/[?!.,;:'"()]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const isHireMeQuery = 
+      normalizedQuery === 'why should i hire you' ||
+      normalizedQuery === 'why should we hire you' ||
+      normalizedQuery === 'why hire you' ||
+      normalizedQuery === 'why hire me' ||
+      normalizedQuery === 'why should i hire' ||
+      normalizedQuery === 'why hire' ||
+      normalizedQuery === 'why you' ||
+      normalizedQuery === 'why me' ||
+      cmd === 'whyhire' ||
+      cmd === 'why-hire' ||
+      cmd === 'why-hire-me' ||
+      cmd === 'pitch';
+
+    const isFresherQuery = 
+      normalizedQuery === 'why i want to hire an fresher like you' ||
+      normalizedQuery === 'why i want to hire a fresher like you' ||
+      normalizedQuery === 'why should i hire a fresher and you are a fresher' ||
+      normalizedQuery === 'why should i hire a fresher' ||
+      normalizedQuery === 'why hire a fresher' ||
+      normalizedQuery === 'why hire an fresher' ||
+      normalizedQuery === 'why fresher' ||
+      normalizedQuery === 'why-fresher' ||
+      normalizedQuery === 'fresher' ||
+      normalizedQuery === 'hire fresher' ||
+      normalizedQuery === 'why hire a fresher when you are a fresher' ||
+      cmd === 'fresher' ||
+      cmd === 'why-fresher';
+
+    const isGeneralHireFresherMatch = 
+      (normalizedQuery.includes('why') && (normalizedQuery.includes('hire') || normalizedQuery.includes('recruit') || normalizedQuery.includes('choose'))) ||
+      (normalizedQuery.includes('fresher') && (normalizedQuery.includes('hire') || normalizedQuery.includes('why') || normalizedQuery.includes('want'))) ||
+      (cmd === 'why' && (arg.includes('hire') || arg.includes('fresher') || arg.includes('you')));
+
+    if (isHireMeQuery || isFresherQuery || isGeneralHireFresherMatch) {
+      const initialTab = isFresherQuery || normalizedQuery.includes('fresher') ? 'fresher' : 'why-me';
+      const outputNode = (
+        <WhyHireCard
+          queryPrompt={trimmed}
+          initialTab={initialTab}
+          onRunCommand={runCommand}
+          onSelectProject={onSelectProject}
+        />
+      );
+      setHistory((prev) => [
+        ...prev,
+        { id: Math.random().toString(), command: rawCmd, output: outputNode },
+      ]);
+      setInputVal('');
+      return;
+    }
+
     let outputNode: React.ReactNode = null;
 
     // --- COMMAND DISPATCHER ---
@@ -181,6 +241,8 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
                 <div className="text-emerald-400 font-bold mb-1">PROFILE &amp; IDENTITY:</div>
                 <div className="space-y-0.5 text-white/80">
                   <div><strong className="text-white cursor-pointer" onClick={() => runCommand('whoami')}>whoami</strong> — Summary &amp; credentials</div>
+                  <div><strong className="text-emerald-400 cursor-pointer" onClick={() => runCommand('why should i hire you?')}>why should i hire you?</strong> — Candidate pitch &amp; proof</div>
+                  <div><strong className="text-emerald-400 cursor-pointer" onClick={() => runCommand('why should i hire a fresher and you are a fresher?')}>why hire a fresher?</strong> — The strategic fresher ROI</div>
                   <div><strong className="text-white cursor-pointer" onClick={() => runCommand('manifesto')}>manifesto</strong> — Development philosophy</div>
                   <div><strong className="text-white cursor-pointer" onClick={() => runCommand('timeline')}>timeline</strong> — Developer milestones</div>
                   <div><strong className="text-white cursor-pointer" onClick={() => runCommand('currently')}>currently</strong> — Active learning &amp; research</div>
@@ -1445,11 +1507,13 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
           <span className="text-white/40 text-[10px] uppercase font-bold mr-1">Quick:</span>
           {[
             'help',
-            'neofetch',
+            'why should i hire you?',
+            'whyhire',
             'projects',
             'architecture',
             'currently',
             'sudo hire',
+            'certifications',
             'matrix',
             'skills',
             'timeline',
