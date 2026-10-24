@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Yogananth — Developer / Portfolio 2026</title>
+
+<meta name="description" content="Yogananth — future-focused developer building web apps, AI experiments, and automation." />
+<meta property="og:title" content="Yogananth — Developer / Portfolio" />
+<meta property="og:description" content="Future-focused developer building web apps, AI experiments, and automation." />
+<meta property="og:type" content="website" />
+<meta name="theme-color" content="#f3f0e8" />
+
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon.png" />
+<link rel="apple-touch-icon" href="assets/favicon.png" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+<style>
+/* ---------- Tokens ---------- */
+:root{
+  --paper:#f3f0e8;
+  --paper-2:#efe7d9;
+  --ink:#090909;
+  --ink-2:#1a1a1a;
+  --red:#F20D26;
+  --muted:#6b6257;
+  --line:rgba(17,17,17,.09);
+  --grid:rgba(0,0,0,.08);
+
+  --font-display:"Archivo Black", Impact, "Arial Black", sans-serif;
+  --font-body:"Inter", Arial, Helvetica, sans-serif;
+
+  --maxw:1180px;
+  --pad:clamp(16px, 4vw, 40px);
+  --radius:2px;
+}
+
+/* ---------- Reset ---------- */
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth; -webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  font-family:var(--font-body);
+  color:var(--ink);
+  background-color:var(--paper);
+  line-height:1.55;
+  overflow-x:hidden;
+  background-image:
+    linear-gradient(to right, var(--grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+  background-size:24px 24px;
+  background-position:0 0;
+  -webkit-font-smoothing:antialiased;
+}
+img{max-width:100%; display:block}
+a{color:inherit; text-decoration:none}
+button{font:inherit; cursor:pointer; background:none; border:0; color:inherit}
+
+/* Three.js Canvas */
+#webgl-container {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: -1; pointer-events: none; opacity: 0.6;
+}
+
+/* Scroll Progress */
+#scroll-progress {
+  position: fixed; top: 0; left: 0; width: 100%; height: 3px;
+  background: var(--red); transform-origin: 0 50%; transform: scaleX(0);
+  z-index: 100;
+}
+
+/* Fallback visibility - essential content is ALWAYS visible */
+.essential-content { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.001ms !important; transition-duration:.001ms !important;}
+  #webgl-container { display: none; }
+  /* If GSAP is disabled, we still want everything visible */
+  .gsap-hidden { opacity: 1 !important; transform: none !important; }
+}
+
+/* ---------- Layout ---------- */
+.container{max-width:var(--maxw); margin:0 auto; padding:0 var(--pad)}
+.section{padding:clamp(56px, 9vw, 120px) 0; position:relative}
+
+/* ---------- Header ---------- */
+.site-header{
+  position:sticky; top:0; z-index:50;
+  background:rgba(243,240,232,.88);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);
+}
+.nav{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:16px; padding:14px var(--pad); max-width:var(--maxw); margin:0 auto;
+  position: relative;
+}
+.brand{
+  font-family:var(--font-display); font-size:18px; letter-spacing:.02em; color:var(--ink);
+}
+.brand::after{content:""; display:inline-block; width:8px; height:8px; background:var(--red); margin-left:6px; vertical-align:middle}
+
+.nav__list{display:flex; gap:4px; list-style:none; margin:0; padding:0}
+.nav__link{
+  padding:8px 14px; border-radius:var(--radius); font-weight:600; font-size:14px; color:var(--ink);
+  border:1px solid transparent; transition:background .15s, border-color .15s, color .15s;
+}
+.nav__link:hover{background:var(--paper-2)}
+.nav__link.active-link{background:var(--ink); color:var(--paper); border-color:var(--ink)}
+.nav__link:focus-visible{outline:2px solid var(--red); outline-offset:2px}
+
+.nav__toggle{
+  display:none; width:44px; height:44px; align-items:center; justify-content:center;
+  border:1px solid var(--ink); border-radius:var(--radius);
+}
+.nav__toggle:focus-visible{outline:2px solid var(--red); outline-offset:2px}
+.nav__toggle svg{width:22px; height:22px; stroke:var(--ink); fill:none; stroke-width:2.2}
+
+@media (max-width:820px){
+  .nav__list{
+    position:fixed; top: 60px; left: 0; right: 0; /* Fixed relative to header */
+    flex-direction:column; gap:0;
+    background:var(--paper); border-bottom:1px solid var(--line);
+    padding:8px var(--pad) 16px;
+    transform:translateY(-12px); opacity:0; pointer-events:none; visibility:hidden;
+    transition:opacity .18s ease, transform .18s ease, visibility .18s;
+    box-shadow:0 12px 24px rgba(0,0,0,.08);
+    z-index: 60;
+  }
+  .nav__list.is-open{transform:translateY(0); opacity:1; pointer-events:auto; visibility:visible;}
+  .nav__list .nav__link{display:block; padding:14px 8px; border-radius:0; border-bottom:1px solid var(--line); font-size:16px;}
+  .nav__toggle{display:inline-flex}
+  body.menu-open{overflow:hidden}
+}
+
+/* ---------- Buttons ---------- */
+.btn{
+  display:inline-flex; align-items:center; gap:10px; padding:12px 20px;
+  font-weight:700; font-size:14px; letter-spacing:.02em;
+  border:2px solid var(--ink); border-radius:var(--radius);
+  background:var(--ink); color:var(--paper);
+  transition:transform .15s, background .15s, color .15s;
+  will-change: transform;
+  cursor: pointer;
+}
+.btn:hover{background:var(--red); border-color:var(--red)}
+.btn:focus-visible{outline:2px solid var(--red); outline-offset:3px}
+.btn svg{width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2.4}
+
+/* ============================================================
+   HERO COLLAGE (Responsive Sizing)
+   ============================================================ */
+.hero-collage {
+  position: relative;
+  width: 100%;
+  /* Natural height, no fixed min-height */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+  padding-top: 40px;
+  padding-bottom: 80px;
+}
+
+.hero-meta-top {
+  width: 100%; max-width: var(--maxw); padding: 0 var(--pad);
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 11px; font-weight: 700; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 20px; z-index: 5;
+}
+
+.collage-stage {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  /* Use aspect-ratio to create a natural stage height that scales */
+  aspect-ratio: 16 / 9;
+  min-height: 400px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.collage-paper {
+  position: absolute;
+  top: 0; left: -50px; right: -50px; bottom: 0;
+  background: var(--ink);
+  z-index: 1;
+  clip-path: polygon(
+    0% 15%, 5% 8%, 12% 18%, 20% 5%, 28% 22%, 35% 10%, 42% 25%, 48% 8%, 
+    55% 20%, 62% 5%, 68% 18%, 75% 8%, 82% 22%, 88% 10%, 95% 18%, 100% 12%, 
+    100% 88%, 95% 95%, 88% 82%, 80% 98%, 72% 85%, 65% 92%, 58% 80%, 50% 95%, 
+    42% 82%, 35% 98%, 28% 85%, 20% 95%, 12% 82%, 5% 95%, 0% 88%
+  );
+}
+
+.collage-type {
+  position: absolute;
+  top: 40%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%; /* Controlled */
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: clamp(100px, 22vw, 280px); 
+  line-height: 0.75;
+  letter-spacing: -0.03em;
+  color: #f8f7f3;
+  text-transform: uppercase;
+  z-index: 2; pointer-events: none;
+  white-space: nowrap;
+  /* Prevent horizontal overflow */
+  overflow: visible;
+}
+
+/* The Transparent PNG Silhouette */
+.collage-portrait {
+  position: absolute;
+  z-index: 3;
+  width: clamp(280px, 50vw, 480px);
+  height: clamp(400px, 70vh, 600px);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  /* No background, no border, no box-shadow */
+}
+
+.collage-portrait img {
+  width: 100%; height: 100%;
+  object-fit: contain; /* Keeps transparent PNG proportions */
+  object-position: bottom;
+  /* Thick red outline following the silhouette using layered drop-shadow */
+  filter: 
+    drop-shadow( 4px  0 0 var(--red))
+    drop-shadow(-4px  0 0 var(--red))
+    drop-shadow( 0  4px 0 var(--red))
+    drop-shadow( 0 -4px 0 var(--red))
+    drop-shadow( 3px  3px 0 var(--red))
+    drop-shadow(-3px -3px 0 var(--red))
+    drop-shadow( 3px -3px 0 var(--red))
+    drop-shadow(-3px  3px 0 var(--red));
+}
+
+.collage-decor {
+  position: absolute; z-index: 5; color: #f8f7f3; pointer-events: none;
+}
+.collage-decor--1 { right: 15%; top: 45%; width: 60px; }
+.collage-decor--2 { right: 8%; top: 55%; width: 40px; }
+
+.hero-intro-bottom {
+  text-align: center; max-width: 650px; margin: 40px auto 0;
+  z-index: 5; position: relative;
+  background: var(--paper); padding: 20px;
+  border: 2px solid var(--ink); box-shadow: 6px 6px 0 var(--ink);
+}
+.hero-intro-bottom p { margin: 0 0 24px; font-size: clamp(15px, 1.8vw, 18px); color: #2b2621; line-height: 1.6; }
+.hero__socials { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.social-pill {
+  display:inline-flex; align-items:center; gap:8px; padding:10px 18px;
+  border:1px solid var(--ink); border-radius:999px; font-size:14px; font-weight:600;
+  transition:background .15s, color .15s; background: var(--paper);
+}
+.social-pill:hover{background:var(--ink); color:var(--paper)}
+.social-pill:focus-visible{outline:2px solid var(--red); outline-offset:2px}
+.social-pill svg{width:16px; height:16px; fill:currentColor}
+
+@media (max-width: 900px) {
+  .collage-stage { aspect-ratio: 4/3; }
+  .collage-type { font-size: clamp(80px, 20vw, 160px); }
+}
+@media (max-width: 600px) {
+  .collage-stage { aspect-ratio: 1/1; min-height: 300px; margin-top: 10px; }
+  .collage-type { font-size: clamp(60px, 18vw, 120px); top: 45%; }
+  .collage-portrait { width: 80%; height: 80%; }
+  .collage-decor { display: none; }
+  .hero-intro-bottom { margin-top: 20px; }
+}
+
+/* ---------- Section heading ---------- */
+.sec-head{
+  display:flex; align-items:flex-end; justify-content:space-between;
+  gap:16px; margin-bottom:clamp(24px, 5vw, 48px);
+  border-bottom:2px solid var(--ink); padding-bottom:14px; flex-wrap:wrap;
+}
+.sec-head h2{
+  font-family:var(--font-display); font-size:clamp(32px, 6vw, 64px);
+  line-height:.92; margin:0; letter-spacing:-.01em; text-transform:uppercase;
+}
+.sec-head .count{ font-size:12px; font-weight:700; letter-spacing:.2em; color:var(--red); text-transform:uppercase; }
+
+/* ---------- Torn divider ---------- */
+.torn{position:relative; height:44px; margin-top:-1px; pointer-events:none}
+.torn svg{position:absolute; inset:0; width:100%; height:100%; display:block; overflow: visible;}
+.torn svg path{ fill:var(--ink); stroke:var(--ink); stroke-width:2; vector-effect: non-scaling-stroke; }
+
+/* ---------- About ---------- */
+.about__grid{ display:grid; grid-template-columns:1.2fr .9fr; gap:clamp(24px, 5vw, 56px); align-items:start; }
+.about__quote{ font-family:var(--font-display); font-size:clamp(24px, 3.6vw, 40px); line-height:1.04; margin:0 0 24px; text-transform:uppercase; }
+.about__quote .accent{color:var(--red)}
+.about__body p{color:#2b2621; margin:0 0 16px; max-width:52ch}
+.about__body p:first-child::first-letter{ font-family:var(--font-display); font-size:3.2em; float:left; line-height:.85; padding:6px 10px 0 0; color:var(--red); }
+
+.facts{list-style:none; margin:0; padding:0; border-top:1px solid var(--line)}
+.facts li{ display:grid; grid-template-columns:110px 1fr; gap:14px; padding:14px 0; border-bottom:1px solid var(--line); font-size:14px; }
+.facts li strong{ font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--red); font-weight:800; padding-top:2px; }
+
+@media (max-width:780px){ .about__grid{grid-template-columns:1fr} }
+
+/* ============================================================
+   SKILLS SHOWCASE
+   ============================================================ */
+.ink-panel{background:var(--ink); color:var(--paper); position:relative}
+.ink-panel .sec-head{border-bottom-color:rgba(255,255,255,.18)}
+.ink-panel .sec-head .count{color:#ff5a6e}
+
+.skills-table { display: flex; flex-direction: column; border-top: 2px solid var(--paper); }
+.skill-row { display: grid; grid-template-columns: 200px 1fr; border-bottom: 2px solid rgba(255,255,255,0.15); padding: 24px 0; transition: background 0.3s, padding 0.3s; }
+.skill-row:hover { background: rgba(255,255,255,0.03); padding-left: 16px; }
+.skill-category { font-family: var(--font-display); font-size: clamp(18px, 2.2vw, 24px); text-transform: uppercase; color: #ff5a6e; padding-top: 4px; }
+.skill-items { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; }
+.skill-item { font-family: var(--font-body); font-size: clamp(16px, 2vw, 20px); font-weight: 600; color: var(--paper); position: relative; }
+.skill-item::after { content: '/'; position: absolute; right: -16px; color: rgba(255,255,255,0.2); font-weight: 400; }
+.skill-item:last-child::after { display: none; }
+
+@media (max-width: 780px) {
+  .skill-row { grid-template-columns: 1fr; gap: 16px; }
+  .skill-category { border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
+}
+
+/* ============================================================
+   PROJECTS SHOWCASE
+   ============================================================ */
+.projects-editorial {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: clamp(24px, 4vw, 48px);
+  margin-top: 40px;
+}
+.project-item {
+  position: relative; display: flex; flex-direction: column;
+  min-width: 0; /* Fixes flex/grid overflow */
+}
+/* Asymmetric layout */
+.project-item:nth-child(4n+1), .project-item:nth-child(4n+4) { grid-column: span 7; }
+.project-item:nth-child(4n+2), .project-item:nth-child(4n+3) { grid-column: span 5; }
+
+@media (max-width: 900px) {
+  .project-item { grid-column: span 12 !important; }
+}
+
+.project-media {
+  position: relative; aspect-ratio: 16/10;
+  border: 2px solid var(--ink); background: var(--paper-2); overflow: hidden;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  box-shadow: 8px 8px 0 var(--ink);
+}
+.project-item:hover .project-media { border-color: var(--red); box-shadow: 12px 12px 0 var(--red); }
+.project-media img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+.project-item:hover .project-media img { transform: scale(1.05); }
+
+.project-content { padding: 24px 0 0; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.project-title-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.project-title {
+  font-family: var(--font-display); font-size: clamp(24px, 3.5vw, 42px);
+  line-height: 0.95; margin: 0; text-transform: uppercase;
+  overflow-wrap: anywhere; /* Prevents overflow */
+}
+.project-link {
+  flex: 0 0 auto; width: 48px; height: 48px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 2px solid var(--ink); border-radius: var(--radius);
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+}
+.project-item:hover .project-link { background: var(--red); color: white; border-color: var(--red); transform: translate(-2px, -2px); }
+.project-link svg { width: 22px; height: 22px; fill: currentColor; }
+
+.project-desc { font-size: 15px; color: #2b2621; line-height: 1.6; max-width: 60ch; overflow-wrap: anywhere; }
+.project-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.project-tag {
+  font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 6px 10px; border: 1px solid var(--ink); border-radius: var(--radius); color: var(--ink);
+  transition: background 0.2s, color 0.2s;
+}
+.project-item:hover .project-tag { background: var(--ink); color: var(--paper); }
+
+/* ---------- Contact ---------- */
+.contact__wrap{ display:grid; grid-template-columns:1fr 1fr; gap:clamp(24px, 5vw, 64px); align-items:start; }
+.contact__lede h2{ font-family:var(--font-display); font-size:clamp(36px, 6vw, 72px); line-height:.9; margin:0 0 18px; text-transform:uppercase; }
+.contact__lede h2 span{color:var(--red)}
+.contact__lede p{max-width:44ch; color:#2b2621; margin:0 0 20px}
+.contact__direct{display:flex; flex-direction:column; gap:8px; font-size:14px}
+.contact__direct a{border-bottom:1px solid var(--red); padding-bottom:2px; width:max-content; overflow-wrap: anywhere;}
+.contact__direct a:hover{color:var(--red)}
+
+form.contact__form{display:flex; flex-direction:column; gap:14px; min-width: 0;}
+.field{display:flex; flex-direction:column; gap:6px; min-width: 0;}
+.field label{ font-size:11px; letter-spacing:.18em; text-transform:uppercase; font-weight:800; color:var(--ink); }
+.field input, .field textarea{
+  font:inherit; font-size:15px; padding:14px 16px;
+  background:var(--paper); border:2px solid var(--ink); border-radius:var(--radius);
+  color:var(--ink); width: 100%; max-width: 100%; /* Prevent overflow */
+  transition:border-color .15s, box-shadow .15s;
+}
+.field input:focus, .field textarea:focus{ outline:none; border-color:var(--red); box-shadow:4px 4px 0 var(--red); }
+.field textarea{min-height:140px; resize:vertical}
+.form-note{ font-size:12px; color:var(--muted); padding:10px 12px; border-left:3px solid var(--red); background:rgba(215,38,61,.06); }
+.form-note[hidden]{display:none}
+.form-status{font-size:13px; margin:0; min-height:1.2em}
+.form-status[data-state="error"]{color:var(--red)}
+.form-status[data-state="ok"]{color:#1c7f3a}
+
+@media (max-width:780px){ .contact__wrap{grid-template-columns:1fr} }
+
+/* ---------- Footer ---------- */
+.site-footer{ background:var(--ink); color:var(--paper); padding:40px 0 32px; margin-top:0; overflow: hidden; }
+.footer__row{ display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; border-bottom:1px solid rgba(255,255,255,.15); padding-bottom:20px; margin-bottom:20px; position: relative; z-index: 2; }
+.footer__brand{ font-family:var(--font-display); font-size:clamp(28px, 5vw, 48px); line-height:.9; margin:0; text-transform:uppercase; }
+.footer__socials{display:flex; gap:10px; flex-wrap:wrap}
+.footer__socials a{ display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border:1px solid rgba(255,255,255,.35); border-radius:999px; font-size:13px; font-weight:600; transition:background .15s, color .15s; }
+.footer__socials a:hover{background:var(--paper); color:var(--ink)}
+.footer__socials a:focus-visible{outline:2px solid #ff5a6e; outline-offset:2px}
+.footer__socials svg{width:15px; height:15px; fill:currentColor}
+.footer__meta{ display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; font-size:12px; color:rgba(243,240,232,.65); position: relative; z-index: 2; }
+</style>
+</head>
+<body>
+
+<div id="scroll-progress"></div>
+<div id="webgl-container"></div>
+
+<a class="skip" href="#main" style="position:absolute;left:-9999px;top:auto" onfocus="this.style.cssText='position:fixed;left:12px;top:12px;background:#111;color:#fff;padding:10px 14px;z-index:999;border-radius:2px'">Skip to content</a>
+
+<header class="site-header">
+  <nav class="nav" aria-label="Main navigation">
+    <a class="brand" href="#home">YOGANANTH</a>
+    <ul class="nav__list" id="nav-list">
+      <li><a class="nav__link active-link" href="#home">Home</a></li>
+      <li><a class="nav__link" href="#about">About</a></li>
+      <li><a class="nav__link" href="#skills">Skills</a></li>
+      <li><a class="nav__link" href="#projects">Projects</a></li>
+      <li><a class="nav__link" href="#contact">Contact</a></li>
+    </ul>
+    <button class="nav__toggle" id="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="nav-list">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+  </nav>
+</header>
+
+<main id="main">
+
+  <!-- ========== HERO COLLAGE ========== -->
+  <section class="section hero" id="home" style="padding-top:0; padding-bottom:40px;">
+    <div class="hero-collage">
+      
+      <div class="hero-meta-top essential-content">
+        <span>Developer / AI · Automation</span>
+        <span>2026</span>
+      </div>
+
+      <div class="collage-stage">
+        <div class="collage-paper essential-content" aria-hidden="true"></div>
+        <div class="collage-type essential-content" id="hero-type" aria-hidden="true">YOGANANTH</div>
+
+        <svg class="collage-decor collage-decor--1 essential-content" viewBox="0 0 100 100" aria-hidden="true">
+          <path fill="currentColor" d="M50 0 C55 30 70 45 100 50 C70 55 55 70 50 100 C45 70 30 55 0 50 C30 45 45 30 50 0 Z"/>
+        </svg>
+        <svg class="collage-decor collage-decor--2 essential-content" viewBox="0 0 100 100" aria-hidden="true">
+           <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" stroke-width="6"/>
+        </svg>
+
+        <div class="collage-portrait essential-content">
+          <img id="hero-portrait" src="assets/favicon.png" alt="Portrait of Yogananth" fetchpriority="high" onerror="this.style.display='none'; this.parentElement.innerHTML='<p style=\'color:white;text-align:center;padding:20px;\'>Image not found</p>';" />
+        </div>
+      </div>
+
+      <div class="hero-intro-bottom essential-content">
+        <p>Future-focused developer building web apps, AI experiments, and automation. I combine machine learning with modern web technology to ship practical, working products.</p>
+        <div class="hero__socials">
+          <a class="social-pill" href="https://www.linkedin.com/in/yogananth-j-653400307/" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.36V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45z"/></svg>
+            LinkedIn
+          </a>
+          <a class="social-pill" href="https://github.com/YogananthJ" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.63 22.42c.58.11.79-.25.79-.56v-2c-3.2.7-3.87-1.37-3.87-1.37-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.41-2.7 5.38-5.27 5.66.41.35.77 1.05.77 2.11v3.13c0 .31.21.68.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>
+            GitHub
+          </a>
+        </div>
+        <div style="margin-top:24px">
+          <a class="btn" href="#contact" data-magnetic>
+            Get in touch
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Torn divider -->
+  <div class="torn" aria-hidden="true">
+    <svg viewBox="0 0 1200 44" preserveAspectRatio="none">
+      <path d="M0,22 L40,10 L80,26 L120,8 L160,28 L200,12 L240,30 L280,10 L320,26 L360,14 L400,30 L440,8 L480,26 L520,12 L560,28 L600,10 L640,24 L680,14 L720,28 L760,10 L800,26 L840,14 L880,30 L920,10 L960,26 L1000,12 L1040,28 L1080,10 L1120,26 L1160,14 L1200,22 L1200,44 L0,44 Z"/>
+    </svg>
+  </div>
+
+  <!-- ========== ABOUT ========== -->
+  <section class="section" id="about">
+    <div class="container">
+      <div class="sec-head essential-content">
+        <h2>Hello</h2>
+        <span class="count">01 — About</span>
+      </div>
+
+      <div class="about__grid">
+        <div class="essential-content">
+          <p class="about__quote">Building with <span class="accent">AI</span>, web &amp; automation — one working project at a time.</p>
+          <div class="about__body">
+            <p>I'm a passionate tech enthusiast and future-focused developer with a strong interest in AI, web development, and automation. I build practical projects that combine machine learning with web technologies.</p>
+            <p>My focus is turning ideas into working software — from predictive models and computer-vision experiments through to full-stack web apps, data dashboards, and LLM-powered tools.</p>
+          </div>
+        </div>
+        <ul class="facts essential-content">
+          <li><strong>Focus</strong><span>AI · Web · Automation</span></li>
+          <li><strong>Stack</strong><span>Python, JavaScript, React, Flask</span></li>
+          <li><strong>Interests</strong><span>ML, Generative AI, Data Analytics</span></li>
+          <li><strong>Based</strong><span>India</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="torn torn--to-ink" aria-hidden="true">
+    <svg viewBox="0 0 1200 44" preserveAspectRatio="none">
+      <path d="M0,22 L40,10 L80,26 L120,8 L160,28 L200,12 L240,30 L280,10 L320,26 L360,14 L400,30 L440,8 L480,26 L520,12 L560,28 L600,10 L640,24 L680,14 L720,28 L760,10 L800,26 L840,14 L880,30 L920,10 L960,26 L1000,12 L1040,28 L1080,10 L1120,26 L1160,14 L1200,22 L1200,0 L0,0 Z"/>
+    </svg>
+  </div>
+
+  <!-- ========== SKILLS ========== -->
+  <section class="section ink-panel" id="skills">
+    <div class="container">
+      <div class="sec-head essential-content">
+        <h2 style="color:var(--paper)">Skills</h2>
+        <span class="count">02 — Toolkit</span>
+      </div>
+
+      <div class="skills-table essential-content">
+        <div class="skill-row">
+          <div class="skill-category">Web Dev</div>
+          <div class="skill-items">
+            <span class="skill-item">HTML</span>
+            <span class="skill-item">CSS</span>
+            <span class="skill-item">JavaScript</span>
+            <span class="skill-item">React</span>
+          </div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-category">Languages</div>
+          <div class="skill-items">
+            <span class="skill-item">Python</span>
+            <span class="skill-item">Java</span>
+          </div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-category">AI & Data</div>
+          <div class="skill-items">
+            <span class="skill-item">Artificial Intelligence</span>
+            <span class="skill-item">Machine Learning</span>
+            <span class="skill-item">Data Analytics</span>
+            <span class="skill-item">Microsoft Excel</span>
+            <span class="skill-item">Generative AI</span>
+            <span class="skill-item">Prompt Engineering</span>
+          </div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-category">Tools</div>
+          <div class="skill-items">
+            <span class="skill-item">Google Apps Script</span>
+            <span class="skill-item">GitHub</span>
+            <span class="skill-item">Git</span>
+            <span class="skill-item">UI/UX Design</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="torn torn--from-ink" aria-hidden="true">
+    <svg viewBox="0 0 1200 44" preserveAspectRatio="none">
+      <path d="M0,22 L40,10 L80,26 L120,8 L160,28 L200,12 L240,30 L280,10 L320,26 L360,14 L400,30 L440,8 L480,26 L520,12 L560,28 L600,10 L640,24 L680,14 L720,28 L760,10 L800,26 L840,14 L880,30 L920,10 L960,26 L1000,12 L1040,28 L1080,10 L1120,26 L1160,14 L1200,22 L1200,0 L0,0 Z"/>
+    </svg>
+  </div>
+
+  <!-- ========== PROJECTS ========== -->
+  <section class="section" id="projects">
+    <div class="container">
+      <div class="sec-head essential-content">
+        <h2>Selected Projects</h2>
+        <span class="count">03 — Work</span>
+      </div>
+
+      <div class="projects-editorial">
+
+        <article class="project-item essential-content" data-tilt>
+          <div class="project-media">
+            <img src="assets/Loan.png" alt="Loan approval prediction interface" loading="lazy" />
+          </div>
+          <div class="project-content">
+            <div class="project-title-row">
+              <h3 class="project-title">Loan Approval Prediction</h3>
+              <a class="project-link" href="https://github.com/YogananthJ/loan_approval_prediction" target="_blank" rel="noopener noreferrer" aria-label="Loan Approval Prediction — GitHub repository">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.63 22.42c.58.11.79-.25.79-.56v-2c-3.2.7-3.87-1.37-3.87-1.37-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.41-2.7 5.38-5.27 5.66.41.35.77 1.05.77 2.11v3.13c0 .31.21.68.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>
+              </a>
+            </div>
+            <p class="project-desc">Predicts loan approvals using logistic regression and XGBoost with feature engineering and SHAP explainability.</p>
+            <div class="project-tags">
+              <span class="project-tag">Python</span>
+              <span class="project-tag">XGBoost</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project-item essential-content" data-tilt>
+          <div class="project-media">
+            <img src="assets/Food.png" alt="Food calorie prediction demo" loading="lazy" />
+          </div>
+          <div class="project-content">
+            <div class="project-title-row">
+              <h3 class="project-title">Food Calorie Prediction</h3>
+              <a class="project-link" href="https://github.com/YogananthJ/Food-Recognition-And-Calorie-Estimation" target="_blank" rel="noopener noreferrer" aria-label="Food Calorie Prediction — GitHub repository">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.63 22.42c.58.11.79-.25.79-.56v-2c-3.2.7-3.87-1.37-3.87-1.37-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.41-2.7 5.38-5.27 5.66.41.35.77 1.05.77 2.11v3.13c0 .31.21.68.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>
+              </a>
+            </div>
+            <p class="project-desc">A CNN-based estimator that predicts approximate calorie counts from food photos using OpenCV preprocessing.</p>
+            <div class="project-tags">
+              <span class="project-tag">CNN</span>
+              <span class="project-tag">OpenCV</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project-item essential-content" data-tilt>
+          <div class="project-media">
+            <img src="assets/Event.png" alt="Event management website interface" loading="lazy" />
+          </div>
+          <div class="project-content">
+            <div class="project-title-row">
+              <h3 class="project-title">Event Management Website</h3>
+              <a class="project-link" href="https://github.com/YogananthJ/event-management" target="_blank" rel="noopener noreferrer" aria-label="Event Management Website — GitHub repository">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.63 22.42c.58.11.79-.25.79-.56v-2c-3.2.7-3.87-1.37-3.87-1.37-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.41-2.7 5.38-5.27 5.66.41.35.77 1.05.77 2.11v3.13c0 .31.21.68.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>
+              </a>
+            </div>
+            <p class="project-desc">Full-stack web app with event creation, RSVP, ticketing and authentication (React frontend + Flask backend).</p>
+            <div class="project-tags">
+              <span class="project-tag">React</span>
+              <span class="project-tag">Node</span>
+              <span class="project-tag">Clerk</span>
+              <span class="project-tag">Stripe</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project-item essential-content" data-tilt>
+          <div class="project-media">
+            <img src="assets/Fire.png" alt="Wildfire detection satellite classifier" loading="lazy" />
+          </div>
+          <div class="project-content">
+            <div class="project-title-row">
+              <h3 class="project-title">Wildfire Detection</h3>
+              <a class="project-link" href="https://github.com/YogananthJ/Wildfire_Detection" target="_blank" rel="noopener noreferrer" aria-label="Wildfire Detection — GitHub repository">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.63 22.42c.58.11.79-.25.79-.56v-2c-3.2.7-3.87-1.37-3.87-1.37-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.41-2.7 5.38-5.27 5.66.41.35.77 1.05.77 2.11v3.13c0 .31.21.68.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>
+              </a>
+            </div>
+            <p class="project-desc">Satellite-image classifier to detect wildfire hotspots using CNNs and geospatial overlays for visualization.</p>
+            <div class="project-tags">
+              <span class="project-tag">CNN</span>
+              <span class="project-tag">Flask</span>
+              <span class="project-tag">Dense-Net</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project-item essential-content" data-tilt>
+          <div class="project-media">
+            <img src="assets/Global.png" alt="Global supply chain analysis dashboard" loading="lazy" />
+          </div>
+          <div class="project-content">
+            <div class="project-title-row">
+              <h3 class="project-title">Global Supply Chain Analysis</h3>
+              <a class="project-link" href="https://github.com/YogananthJ/Global_Supply_Chain_Analysis" target="_blank" rel="noopener noreferrer" aria-label="Global Supply Chain Analysis — GitHub repository">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.63 22.42c.58.11.79-.25.79-.56v-2c-3.2.7-3.87-1.37-3.87-1.37-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.41-2.7 5.38-5.27 5.66.41.35.77 1.05.77 2.11v3.13c0 .31.21.68.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>
+              </a>
+            </div>
+            <p class="project-desc">Advanced analytics project that visualizes and predicts global supply chain performance by tracking demand, inventory, logistics, and supplier metrics.</p>
+            <div class="project-tags">
+              <span class="project-tag">Data Analytics</span>
+              <span class="project-tag">Python</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project-item essential-content" data-tilt>
+          <div class="project-media">
+            <img src="assets/RAG.png" alt="PDF RAG chatbot interface" loading="lazy" />
+          </div>
+          <div class="project-content">
+            <div class="project-title-row">
+              <h3 class="project-title">PDF RAG Chatbot</h3>
+              <a class="project-link" href="https://github.com/YogananthJ/PDF-RAG-Chatbot" target="_blank" rel="noopener noreferrer" aria-label="PDF RAG Chatbot — GitHub repository">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.63 22.42c.58.11.79-.25.79-.56v-2c-3.2.7-3.87-1.37-3.87-1.37-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.41-2.7 5.38-5.27 5.66.41.35.77 1.05.77 2.11v3.13c0 .31.21.68.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>
+              </a>
+            </div>
+            <p class="project-desc">Built a Retrieval-Augmented Generation (RAG) system that enables users to upload PDF documents and receive context-aware answers.</p>
+            <div class="project-tags">
+              <span class="project-tag">Python</span>
+              <span class="project-tag">Llama 3.1</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="project-item essential-content" data-tilt>
+          <div class="project-media">
+            <img src="assets/CognitiveAI.png" alt="Cognitive-aware AI chatbot interface" loading="lazy" />
+          </div>
+          <div class="project-content">
+            <div class="project-title-row">
+              <h3 class="project-title">Cognitive-Aware AI Chatbot</h3>
+              <a class="project-link" href="https://github.com/YogananthJ/Cognitive-Aware-AI-Chatbot" target="_blank" rel="noopener noreferrer" aria-label="Cognitive-Aware AI Chatbot — GitHub repository">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.63 22.42c.58.11.79-.25.79-.56v-2c-3.2.7-3.87-1.37-3.87-1.37-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.41-2.7 5.38-5.27 5.66.41.35.77 1.05.77 2.11v3.13c0 .31.21.68.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>
+              </a>
+            </div>
+            <p class="project-desc">AI chatbot that analyzes user emotion, confidence, and hesitation patterns before generating structured responses.</p>
+            <div class="project-tags">
+              <span class="project-tag">Python</span>
+              <span class="project-tag">NLP</span>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <div class="torn torn--to-ink" aria-hidden="true">
+    <svg viewBox="0 0 1200 44" preserveAspectRatio="none">
+      <path d="M0,22 L40,10 L80,26 L120,8 L160,28 L200,12 L240,30 L280,10 L320,26 L360,14 L400,30 L440,8 L480,26 L520,12 L560,28 L600,10 L640,24 L680,14 L720,28 L760,10 L800,26 L840,14 L880,30 L920,10 L960,26 L1000,12 L1040,28 L1080,10 L1120,26 L1160,14 L1200,22 L1200,0 L0,0 Z"/>
+    </svg>
+  </div>
+
+  <!-- ========== CONTACT ========== -->
+  <section class="section ink-panel" id="contact" style="padding-top:clamp(40px,7vw,80px)">
+    <div class="container">
+      <div class="contact__wrap">
+        <div class="contact__lede essential-content">
+          <h2 style="color:var(--paper)">Let's<br>talk<span>.</span></h2>
+          <p style="color:rgba(243,240,232,.78)">Have a project, idea, or collaboration in mind? Send a message and I'll get back to you.</p>
+          <div class="contact__direct" style="color:var(--paper)">
+            <a href="https://github.com/YogananthJ" target="_blank" rel="noopener noreferrer">github.com/YogananthJ</a>
+            <a href="https://www.linkedin.com/in/yogananth-j-653400307/" target="_blank" rel="noopener noreferrer">linkedin.com/in/yogananth-j</a>
+          </div>
+        </div>
+
+        <form id="contactForm" class="contact__form essential-content" novalidate>
+          <div class="form-note" id="formNote" role="note">
+            <strong>Setup required:</strong> set <code>CONTACT_EMAIL</code> in this file's script to enable sending.
+          </div>
+          <div class="field">
+            <label for="name">Name</label>
+            <input id="name" name="name" type="text" autocomplete="name" required />
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" autocomplete="email" required />
+          </div>
+          <div class="field">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" required></textarea>
+          </div>
+          <button type="submit" class="btn" style="align-self:flex-start" data-magnetic>
+            Send message
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div class="torn torn--from-ink" style="margin-bottom:-1px" aria-hidden="true">
+  <svg viewBox="0 0 1200 44" preserveAspectRatio="none">
+    <path d="M0,22 L40,10 L80,26 L120,8 L160,28 L200,12 L240,30 L280,10 L320,26 L360,14 L400,30 L440,8 L480,26 L520,12 L560,28 L600,10 L640,24 L680,14 L720,28 L760,10 L800,26 L840,14 L880,30 L920,10 L960,26 L1000,12 L1040,28 L1080,10 L1120,26 L1160,14 L1200,22 L1200,0 L0,0 Z"/>
+  </svg>
+</div>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer__row">
+      <p class="footer__brand" data-speed="0.9">Yogananth</p>
+      <div class="footer__socials">
+        <a href="https://www.linkedin.com/in/yogananth-j-653400307/" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.36V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.27 2.37 4.27 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45z"/></svg>
+          LinkedIn
+        </a>
+        <a href="https://github.com/YogananthJ" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.63 22.42c.58.11.79-.25.79-.56v-2c-3.2.7-3.87-1.37-3.87-1.37-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.41-2.7 5.38-5.27 5.66.41.35.77 1.05.77 2.11v3.13c0 .31.21.68.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+    <div class="footer__meta">
+      <span>&copy; <span id="year"></span> Yogananth. All rights reserved.</span>
+      <span>Designed &amp; built with intent.</span>
+    </div>
+  </div>
+</footer>
+
+<!-- Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ============================================================
+     CONFIG & SAFETY WRAPPER
+     ============================================================ */
+  var CONTACT_EMAIL = ""; 
+
+  /* ============================================================
+     VANILLA JS (Navigation & Form)
+     ============================================================ */
+  var yearEl = document.getElementById("year");
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+  var toggle = document.getElementById("nav-toggle");
+  var list = document.getElementById("nav-list");
+  var body = document.body;
+
+  function setMenu(open) {
+    if (!toggle || !list) return;
+    list.classList.toggle("is-open", open);
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+    body.classList.toggle("menu-open", open);
+  }
+
+  if (toggle && list) {
+    toggle.addEventListener("click", function () { setMenu(!list.classList.contains("is-open")); });
+    list.querySelectorAll(".nav__link").forEach(function (link) { link.addEventListener("click", function () { setMenu(false); }); });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && list.classList.contains("is-open")) { setMenu(false); toggle.focus(); }
+    });
+    window.addEventListener("resize", function () {
+      if (window.innerWidth > 820 && list.classList.contains("is-open")) { setMenu(false); }
+    });
+  }
+
+  // Scroll Observer for Active Nav
+  var sections = document.querySelectorAll("main section[id]");
+  var navLinks = document.querySelectorAll(".nav__menu a, #nav-list .nav__link");
+  var byId = {};
+  navLinks.forEach(function (a) {
+    var href = a.getAttribute("href") || "";
+    if (href.charAt(0) === "#") byId[href.slice(1)] = a;
+  });
+
+  if ("IntersectionObserver" in window && sections.length) {
+    var visible = {};
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) { visible[entry.target.id] = entry.isIntersecting ? entry.intersectionRatio : 0; });
+      var bestId = null, bestRatio = 0;
+      Object.keys(visible).forEach(function (id) {
+        if (visible[id] > bestRatio) { bestRatio = visible[id]; bestId = id; }
+      });
+      navLinks.forEach(function (a) { a.classList.remove("active-link"); });
+      if (bestId && byId[bestId]) byId[bestId].classList.add("active-link");
+    }, { rootMargin: "-45% 0px -45% 0px", threshold: [0, 0.25, 0.5, 0.75, 1] });
+    sections.forEach(function (s) { io.observe(s); });
+  }
+
+  // Contact Form
+  var form = document.getElementById("contactForm");
+  var status = document.getElementById("formStatus");
+  var note = document.getElementById("formNote");
+
+  if (note) {
+    if (CONTACT_EMAIL && CONTACT_EMAIL.indexOf("@") > 0) { note.hidden = true; }
+    else { note.hidden = true; note.dataset.pending = "1"; }
+  }
+
+  function setStatus(msg, state) {
+    if (!status) return;
+    status.textContent = msg || "";
+    if (state) status.setAttribute("data-state", state);
+    else status.removeAttribute("data-state");
+  }
+
+  if (form) {
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var name = (document.getElementById("name") || {}).value || "";
+      var email = (document.getElementById("email") || {}).value || "";
+      var message = (document.getElementById("message") || {}).value || "";
+      name = name.trim(); email = email.trim(); message = message.trim();
+
+      if (!name || !email || !message) { setStatus("Please fill in all fields.", "error"); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setStatus("Please enter a valid email address.", "error"); return; }
+
+      if (!CONTACT_EMAIL || CONTACT_EMAIL.indexOf("@") < 0) {
+        setStatus("Contact form isn't configured yet — email address is missing in the code.", "error");
+        if (note && note.dataset.pending === "1") note.hidden = false;
+        return;
+      }
+
+      var subject = encodeURIComponent("Portfolio contact from " + name);
+      var bodyTxt = encodeURIComponent(message + "\n\n— " + name + " (" + email + ")");
+      window.location.href = "mailto:" + CONTACT_EMAIL + "?subject=" + subject + "&body=" + bodyTxt;
+      setStatus("Opening your email app…", "ok");
+    });
+  }
+
+  /* ============================================================
+     THREE.JS (Wrapped in try/catch for robustness)
+     ============================================================ */
+  try {
+    var container = document.getElementById('webgl-container');
+    if (container && !window.matchMedia('(prefers-reduced-motion: reduce)').matches && window.THREE) {
+      var scene = new THREE.Scene();
+      var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      var renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+      
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+
+      var particlesCount = 200;
+      var posArray = new Float32Array(particlesCount * 3);
+      for (var i = 0; i < particlesCount * 3; i += 3) {
+        posArray[i] = (Math.random() - 0.5) * 10;
+        posArray[i+1] = (Math.random() - 0.5) * 10;
+        posArray[i+2] = (Math.random() - 0.5) * 10;
+      }
+      
+      var geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+      
+      var material = new THREE.PointsMaterial({ color: 0x090909, size: 0.02, transparent: true, opacity: 0.8 });
+      var particles = new THREE.Points(geometry, material);
+      scene.add(particles);
+
+      camera.position.z = 3;
+
+      var mouseX = 0, mouseY = 0;
+      document.addEventListener('mousemove', function(e) {
+        mouseX = (e.clientX / window.innerWidth - 0.5) * 0.2;
+        mouseY = (e.clientY / window.innerHeight - 0.5) * 0.2;
+      });
+
+      var clock = new THREE.Clock();
+      function animate() {
+        requestAnimationFrame(animate);
+        var elapsedTime = clock.getElapsedTime();
+        particles.rotation.y = elapsedTime * 0.05;
+        particles.rotation.x = elapsedTime * 0.02;
+        camera.position.x += (mouseX - camera.position.x) * 0.05;
+        camera.position.y += (-mouseY - camera.position.y) * 0.05;
+        camera.lookAt(scene.position);
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      window.addEventListener('resize', function() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    }
+  } catch (err) {
+    console.warn("Three.js failed to initialize. Background will be static.", err);
+    var webglContainer = document.getElementById('webgl-container');
+    if (webglContainer) webglContainer.style.display = 'none';
+  }
+
+  /* ============================================================
+     GSAP ANIMATIONS
+     ============================================================ */
+  // If GSAP failed to load, bail gracefully.
+  if (!window.gsap) {
+    console.warn("GSAP not found. Content is visible but animations are disabled.");
+    return;
+  }
+
+  try {
+    gsap.registerPlugin(ScrollTrigger);
+
+    // 1. Scroll Progress Bar
+    gsap.to("#scroll-progress", {
+      scaleX: 1,
+      ease: "none",
+      scrollTrigger: { trigger: "body", start: "top top", end: "bottom bottom", scrub: 0.3 }
+    });
+
+    // 2. Hero Entrance Timeline (Animating from hidden states)
+    var heroTl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+    // Ensure elements are initially visible before animating. We use fromTo to control both states.
+    heroTl.from(".site-header", { y: -20, opacity: 0, duration: 0.8 })
+          .from(".hero-meta-top", { y: 20, opacity: 0, duration: 0.6 }, "-=0.4")
+          .fromTo(".collage-paper", { scaleY: 0 }, { scaleY: 1, duration: 0.8, transformOrigin: "top center" }, "-=0.2")
+          .fromTo("#hero-type", 
+            { clipPath: "polygon(0 0, 100% 0, 100% 0, 0 0)", opacity: 0, y: 50 },
+            { clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%)", opacity: 1, y: 0, duration: 1 },
+            "-=0.4"
+          )
+          .from(".collage-portrait", { opacity: 0, y: 40, duration: 1, ease: "power4.out" }, "-=0.6")
+          .from(".collage-decor--1", { opacity: 0, scale: 0.5, rotation: -45, duration: 0.5 }, "-=0.4")
+          .from(".collage-decor--2", { opacity: 0, scale: 0.5, rotation: 45, duration: 0.5 }, "-=0.4")
+          .from(".hero-intro-bottom", { opacity: 0, y: 30, duration: 0.8 }, "-=0.2");
+
+    // 3. Hero Parallax
+    gsap.to("#hero-type", {
+      y: -100, ease: "none",
+      scrollTrigger: { trigger: ".hero-collage", start: "top top", end: "bottom top", scrub: true }
+    });
+    gsap.to(".collage-portrait", {
+      y: 50, ease: "none",
+      scrollTrigger: { trigger: ".hero-collage", start: "top top", end: "bottom top", scrub: true }
+    });
+
+    // 4. Draw Torn Dividers (SVG) - Initially stroke-dasharray from CSS
+    gsap.utils.toArray(".torn").forEach(function(torn) {
+      gsap.fromTo(torn.querySelectorAll("path"),
+        { strokeDashoffset: 2000 },
+        { strokeDashoffset: 0, duration: 1.5, ease: "power2.out",
+          scrollTrigger: { trigger: torn, start: "top 90%" }
+        }
+      );
+    });
+
+    // 5. Facts List Stagger
+    gsap.from(".facts li", {
+      opacity: 0, x: -20, duration: 0.6, stagger: 0.1, ease: "power3.out",
+      scrollTrigger: { trigger: ".facts", start: "top 85%" }
+    });
+
+    // 6. Skills Table Reveal
+    gsap.utils.toArray(".skill-row").forEach(function(row) {
+      gsap.from(row, {
+        opacity: 0, y: 30, duration: 0.6, ease: "power2.out",
+        scrollTrigger: { trigger: row, start: "top 85%" }
+      });
+    });
+
+    // 7. Projects Scroll Reveal
+    gsap.utils.toArray(".project-item").forEach(function(item) {
+      gsap.from(item, {
+        opacity: 0, y: 40, duration: 0.8, ease: "power3.out",
+        scrollTrigger: { trigger: item, start: "top 85%" }
+      });
+    });
+
+    // 8. 3D Tilt Effect for Projects (gsap quickTo)
+    var tiltCards = document.querySelectorAll("[data-tilt]");
+    tiltCards.forEach(function(card) {
+      var xTo = gsap.quickTo(card, "rotationX", { duration: 0.6, ease: "power3" });
+      var yTo = gsap.quickTo(card, "rotationY", { duration: 0.6, ease: "power3" });
+      
+      card.addEventListener("mousemove", function(e) {
+        if (window.innerWidth < 768) return; // Disable on touch/mobile
+        var rect = card.getBoundingClientRect();
+        var x = e.clientX - rect.left;
+        var y = e.clientY - rect.top;
+        var rotX = ((y / rect.height) - 0.5) * -5;
+        var rotY = ((x / rect.width) - 0.5) * 5;
+        xTo(rotX);
+        yTo(rotY);
+      });
+      
+      card.addEventListener("mouseleave", function() {
+        xTo(0);
+        yTo(0);
+      });
+    });
+
+    // 9. Magnetic Buttons
+    var magneticBtns = document.querySelectorAll("[data-magnetic]");
+    magneticBtns.forEach(function(btn) {
+      var xTo = gsap.quickTo(btn, "x", { duration: 0.4, ease: "power3" });
+      var yTo = gsap.quickTo(btn, "y", { duration: 0.4, ease: "power3" });
+      
+      btn.addEventListener("mousemove", function(e) {
+        if (window.innerWidth < 768) return;
+        var rect = btn.getBoundingClientRect();
+        var x = e.clientX - rect.left - rect.width / 2;
+        var y = e.clientY - rect.top - rect.height / 2;
+        xTo(x * 0.3);
+        yTo(y * 0.3);
+      });
+      
+      btn.addEventListener("mouseleave", function() {
+        xTo(0);
+        yTo(0);
+      });
+    });
+
+    // 10. Footer Parallax
+    gsap.to(".footer__brand", {
+      y: -30, ease: "none",
+      scrollTrigger: { trigger: ".site-footer", start: "top bottom", end: "bottom top", scrub: true }
+    });
+
+  } catch (error) {
+    console.error("GSAP Animation initialization failed.", error);
+  }
+
+})();
+</script>
+</body>
+</html>
