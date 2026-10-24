@@ -16,6 +16,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, activeSection })
     { href: '#projects', label: 'Projects', id: 'projects' },
     { href: '#architecture', label: 'Architecture', id: 'architecture' },
     { href: '#simulators', label: 'AI Labs', id: 'simulators' },
+    { href: '#motion-playground', label: 'Motion Lab', id: 'motion-playground' },
     { href: '#skills', label: 'Skills', id: 'skills' },
     { href: '#experience', label: 'Milestones', id: 'experience' },
     { href: '#contact', label: 'Contact', id: 'contact' },

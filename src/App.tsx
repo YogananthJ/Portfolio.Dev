@@ -4,6 +4,7 @@ import { Hero } from './components/Hero';
 import { ProjectShowcase } from './components/ProjectShowcase';
 import { ArchitectureExplorer } from './components/ArchitectureExplorer';
 import { SimulatorsSection } from './components/SimulatorsSection';
+import { MotionPlayground } from './components/motion-playground/MotionPlayground';
 import { SkillsSection } from './components/SkillsSection';
 import { ExperienceSection } from './components/ExperienceSection';
 import { ContactSection } from './components/ContactSection';
@@ -39,7 +40,7 @@ function PortfolioMainContent() {
   // Active section scroll spy (standard layout)
   useEffect(() => {
     if (layoutMode !== 'standard') return;
-    const sectionIds = ['overview', 'projects', 'architecture', 'simulators', 'skills', 'experience', 'contact'];
+    const sectionIds = ['overview', 'projects', 'architecture', 'simulators', 'motion-playground', 'skills', 'experience', 'contact'];
     const handleScroll = () => {
       const scrollPosition = window.scrollY + 200;
       for (let i = sectionIds.length - 1; i >= 0; i--) {
@@ -112,6 +113,9 @@ function PortfolioMainContent() {
 
           {/* Dedicated Live Interactive Model Lab & Simulators (AI Projects Only) */}
           <SimulatorsSection />
+
+          {/* Motion Playground & Interactive Animation Code Lab */}
+          <MotionPlayground />
 
           {/* Core Toolkit & Competencies */}
           <SkillsSection />

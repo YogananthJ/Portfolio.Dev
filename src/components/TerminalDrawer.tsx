@@ -1333,11 +1333,14 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
         if (!arg) {
           outputNode = (
             <div className="text-xs text-amber-300">
-              Specify a section to navigate to: <code>overview</code>, <code>projects</code>, <code>simulators</code>, <code>skills</code>, <code>experience</code>, <code>contact</code>.
+              Specify a section to navigate to: <code>overview</code>, <code>projects</code>, <code>architecture</code>, <code>simulators</code>, <code>motion-playground</code>, <code>skills</code>, <code>experience</code>, <code>contact</code>.
             </div>
           );
         } else {
-          const sectionId = arg.trim();
+          let sectionId = arg.trim();
+          if (sectionId === 'motion' || sectionId === 'playground' || sectionId === 'motionlab') {
+            sectionId = 'motion-playground';
+          }
           onNavigateSection?.(sectionId);
           const el = document.getElementById(sectionId);
           if (el) {
@@ -1350,7 +1353,7 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
           } else {
             outputNode = (
               <div className="text-xs text-amber-300">
-                Section "#{sectionId}" not found. Available sections: overview, projects, simulators, skills, experience, contact.
+                Section "#{sectionId}" not found. Available sections: overview, projects, architecture, simulators, motion-playground, skills, experience, contact.
               </div>
             );
           }
