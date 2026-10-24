@@ -8,6 +8,7 @@ import {
   attachMagneticEffect, 
   attach3DTilt 
 } from '../utils/gsapAnimations';
+import { DigitalVisitingCard } from './DigitalVisitingCard';
 
 interface HeroProps {
   onOpenTerminal: () => void;
@@ -274,29 +275,12 @@ def adapt_system_prompt(user_text: str, cadence_pause_ms: int):
               </div>
             </div>
 
-            {/* Profile Avatar Portrait (Using user's provided asset) */}
+            {/* Interactive Digital Visiting Card (Flips between square photo and vertical business card) */}
             <div
               ref={portraitRef}
-              className="relative shrink-0 flex items-center justify-center self-start lg:self-center"
+              className="relative shrink-0 flex items-center justify-center self-start lg:self-center z-20"
             >
-              <div className="relative w-40 h-40 sm:w-48 sm:h-48 md:w-56 md:h-56 bg-[var(--bg-surface)] border-4 border-[var(--border-color)] shadow-xl overflow-hidden group">
-                <img
-                  src="/assets/aistudio/favicon_507da8ac.png"
-                  alt="Portrait illustration of Yogananth"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  loading="eager"
-                />
-
-                {/* Status sticker */}
-                <div className="absolute bottom-2 left-2 right-2 px-2 py-1 bg-[var(--bg-card)]/90 backdrop-blur-xs text-[var(--text-main)] text-[10px] font-mono font-bold tracking-wider border border-[var(--border-color)] text-center uppercase">
-                  Open to Opportunities
-                </div>
-              </div>
-
-              {/* Decorative neo-brutalist badge */}
-              <div className="absolute -top-3 -right-3 px-2 py-1 bg-[var(--accent)] text-white text-[10px] font-mono font-bold uppercase tracking-wider border-2 border-[var(--border-color)] shadow-sm">
-                AI &amp; Web Dev
-              </div>
+              <DigitalVisitingCard />
             </div>
           </div>
         </div>
