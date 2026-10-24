@@ -17,7 +17,7 @@ import { ProjectItem } from './types/portfolio';
 import { PROJECTS } from './data/portfolioData';
 
 function PortfolioMainContent() {
-  const { layoutMode, setActiveSimulatorId } = useLayout();
+  const { layoutMode, setLayoutMode, setActiveSimulatorId } = useLayout();
   const [activeProject, setActiveProject] = useState<ProjectItem | null>(null);
   const [isTerminalOpen, setIsTerminalOpen] = useState<boolean>(false);
   const [activeSection, setActiveSection] = useState<string>('overview');
@@ -132,6 +132,16 @@ function PortfolioMainContent() {
       <TerminalDrawer
         isOpen={isTerminalOpen}
         onClose={() => setIsTerminalOpen(false)}
+        onNavigateSection={(sectionId) => {
+          if (layoutMode === 'split') {
+            // If in split mode and navigating to non-split section, switch to standard
+            setLayoutMode('standard');
+          }
+          setTimeout(() => {
+            const el = document.getElementById(sectionId);
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }, 100);
+        }}
         onSelectProject={(id) => {
           const p = PROJECTS.find((item) => item.id === id);
           if (p) {
