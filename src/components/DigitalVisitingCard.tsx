@@ -6,14 +6,12 @@ import {
   Globe, 
   MapPin, 
   RotateCcw, 
-  GraduationCap, 
   Cpu, 
   ExternalLink, 
   Check, 
   Copy, 
   Sparkles,
-  ShieldCheck,
-  CreditCard
+  ArrowRight
 } from 'lucide-react';
 
 interface DigitalVisitingCardProps {
@@ -31,14 +29,35 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
   const timelineRef = useRef<gsap.core.Timeline | null>(null);
   const isAnimatingRef = useRef<boolean>(false);
 
-  // Measure square vs expanded dimensions based on viewport
+  // Compute closed square vs expanded landscape dimensions (23 / 15 ratio)
   const getDimensions = () => {
     const isMobile = window.innerWidth < 640;
-    const isTablet = window.innerWidth < 768;
+    const isTablet = window.innerWidth >= 640 && window.innerWidth < 1024;
 
-    const squareSize = isMobile ? 176 : isTablet ? 208 : 224; // w-44 / w-52 / w-56
-    const expandedWidth = isMobile ? 285 : 320;
-    const expandedHeight = isMobile ? 440 : 485;
+    // Closed state: Preserves original square photo dimensions
+    // w-44 (176px), sm:w-52 (208px), md:w-56 (224px)
+    const squareSize = isMobile ? 176 : isTablet ? 208 : 224;
+
+    // Expanded landscape target dimensions:
+    // Aspect ratio: 23 / 15 (1.5333) -> Visibly wider than tall
+    // Desktop: 460px wide x 300px tall
+    // Tablet: up to 420px wide (420 * 15 / 23 = ~274px)
+    // Mobile: width = min(460px, calc(100vw - 32px)), height follows ratio (clamped to prevent clipping)
+    let expandedWidth = 460;
+    let expandedHeight = 300;
+
+    if (isMobile) {
+      expandedWidth = Math.min(420, Math.max(300, window.innerWidth - 32));
+      const calculatedHeight = Math.round(expandedWidth * (15 / 23));
+      // Ensure content fits comfortably without clipping while remaining strictly landscape
+      expandedHeight = Math.max(220, calculatedHeight);
+    } else if (isTablet) {
+      expandedWidth = 420;
+      expandedHeight = Math.round(420 * (15 / 23)); // 274px
+    } else {
+      expandedWidth = 460;
+      expandedHeight = 300;
+    }
 
     return { squareSize, expandedWidth, expandedHeight };
   };
@@ -75,54 +94,57 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
       defaults: { ease: 'power3.inOut' },
       onComplete: () => {
         isAnimatingRef.current = false;
+        if (!nextFlipped && cardChassisRef.current) {
+          gsap.set(cardChassisRef.current, { clearProps: 'width,height' });
+        }
       },
     });
 
     timelineRef.current = tl;
 
     if (nextFlipped) {
-      // 1. Flip to Back & Expand
+      // 1. Flip to Back & Expand to Landscape Rectangle
       tl.to(cardInnerRef.current, {
         rotationY: 180,
-        duration: 0.75,
+        duration: 0.65,
         ease: 'power3.inOut',
       }, 0)
       .to(cardChassisRef.current, {
         width: expandedWidth,
         height: expandedHeight,
-        duration: 0.7,
+        duration: 0.65,
         ease: 'power3.inOut',
-      }, 0.05);
+      }, 0);
 
       // 2. Stagger reveal back-side details
       if (backContentRef.current) {
         const staggerItems = backContentRef.current.querySelectorAll('.card-stagger-item');
         tl.fromTo(
           staggerItems,
-          { opacity: 0, y: 12 },
+          { opacity: 0, y: 8 },
           {
             opacity: 1,
             y: 0,
-            duration: 0.45,
-            stagger: 0.05,
+            duration: 0.35,
+            stagger: 0.04,
             ease: 'power2.out',
           },
-          0.35
+          0.32
         );
       }
     } else {
       // Return to Front & Shrink to Square
       tl.to(cardInnerRef.current, {
         rotationY: 0,
-        duration: 0.7,
+        duration: 0.6,
         ease: 'power3.inOut',
       }, 0)
       .to(cardChassisRef.current, {
         width: squareSize,
         height: squareSize,
-        duration: 0.65,
+        duration: 0.6,
         ease: 'power3.inOut',
-      }, 0.05);
+      }, 0);
     }
   };
 
@@ -140,14 +162,14 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
     setTimeout(() => setCopiedEmail(false), 2200);
   };
 
-  // Adjust dimensions on window resize if currently flipped
+  // Keep dimensions responsive on window resize when flipped
   useEffect(() => {
     const onResize = () => {
-      if (cardChassisRef.current) {
-        const { squareSize, expandedWidth, expandedHeight } = getDimensions();
+      if (cardChassisRef.current && isFlipped) {
+        const { expandedWidth, expandedHeight } = getDimensions();
         gsap.set(cardChassisRef.current, {
-          width: isFlipped ? expandedWidth : squareSize,
-          height: isFlipped ? expandedHeight : squareSize,
+          width: expandedWidth,
+          height: expandedHeight,
         });
       }
     };
@@ -169,16 +191,22 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
         role="button"
         tabIndex={0}
         aria-expanded={isFlipped}
-        aria-label={isFlipped ? 'Click to flip back to photo' : 'Click to flip and expand digital visiting card'}
-        className={`relative w-44 h-44 sm:w-52 sm:h-52 md:w-56 md:h-56 cursor-pointer select-none transition-shadow ${
+        aria-label={isFlipped ? 'Click to flip back to portrait photo' : 'Click to flip and expand landscape digital visiting card'}
+        className={`relative cursor-pointer select-none transition-shadow ${
+          !isFlipped ? 'w-44 h-44 sm:w-52 sm:h-52 md:w-56 md:h-56' : ''
+        } ${
           isFlipped
             ? 'shadow-[10px_10px_0px_0px_var(--border-color)]'
             : 'shadow-[6px_6px_0px_0px_var(--border-color)] hover:shadow-[8px_8px_0px_0px_var(--border-color)]'
         }`}
+        style={{
+          maxWidth: 'calc(100vw - 32px)',
+          aspectRatio: isFlipped ? '23 / 15' : '1 / 1',
+        }}
       >
         <div
           ref={cardInnerRef}
-          className="relative w-full h-full transition-transform"
+          className="relative w-full h-full"
           style={{ transformStyle: 'preserve-3d' }}
         >
           {/* ========================================================================= */}
@@ -208,18 +236,18 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
           </div>
 
           {/* ========================================================================= */}
-          {/* BACK FACE: Polished Vertical Digital Visiting Card */}
+          {/* BACK FACE: Polished Landscape Digital Visiting Card (Asymmetric 2-Column) */}
           {/* ========================================================================= */}
           <div
             ref={backContentRef}
-            className="absolute inset-0 w-full h-full bg-[#F5F2EB] dark:bg-[#18181B] text-[#121212] dark:text-[#F4F4F5] border-4 border-[var(--border-color)] p-4 sm:p-5 flex flex-col justify-between overflow-hidden paper-grid"
+            className="absolute inset-0 w-full h-full bg-[#0E0E12] text-[#FAFAFA] border-3 border-[var(--border-color)] p-3 sm:p-4 flex flex-col justify-between overflow-hidden bg-[radial-gradient(#ffffff10_1px,transparent_1px)] [background-size:12px_12px]"
             style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
           >
-            {/* 1. Card Top Bar & Flip-back Button */}
-            <div className="card-stagger-item flex items-center justify-between border-b border-[#121212]/20 dark:border-white/20 pb-2.5">
+            {/* Top Header */}
+            <div className="card-stagger-item flex items-center justify-between border-b border-white/15 pb-1.5 shrink-0">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse"></span>
-                <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#121212]/70 dark:text-white/70">
+                <span className="w-2 h-2 rounded-full bg-[#E11D48] animate-pulse"></span>
+                <span className="font-mono text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-white/80">
                   DIGITAL VISITING CARD
                 </span>
               </div>
@@ -230,118 +258,117 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                   handleFlip();
                 }}
                 type="button"
-                className="p-1 text-[#121212]/70 dark:text-white/70 hover:text-[var(--accent)] hover:bg-[#121212]/5 dark:hover:bg-white/10 rounded transition-colors cursor-pointer"
-                title="Flip back to portrait"
-                aria-label="Flip back to portrait"
+                className="p-1 text-white/60 hover:text-[#E11D48] hover:bg-white/10 rounded transition-colors cursor-pointer"
+                title="Flip back to square portrait"
+                aria-label="Flip back to square portrait"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            {/* 2. Identity Header: Mini Portrait + Name + Title */}
-            <div className="card-stagger-item space-y-2 py-1">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded border-2 border-[var(--border-color)] overflow-hidden shrink-0 shadow-xs">
-                  <img
-                    src="/assets/aistudio/favicon_507da8ac.png"
-                    alt="Mini avatar"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div>
-                  <h3 className="font-display text-xl sm:text-2xl font-black uppercase tracking-tight leading-none text-[#121212] dark:text-white">
-                    YOGANANTH J
-                  </h3>
-                  <div className="flex items-center gap-1.5 mt-1 font-mono text-[11px] font-bold text-[var(--accent)] uppercase">
-                    <Cpu className="w-3.5 h-3.5" />
-                    <span>AI / ML Engineer</span>
+            {/* Main Content: Asymmetric Two-Column Layout */}
+            <div className="grid grid-cols-12 gap-2.5 sm:gap-4 flex-1 items-center py-1 sm:py-1.5 min-h-0">
+              {/* Left Column: Identity */}
+              <div className="col-span-5 flex flex-col justify-center border-r border-white/10 pr-2 sm:pr-3 min-w-0">
+                <div className="card-stagger-item flex items-center gap-2.5 mb-1.5">
+                  <div className="w-11 h-11 sm:w-13 sm:h-13 rounded border border-white/20 overflow-hidden shrink-0 shadow-xs bg-black">
+                    <img
+                      src="/assets/aistudio/favicon_507da8ac.png"
+                      alt="Yogananth J"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-display text-base sm:text-lg md:text-xl font-black uppercase tracking-tight text-white leading-tight truncate">
+                      YOGANANTH J
+                    </h3>
+                    <div className="flex items-center gap-1 font-mono text-[9px] sm:text-[10px] font-bold text-[#E11D48] uppercase mt-0.5">
+                      <Cpu className="w-3 h-3 shrink-0" />
+                      <span className="truncate">AI / ML ENGINEER</span>
+                    </div>
                   </div>
                 </div>
+
+                <div className="card-stagger-item font-mono text-[9px] sm:text-[10px] text-white/70 leading-snug border-l-2 border-[#E11D48]/70 pl-2 py-0.5">
+                  B.Tech in Artificial Intelligence and Machine Learning
+                </div>
               </div>
 
-              {/* Qualification Badge */}
-              <div className="card-stagger-item p-2 bg-[#EBE6DC] dark:bg-[#202024] border border-[#121212]/20 dark:border-white/15 space-y-0.5">
-                <div className="flex items-center gap-1.5 font-mono text-[9px] font-bold uppercase text-[#121212]/60 dark:text-white/60">
-                  <GraduationCap className="w-3 h-3 text-[var(--accent)]" />
-                  <span>Academic Qualification</span>
+              {/* Right Column: Contact Information (Direct Channels & Links) */}
+              <div className="col-span-7 flex flex-col justify-center gap-1 sm:gap-1.5 min-w-0">
+                <div className="card-stagger-item font-mono text-[8px] sm:text-[9px] uppercase font-bold text-white/50 tracking-wider flex items-center gap-1 mb-0.5">
+                  <span className="w-1 h-1 bg-[#E11D48]"></span>
+                  <span>DIRECT CHANNELS &amp; LINKS</span>
                 </div>
-                <div className="font-mono text-[11px] font-semibold text-[#121212] dark:text-white leading-tight">
-                  B.Tech in Artificial Intelligence &amp; Machine Learning
+
+                {/* 1. Email */}
+                <div className="card-stagger-item flex items-center justify-between px-2 py-1 bg-white/5 border border-white/10 hover:border-[#E11D48]/60 transition-colors rounded-xs">
+                  <a
+                    href="mailto:mjyogananth@gmail.com"
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center gap-1.5 sm:gap-2 font-mono text-[10px] sm:text-[11px] text-white/90 hover:text-[#E11D48] transition-colors truncate"
+                    title="Send email to mjyogananth@gmail.com"
+                  >
+                    <Mail className="w-3 h-3 text-[#E11D48] shrink-0" />
+                    <span className="truncate">mjyogananth@gmail.com</span>
+                  </a>
+                  <button
+                    onClick={handleCopyEmail}
+                    type="button"
+                    className="p-0.5 hover:text-[#E11D48] text-white/50 transition-colors shrink-0"
+                    title="Copy email address"
+                    aria-label="Copy email"
+                  >
+                    {copiedEmail ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
+                  </button>
+                </div>
+
+                {/* 2. LinkedIn */}
+                <div className="card-stagger-item flex items-center justify-between px-2 py-1 bg-white/5 border border-white/10 hover:border-[#E11D48]/60 transition-colors rounded-xs">
+                  <a
+                    href="https://www.linkedin.com/in/yogananth-j-653400307/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center gap-1.5 sm:gap-2 font-mono text-[10px] sm:text-[11px] text-white/90 hover:text-[#E11D48] transition-colors truncate"
+                    title="Open LinkedIn profile"
+                  >
+                    <Linkedin className="w-3 h-3 text-sky-400 shrink-0" />
+                    <span className="truncate">linkedin.com/in/yogananth-j</span>
+                  </a>
+                  <ExternalLink className="w-2.5 h-2.5 text-white/40 shrink-0" />
+                </div>
+
+                {/* 3. Portfolio */}
+                <div className="card-stagger-item flex items-center justify-between px-2 py-1 bg-white/5 border border-white/10 hover:border-[#E11D48]/60 transition-colors rounded-xs">
+                  <a
+                    href="https://iam-mjyogananth.pages.dev"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center gap-1.5 sm:gap-2 font-mono text-[10px] sm:text-[11px] text-white/90 hover:text-[#E11D48] transition-colors truncate"
+                    title="Visit portfolio at iam-mjyogananth.pages.dev"
+                  >
+                    <Globe className="w-3 h-3 text-emerald-400 shrink-0" />
+                    <span className="truncate">iam-mjyogananth.pages.dev</span>
+                  </a>
+                  <ExternalLink className="w-2.5 h-2.5 text-white/40 shrink-0" />
+                </div>
+
+                {/* 4. Location */}
+                <div className="card-stagger-item flex items-center gap-1.5 sm:gap-2 px-2 py-1 bg-white/5 border border-white/10 font-mono text-[10px] sm:text-[11px] text-white/90 rounded-xs">
+                  <MapPin className="w-3 h-3 text-[#E11D48] shrink-0" />
+                  <span className="truncate">Gobichettipalayam, Erode, Tamil Nadu</span>
                 </div>
               </div>
             </div>
 
-            {/* 3. Contact & Verified Web Channels */}
-            <div className="card-stagger-item space-y-2 py-1">
-              <div className="font-mono text-[9px] uppercase font-bold text-[#121212]/50 dark:text-white/50 tracking-wider">
-                Direct Channels &amp; Links:
-              </div>
-
-              {/* Email */}
-              <div className="card-stagger-item flex items-center justify-between p-1.5 bg-white/70 dark:bg-black/30 border border-[#121212]/15 dark:border-white/15 hover:border-[var(--accent)] transition-colors">
-                <a
-                  href="mailto:mjyogananth@gmail.com"
-                  onClick={(e) => e.stopPropagation()}
-                  className="flex items-center gap-2 font-mono text-xs text-[#121212] dark:text-white font-medium hover:text-[var(--accent)] transition-colors truncate"
-                  title="Send email to mjyogananth@gmail.com"
-                >
-                  <Mail className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
-                  <span className="truncate">mjyogananth@gmail.com</span>
-                </a>
-                <button
-                  onClick={handleCopyEmail}
-                  type="button"
-                  className="p-1 hover:text-[var(--accent)] text-[#121212]/60 dark:text-white/60 transition-colors shrink-0"
-                  title="Copy email address"
-                  aria-label="Copy email"
-                >
-                  {copiedEmail ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-                </button>
-              </div>
-
-              {/* LinkedIn */}
-              <div className="card-stagger-item flex items-center justify-between p-1.5 bg-white/70 dark:bg-black/30 border border-[#121212]/15 dark:border-white/15 hover:border-[var(--accent)] transition-colors">
-                <a
-                  href="https://www.linkedin.com/in/yogananth-j-653400307/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="flex items-center gap-2 font-mono text-xs text-[#121212] dark:text-white font-medium hover:text-[var(--accent)] transition-colors truncate"
-                  title="Open LinkedIn profile"
-                >
-                  <Linkedin className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                  <span className="truncate">linkedin.com/in/yogananth-j</span>
-                </a>
-                <ExternalLink className="w-3 h-3 text-[#121212]/40 dark:text-white/40 shrink-0" />
-              </div>
-
-              {/* Portfolio */}
-              <div className="card-stagger-item flex items-center justify-between p-1.5 bg-white/70 dark:bg-black/30 border border-[#121212]/15 dark:border-white/15 hover:border-[var(--accent)] transition-colors">
-                <a
-                  href="https://iam-mjyogananth.pages.dev"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="flex items-center gap-2 font-mono text-xs text-[#121212] dark:text-white font-medium hover:text-[var(--accent)] transition-colors truncate"
-                  title="Visit portfolio at iam-mjyogananth.pages.dev"
-                >
-                  <Globe className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  <span className="truncate">iam-mjyogananth.pages.dev</span>
-                </a>
-                <ExternalLink className="w-3 h-3 text-[#121212]/40 dark:text-white/40 shrink-0" />
-              </div>
-
-              {/* Location */}
-              <div className="card-stagger-item flex items-center gap-2 p-1.5 bg-white/70 dark:bg-black/30 border border-[#121212]/15 dark:border-white/15 font-mono text-xs text-[#121212] dark:text-white font-medium">
-                <MapPin className="w-3.5 h-3.5 text-[#E11D48] shrink-0" />
-                <span className="truncate">Attur, Tamil Nadu, India</span>
-              </div>
-            </div>
-
-            {/* 4. Card Footer / ID Bar */}
-            <div className="card-stagger-item pt-2 border-t border-[#121212]/15 dark:border-white/15 flex items-center justify-between font-mono text-[9px] text-[#121212]/50 dark:text-white/50">
-              <span>CARD ID: YJ-2026-AIML</span>
-              <span className="text-[var(--accent)] font-bold">CLICK TO FLIP BACK &crarr;</span>
+            {/* Footer */}
+            <div className="card-stagger-item pt-1 border-t border-white/15 flex items-center justify-between font-mono text-[8px] sm:text-[9px] text-white/60 shrink-0">
+              <span className="tracking-wider">CARD ID: YJ-2026-AIML</span>
+              <span className="text-[#E11D48] font-bold tracking-wider flex items-center gap-1">
+                CLICK TO FLIP BACK <ArrowRight className="w-2.5 h-2.5 rotate-180" />
+              </span>
             </div>
           </div>
         </div>

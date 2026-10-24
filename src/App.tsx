@@ -5,6 +5,7 @@ import { ProjectShowcase } from './components/ProjectShowcase';
 import { ArchitectureExplorer } from './components/ArchitectureExplorer';
 import { SimulatorsSection } from './components/SimulatorsSection';
 import { MotionPlayground } from './components/motion-playground/MotionPlayground';
+import { MotionExperimentPage } from './components/motion-playground/detail/MotionExperimentPage';
 import { SkillsSection } from './components/SkillsSection';
 import { ExperienceSection } from './components/ExperienceSection';
 import { ContactSection } from './components/ContactSection';
@@ -23,6 +24,52 @@ function PortfolioMainContent() {
   const [activeProject, setActiveProject] = useState<ProjectItem | null>(null);
   const [isTerminalOpen, setIsTerminalOpen] = useState<boolean>(false);
   const [activeSection, setActiveSection] = useState<string>('overview');
+
+  // Client-side route detection for Motion Lab experiment detail pages (/motion-lab/:id)
+  const getRouteFromUrl = () => {
+    if (typeof window === 'undefined') return { page: 'home', experimentId: '' };
+    const pathname = window.location.pathname;
+    const hash = window.location.hash;
+
+    if (pathname.startsWith('/motion-lab/')) {
+      const expId = pathname.replace('/motion-lab/', '').split('/')[0];
+      return { page: 'motion-detail', experimentId: expId };
+    }
+    if (hash.startsWith('#/motion-lab/') || hash.startsWith('#motion-lab/')) {
+      const expId = hash.replace(/^#\/?motion-lab\//, '').split('/')[0];
+      return { page: 'motion-detail', experimentId: expId };
+    }
+    return { page: 'home', experimentId: '' };
+  };
+
+  const [route, setRoute] = useState<{ page: string; experimentId: string }>(getRouteFromUrl);
+
+  useEffect(() => {
+    const handleRouteChange = () => {
+      setRoute(getRouteFromUrl());
+    };
+    window.addEventListener('popstate', handleRouteChange);
+    window.addEventListener('hashchange', handleRouteChange);
+    return () => {
+      window.removeEventListener('popstate', handleRouteChange);
+      window.removeEventListener('hashchange', handleRouteChange);
+    };
+  }, []);
+
+  const handleOpenMotionDetail = (experimentId: string) => {
+    window.history.pushState({}, '', `/motion-lab/${experimentId}`);
+    setRoute({ page: 'motion-detail', experimentId });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleBackToMotionLab = () => {
+    window.history.pushState({}, '', '/#motion-playground');
+    setRoute({ page: 'home', experimentId: '' });
+    setTimeout(() => {
+      const el = document.getElementById('motion-playground');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
 
   // Global Keyboard Shortcuts (Cmd+K / Ctrl+K for Terminal)
   useEffect(() => {
@@ -91,8 +138,15 @@ function PortfolioMainContent() {
         }}
       />
 
-      {/* Main Body: Dual-Pane Split Workbench vs Standard Editorial Flow */}
-      {layoutMode === 'split' ? (
+      {/* Main Body: Detail Page vs Dual-Pane Split Workbench vs Standard Editorial Flow */}
+      {route.page === 'motion-detail' && route.experimentId ? (
+        <main className="flex-1">
+          <MotionExperimentPage
+            experimentId={route.experimentId}
+            onBack={handleBackToMotionLab}
+          />
+        </main>
+      ) : layoutMode === 'split' ? (
         <main className="flex-1">
           <SplitScreenWorkspace onOpenModal={handleOpenProjectModal} />
         </main>
@@ -115,7 +169,7 @@ function PortfolioMainContent() {
           <SimulatorsSection />
 
           {/* Motion Playground & Interactive Animation Code Lab */}
-          <MotionPlayground />
+          <MotionPlayground onOpenDetail={handleOpenMotionDetail} />
 
           {/* Core Toolkit & Competencies */}
           <SkillsSection />
@@ -128,8 +182,8 @@ function PortfolioMainContent() {
         </main>
       )}
 
-      {/* Footer (shown in standard mode) */}
-      {layoutMode === 'standard' && <Footer />}
+      {/* Footer (shown in standard mode or detail view) */}
+      {(layoutMode === 'standard' || route.page === 'motion-detail') && <Footer />}
 
       {/* Deep-Dive Project Modal with Interactive Simulator */}
       <ProjectModal

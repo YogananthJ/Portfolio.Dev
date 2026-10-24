@@ -123,6 +123,12 @@ export const attach3DTilt = (card: HTMLElement | null, maxAngle: number = 7) => 
   const rotYTo = gsap.quickTo(card, 'rotationY', { duration: 0.4, ease: 'power3.out' });
 
   const onMouseMove = (e: MouseEvent) => {
+    // If digital visiting card is flipped open into interactive landscape card, keep it stable
+    if (card.querySelector('[aria-expanded="true"]')) {
+      rotXTo(0);
+      rotYTo(0);
+      return;
+    }
     const rect = card.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;

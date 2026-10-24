@@ -11,7 +11,11 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-export const MotionPlayground: React.FC = () => {
+interface MotionPlaygroundProps {
+  onOpenDetail?: (experimentId: string) => void;
+}
+
+export const MotionPlayground: React.FC<MotionPlaygroundProps> = ({ onOpenDetail }) => {
   const [activeCategory, setActiveCategory] = useState<MotionCategory>('all');
   const sectionRef = useRef<HTMLElement | null>(null);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
@@ -182,6 +186,7 @@ export const MotionPlayground: React.FC = () => {
             <MotionCard
               key={exp.id}
               experiment={exp}
+              onOpenDetail={onOpenDetail}
               ref={(handle) => {
                 cardHandlesRef.current[exp.id] = handle;
               }}

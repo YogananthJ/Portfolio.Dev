@@ -19,9 +19,10 @@ export interface MotionCardHandle {
 interface MotionCardProps {
   experiment: MotionExperiment;
   onCodeToggled?: (isOpen: boolean) => void;
+  onOpenDetail?: (experimentId: string) => void;
 }
 
-export const MotionCard = forwardRef<MotionCardHandle, MotionCardProps>(({ experiment }, ref) => {
+export const MotionCard = forwardRef<MotionCardHandle, MotionCardProps>(({ experiment, onOpenDetail }, ref) => {
   const [isCodeOpen, setIsCodeOpen] = useState<boolean>(false);
   const [isHighlighted, setIsHighlighted] = useState<boolean>(false);
   const controlsRef = useRef<{ reset: () => void; replay: () => void }>({
@@ -136,16 +137,13 @@ export const MotionCard = forwardRef<MotionCardHandle, MotionCardProps>(({ exper
             <span>{experiment.interactionHint}</span>
           </div>
           <button
-            onClick={() => setIsCodeOpen(!isCodeOpen)}
+            onClick={() => onOpenDetail ? onOpenDetail(experiment.id) : setIsCodeOpen(!isCodeOpen)}
             type="button"
-            className={`px-2 py-0.5 font-mono font-bold text-[10px] uppercase border transition-colors flex items-center gap-1 cursor-pointer ${
-              isCodeOpen
-                ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
-                : 'bg-[var(--bg-card)] text-[var(--text-main)] border-[var(--border-color)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
-            }`}
+            className="px-2.5 py-1 font-mono font-bold text-[10px] uppercase border transition-colors flex items-center gap-1.5 cursor-pointer bg-[var(--accent)] hover:bg-[#BE123C] text-white border-[var(--accent)] shadow-xs"
+            title="Open dedicated experiment detail page with live code editor"
           >
-            <Code2 className="w-3 h-3" />
-            <span>{isCodeOpen ? 'Hide Code' : 'View Code'}</span>
+            <Code2 className="w-3.5 h-3.5" />
+            <span>View Code &rarr;</span>
           </button>
         </div>
 
@@ -172,10 +170,10 @@ export const MotionCard = forwardRef<MotionCardHandle, MotionCardProps>(({ exper
         </div>
 
         <button
-          onClick={() => setIsCodeOpen(!isCodeOpen)}
+          onClick={() => onOpenDetail ? onOpenDetail(experiment.id) : setIsCodeOpen(!isCodeOpen)}
           className="text-xs font-mono font-bold text-[var(--accent)] hover:underline flex items-center gap-1 cursor-pointer"
         >
-          <span>{isCodeOpen ? 'Close Panel' : 'Inspect Code &rarr;'}</span>
+          <span>Explore Detail Page &rarr;</span>
         </button>
       </div>
     </div>

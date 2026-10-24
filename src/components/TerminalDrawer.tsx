@@ -1338,6 +1338,17 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
           );
         } else {
           let sectionId = arg.trim();
+          if (sectionId.startsWith('motion-lab/')) {
+            const expId = sectionId.replace('motion-lab/', '');
+            window.history.pushState({}, '', `/motion-lab/${expId}`);
+            window.dispatchEvent(new PopStateEvent('popstate'));
+            outputNode = (
+              <div className="text-xs text-emerald-400 font-bold">
+                Navigated to Motion Lab Detail: <strong>/motion-lab/{expId}</strong>.
+              </div>
+            );
+            break;
+          }
           if (sectionId === 'motion' || sectionId === 'playground' || sectionId === 'motionlab') {
             sectionId = 'motion-playground';
           }
