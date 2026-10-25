@@ -29,7 +29,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
   const timelineRef = useRef<gsap.core.Timeline | null>(null);
   const isAnimatingRef = useRef<boolean>(false);
 
-  // Compute closed square vs expanded landscape dimensions (23 / 15 ratio)
+  // Compute closed square vs expanded landscape dimensions (Target ratio ~23 / 15)
   const getDimensions = () => {
     const isMobile = window.innerWidth < 640;
     const isTablet = window.innerWidth >= 640 && window.innerWidth < 1024;
@@ -39,10 +39,10 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
     const squareSize = isMobile ? 176 : isTablet ? 208 : 224;
 
     // Expanded landscape target dimensions:
-    // Aspect ratio: 23 / 15 (1.5333) -> Visibly wider than tall
+    // Aspect ratio: 23 / 15 (1.5333) -> Clearly horizontal rectangle, visibly wider than tall
     // Desktop: 460px wide x 300px tall
-    // Tablet: up to 420px wide (420 * 15 / 23 = ~274px)
-    // Mobile: width = min(460px, calc(100vw - 32px)), height follows ratio (clamped to prevent clipping)
+    // Tablet: 420px wide x 274px tall
+    // Mobile: min(420, window.innerWidth - 32) wide, height comfortable for all text
     let expandedWidth = 460;
     let expandedHeight = 300;
 
@@ -50,10 +50,10 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
       expandedWidth = Math.min(420, Math.max(300, window.innerWidth - 32));
       const calculatedHeight = Math.round(expandedWidth * (15 / 23));
       // Ensure content fits comfortably without clipping while remaining strictly landscape
-      expandedHeight = Math.max(220, calculatedHeight);
+      expandedHeight = Math.max(260, calculatedHeight);
     } else if (isTablet) {
       expandedWidth = 420;
-      expandedHeight = Math.round(420 * (15 / 23)); // 274px
+      expandedHeight = 274;
     } else {
       expandedWidth = 460;
       expandedHeight = 300;
@@ -91,7 +91,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
     }
 
     const tl = gsap.timeline({
-      defaults: { ease: 'power3.inOut' },
+      defaults: { ease: 'power2.inOut' },
       onComplete: () => {
         isAnimatingRef.current = false;
         if (!nextFlipped && cardChassisRef.current) {
@@ -107,13 +107,13 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
       tl.to(cardInnerRef.current, {
         rotationY: 180,
         duration: 0.65,
-        ease: 'power3.inOut',
+        ease: 'power2.inOut',
       }, 0)
       .to(cardChassisRef.current, {
         width: expandedWidth,
         height: expandedHeight,
         duration: 0.65,
-        ease: 'power3.inOut',
+        ease: 'power2.inOut',
       }, 0);
 
       // 2. Stagger reveal back-side details
@@ -121,7 +121,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
         const staggerItems = backContentRef.current.querySelectorAll('.card-stagger-item');
         tl.fromTo(
           staggerItems,
-          { opacity: 0, y: 8 },
+          { opacity: 0, y: 6 },
           {
             opacity: 1,
             y: 0,
@@ -129,7 +129,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
             stagger: 0.04,
             ease: 'power2.out',
           },
-          0.32
+          0.3
         );
       }
     } else {
@@ -137,13 +137,13 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
       tl.to(cardInnerRef.current, {
         rotationY: 0,
         duration: 0.6,
-        ease: 'power3.inOut',
+        ease: 'power2.inOut',
       }, 0)
       .to(cardChassisRef.current, {
         width: squareSize,
         height: squareSize,
         duration: 0.6,
-        ease: 'power3.inOut',
+        ease: 'power2.inOut',
       }, 0);
     }
   };
@@ -201,20 +201,26 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
         }`}
         style={{
           maxWidth: 'calc(100vw - 32px)',
-          aspectRatio: isFlipped ? '23 / 15' : '1 / 1',
         }}
       >
         <div
           ref={cardInnerRef}
           className="relative w-full h-full"
-          style={{ transformStyle: 'preserve-3d' }}
+          style={{ 
+            transformStyle: 'preserve-3d',
+            transformOrigin: 'center center'
+          }}
         >
           {/* ========================================================================= */}
           {/* FRONT FACE: Original Square Profile Portrait */}
           {/* ========================================================================= */}
           <div
             className="absolute inset-0 w-full h-full bg-[var(--bg-surface)] border-4 border-[var(--border-color)] overflow-hidden group"
-            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(0deg)' }}
+            style={{ 
+              backfaceVisibility: 'hidden', 
+              WebkitBackfaceVisibility: 'hidden',
+              transform: 'rotateY(0deg)' 
+            }}
           >
             <img
               src="/assets/aistudio/favicon_507da8ac.png"
@@ -236,18 +242,22 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
           </div>
 
           {/* ========================================================================= */}
-          {/* BACK FACE: Polished Landscape Digital Visiting Card (Asymmetric 2-Column) */}
+          {/* BACK FACE: Polished Landscape Digital Visiting Card (No Truncation) */}
           {/* ========================================================================= */}
           <div
             ref={backContentRef}
-            className="absolute inset-0 w-full h-full bg-[#0E0E12] text-[#FAFAFA] border-3 border-[var(--border-color)] p-3 sm:p-4 flex flex-col justify-between overflow-hidden bg-[radial-gradient(#ffffff10_1px,transparent_1px)] [background-size:12px_12px]"
-            style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+            className="absolute inset-0 w-full h-full bg-[#0E0E12] text-[#FAFAFA] border-3 border-[var(--border-color)] p-3 sm:p-3.5 flex flex-col justify-between overflow-hidden bg-[radial-gradient(#ffffff10_1px,transparent_1px)] [background-size:12px_12px]"
+            style={{ 
+              backfaceVisibility: 'hidden', 
+              WebkitBackfaceVisibility: 'hidden',
+              transform: 'rotateY(180deg)' 
+            }}
           >
-            {/* Top Header */}
+            {/* Top Header Bar */}
             <div className="card-stagger-item flex items-center justify-between border-b border-white/15 pb-1.5 shrink-0">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#E11D48] animate-pulse"></span>
-                <span className="font-mono text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-white/80">
+                <span className="font-mono text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-white/85">
                   DIGITAL VISITING CARD
                 </span>
               </div>
@@ -258,113 +268,133 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                   handleFlip();
                 }}
                 type="button"
-                className="p-1 text-white/60 hover:text-[#E11D48] hover:bg-white/10 rounded transition-colors cursor-pointer"
+                className="flex items-center gap-1 px-1.5 py-0.5 text-white/60 hover:text-white hover:bg-white/10 rounded transition-colors cursor-pointer"
                 title="Flip back to square portrait"
                 aria-label="Flip back to square portrait"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
+                <RotateCcw className="w-3 h-3 text-[#E11D48]" />
+                <span className="hidden sm:inline font-mono text-[8px] uppercase tracking-wider text-white/70">Flip</span>
               </button>
             </div>
 
-            {/* Main Content: Asymmetric Two-Column Layout */}
-            <div className="grid grid-cols-12 gap-2.5 sm:gap-4 flex-1 items-center py-1 sm:py-1.5 min-h-0">
-              {/* Left Column: Identity */}
-              <div className="col-span-5 flex flex-col justify-center border-r border-white/10 pr-2 sm:pr-3 min-w-0">
-                <div className="card-stagger-item flex items-center gap-2.5 mb-1.5">
-                  <div className="w-11 h-11 sm:w-13 sm:h-13 rounded border border-white/20 overflow-hidden shrink-0 shadow-xs bg-black">
-                    <img
-                      src="/assets/aistudio/favicon_507da8ac.png"
-                      alt="Yogananth J"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="font-display text-base sm:text-lg md:text-xl font-black uppercase tracking-tight text-white leading-tight truncate">
-                      YOGANANTH J
-                    </h3>
-                    <div className="flex items-center gap-1 font-mono text-[9px] sm:text-[10px] font-bold text-[#E11D48] uppercase mt-0.5">
-                      <Cpu className="w-3 h-3 shrink-0" />
-                      <span className="truncate">AI / ML ENGINEER</span>
+            {/* Main Content: Two-Column Responsive Layout */}
+            <div className="grid grid-cols-12 gap-2.5 sm:gap-3 flex-1 items-stretch py-1.5 min-h-0">
+              {/* Left Column: Identity & Qualifications (col-span-5) */}
+              <div className="col-span-5 flex flex-col justify-between border-r border-white/10 pr-2 sm:pr-2.5 min-w-0">
+                <div className="flex flex-col">
+                  {/* Avatar + Full Name + Title */}
+                  <div className="card-stagger-item flex items-start gap-2 mb-2">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded border border-white/25 overflow-hidden shrink-0 shadow-xs bg-black mt-0.5">
+                      <img
+                        src="/assets/aistudio/favicon_507da8ac.png"
+                        alt="Yogananth J"
+                        className="w-full h-full object-cover"
+                      />
                     </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-display text-sm sm:text-[15px] md:text-base font-bold text-white tracking-tight leading-tight">
+                        Yogananth J
+                      </h3>
+                      <div className="flex items-center gap-1 font-mono text-[8.5px] sm:text-[9.5px] font-bold text-[#E11D48] uppercase mt-0.5">
+                        <Cpu className="w-3 h-3 shrink-0" />
+                        <span className="whitespace-nowrap">AI / ML ENGINEER</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Qualification */}
+                  <div className="card-stagger-item font-mono text-[8.5px] sm:text-[9.5px] text-white/80 leading-snug border-l-2 border-[#E11D48] pl-2 py-0.5 mt-1">
+                    <span className="block text-[7.5px] uppercase font-bold tracking-wider text-white/40 mb-0.5">
+                      Qualification
+                    </span>
+                    B.Tech in Artificial Intelligence and Machine Learning
                   </div>
                 </div>
 
-                <div className="card-stagger-item font-mono text-[9px] sm:text-[10px] text-white/70 leading-snug border-l-2 border-[#E11D48]/70 pl-2 py-0.5">
-                  B.Tech in Artificial Intelligence and Machine Learning
+                {/* Status indicator */}
+                <div className="card-stagger-item inline-flex items-center gap-1.5 px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xs self-start mt-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span className="font-mono text-[7.5px] sm:text-[8px] uppercase tracking-wider text-emerald-300 font-semibold">
+                    Open to Opportunities
+                  </span>
                 </div>
               </div>
 
-              {/* Right Column: Contact Information (Direct Channels & Links) */}
-              <div className="col-span-7 flex flex-col justify-center gap-1 sm:gap-1.5 min-w-0">
-                <div className="card-stagger-item font-mono text-[8px] sm:text-[9px] uppercase font-bold text-white/50 tracking-wider flex items-center gap-1 mb-0.5">
+              {/* Right Column: Contact Channels & Links (col-span-7) */}
+              <div className="col-span-7 flex flex-col justify-between min-w-0">
+                <div className="card-stagger-item font-mono text-[8px] sm:text-[8.5px] uppercase font-bold text-white/50 tracking-wider flex items-center gap-1 mb-1 shrink-0">
                   <span className="w-1 h-1 bg-[#E11D48]"></span>
                   <span>DIRECT CHANNELS &amp; LINKS</span>
                 </div>
 
-                {/* 1. Email */}
-                <div className="card-stagger-item flex items-center justify-between px-2 py-1 bg-white/5 border border-white/10 hover:border-[#E11D48]/60 transition-colors rounded-xs">
-                  <a
-                    href="mailto:mjyogananth@gmail.com"
-                    onClick={(e) => e.stopPropagation()}
-                    className="flex items-center gap-1.5 sm:gap-2 font-mono text-[10px] sm:text-[11px] text-white/90 hover:text-[#E11D48] transition-colors truncate"
-                    title="Send email to mjyogananth@gmail.com"
-                  >
-                    <Mail className="w-3 h-3 text-[#E11D48] shrink-0" />
-                    <span className="truncate">mjyogananth@gmail.com</span>
-                  </a>
-                  <button
-                    onClick={handleCopyEmail}
-                    type="button"
-                    className="p-0.5 hover:text-[#E11D48] text-white/50 transition-colors shrink-0"
-                    title="Copy email address"
-                    aria-label="Copy email"
-                  >
-                    {copiedEmail ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
-                  </button>
-                </div>
+                <div className="flex flex-col gap-1 sm:gap-1.5 flex-1 justify-center">
+                  {/* 1. Email */}
+                  <div className="card-stagger-item flex items-center justify-between px-2 py-1 bg-white/5 border border-white/10 hover:border-[#E11D48]/60 transition-colors rounded-xs group/item">
+                    <a
+                      href="mailto:mjyogananth@gmail.com"
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex items-center gap-1.5 sm:gap-2 font-mono text-[9.5px] sm:text-[10.5px] text-white/95 group-hover/item:text-[#E11D48] transition-colors min-w-0"
+                      title="Send email to mjyogananth@gmail.com"
+                    >
+                      <Mail className="w-3 h-3 text-[#E11D48] shrink-0" />
+                      <span className="whitespace-nowrap">mjyogananth@gmail.com</span>
+                    </a>
+                    <button
+                      onClick={handleCopyEmail}
+                      type="button"
+                      className="p-0.5 hover:text-[#E11D48] text-white/50 hover:bg-white/10 rounded-xs transition-colors shrink-0 ml-1 cursor-pointer"
+                      title="Copy email address"
+                      aria-label="Copy email"
+                    >
+                      {copiedEmail ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                    </button>
+                  </div>
 
-                {/* 2. LinkedIn */}
-                <div className="card-stagger-item flex items-center justify-between px-2 py-1 bg-white/5 border border-white/10 hover:border-[#E11D48]/60 transition-colors rounded-xs">
+                  {/* 2. LinkedIn */}
                   <a
                     href="https://www.linkedin.com/in/yogananth-j-653400307/"
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="flex items-center gap-1.5 sm:gap-2 font-mono text-[10px] sm:text-[11px] text-white/90 hover:text-[#E11D48] transition-colors truncate"
-                    title="Open LinkedIn profile"
+                    className="card-stagger-item flex items-center justify-between px-2 py-1 bg-white/5 border border-white/10 hover:border-[#E11D48]/60 transition-colors rounded-xs group/item"
+                    title="Open LinkedIn profile: https://www.linkedin.com/in/yogananth-j-653400307/"
                   >
-                    <Linkedin className="w-3 h-3 text-sky-400 shrink-0" />
-                    <span className="truncate">linkedin.com/in/yogananth-j</span>
+                    <div className="flex items-center gap-1.5 sm:gap-2 font-mono text-[9.5px] sm:text-[10.5px] text-white/95 group-hover/item:text-[#E11D48] transition-colors min-w-0">
+                      <Linkedin className="w-3 h-3 text-sky-400 shrink-0" />
+                      <span className="whitespace-nowrap">linkedin.com/in/yogananth-j</span>
+                    </div>
+                    <ExternalLink className="w-2.5 h-2.5 text-white/40 group-hover/item:text-white/80 shrink-0 ml-1" />
                   </a>
-                  <ExternalLink className="w-2.5 h-2.5 text-white/40 shrink-0" />
-                </div>
 
-                {/* 3. Portfolio */}
-                <div className="card-stagger-item flex items-center justify-between px-2 py-1 bg-white/5 border border-white/10 hover:border-[#E11D48]/60 transition-colors rounded-xs">
+                  {/* 3. Portfolio */}
                   <a
                     href="https://iam-mjyogananth.pages.dev"
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="flex items-center gap-1.5 sm:gap-2 font-mono text-[10px] sm:text-[11px] text-white/90 hover:text-[#E11D48] transition-colors truncate"
+                    className="card-stagger-item flex items-center justify-between px-2 py-1 bg-white/5 border border-white/10 hover:border-[#E11D48]/60 transition-colors rounded-xs group/item"
                     title="Visit portfolio at iam-mjyogananth.pages.dev"
                   >
-                    <Globe className="w-3 h-3 text-emerald-400 shrink-0" />
-                    <span className="truncate">iam-mjyogananth.pages.dev</span>
+                    <div className="flex items-center gap-1.5 sm:gap-2 font-mono text-[9.5px] sm:text-[10.5px] text-white/95 group-hover/item:text-[#E11D48] transition-colors min-w-0">
+                      <Globe className="w-3 h-3 text-emerald-400 shrink-0" />
+                      <span className="whitespace-nowrap">iam-mjyogananth.pages.dev</span>
+                    </div>
+                    <ExternalLink className="w-2.5 h-2.5 text-white/40 group-hover/item:text-white/80 shrink-0 ml-1" />
                   </a>
-                  <ExternalLink className="w-2.5 h-2.5 text-white/40 shrink-0" />
-                </div>
 
-                {/* 4. Location */}
-                <div className="card-stagger-item flex items-center gap-1.5 sm:gap-2 px-2 py-1 bg-white/5 border border-white/10 font-mono text-[10px] sm:text-[11px] text-white/90 rounded-xs">
-                  <MapPin className="w-3 h-3 text-[#E11D48] shrink-0" />
-                  <span className="truncate">Gobichettipalayam, Erode, Tamil Nadu</span>
+                  {/* 4. Location (No Truncation - Full Address Displayed) */}
+                  <div className="card-stagger-item flex items-start gap-1.5 sm:gap-2 px-2 py-1 bg-white/5 border border-white/10 rounded-xs">
+                    <MapPin className="w-3 h-3 text-[#E11D48] shrink-0 mt-0.5" />
+                    <span className="font-mono text-[9px] sm:text-[9.5px] text-white/90 leading-tight">
+                      Gobichettipalayam, Erode, Tamil Nadu
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="card-stagger-item pt-1 border-t border-white/15 flex items-center justify-between font-mono text-[8px] sm:text-[9px] text-white/60 shrink-0">
+            <div className="card-stagger-item pt-1.5 border-t border-white/15 flex items-center justify-between font-mono text-[8px] sm:text-[8.5px] text-white/60 shrink-0">
               <span className="tracking-wider">CARD ID: YJ-2026-AIML</span>
               <span className="text-[#E11D48] font-bold tracking-wider flex items-center gap-1">
                 CLICK TO FLIP BACK <ArrowRight className="w-2.5 h-2.5 rotate-180" />
@@ -383,3 +413,4 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
     </div>
   );
 };
+
