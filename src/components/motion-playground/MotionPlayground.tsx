@@ -136,12 +136,12 @@ export const MotionPlayground: React.FC<MotionPlaygroundProps> = ({ onOpenDetail
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-[var(--bg-surface)] border border-[var(--border-color)] text-xs font-mono font-bold uppercase text-[var(--accent)] tracking-wider">
               <Activity className="w-3.5 h-3.5 text-[var(--accent)]" />
-              <span>LIVE ANIMATION CODE LAB // 6 EXPERIMENTS</span>
+              <span>INTERACTIVE EXPERIMENTS // LIVE RENDERING</span>
             </div>
 
             <div className="flex items-center gap-2 text-xs font-mono text-[var(--text-muted)]">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-              <span>INTERACTIVE SANDBOX · ZERO EXTERNAL ASSETS</span>
+              <span>6 BESPOKE SIMULATIONS · HARMONIC RECOVERY</span>
             </div>
           </div>
 
@@ -151,19 +151,19 @@ export const MotionPlayground: React.FC<MotionPlaygroundProps> = ({ onOpenDetail
                 ref={headingRef}
                 className="font-display text-3xl sm:text-4xl lg:text-5xl font-black text-[var(--text-main)] uppercase tracking-tight"
               >
-                MOTION PLAYGROUND
+                MOTION LAB
               </h2>
               <p
                 ref={subtitleRef}
                 className="font-mono text-sm sm:text-base font-bold text-[var(--accent)] mt-1 italic"
               >
-                Small experiments. Real motion. Code you can explore.
+                Small experiments. Real motion. Interactive worlds.
               </p>
             </div>
 
             <p className="max-w-xl text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed">
-              Explore interactive animations built with GSAP 3, vanilla JavaScript, Canvas 2D, and Three.js. 
-              Play with each experiment, inspect how it works, and take the code with you.
+              Explore interactive animations, creative interaction physics, and generative visuals. 
+              Grab, drag, stretch, and explore each experiment with real-time physical simulation and natural recovery.
             </p>
           </div>
         </div>

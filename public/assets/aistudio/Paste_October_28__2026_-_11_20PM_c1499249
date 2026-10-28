@@ -1,0 +1,642 @@
+# MASTER IMPLEMENTATION PROMPT — MOTION LAB
+## Creative UI Animation, Interactive Physics & Relaxing Generative Experiences
+
+I want to integrate a polished, creative **Motion Lab** into my existing developer portfolio website.
+
+The Motion Lab should showcase original UI animations, realistic physics, interactive particle systems, generative geometry, and immersive visual experiences. It should feel like a premium creative coding studio built by a frontend engineer with a strong understanding of animation, visual design, and interaction physics.
+
+I have provided reference images for the existing Motion Playground layout, a spiral galaxy, and a helium balloon attached to a hanging cardboard tag. Use these references to understand the intended visual direction and interactions.
+
+**IMPORTANT: Inspect the existing project before making any changes. Integrate the Motion Lab into the current website without replacing the existing portfolio, changing unrelated sections, or breaking existing functionality.**
+
+---
+
+# 1. CORE CREATIVE VISION
+
+The Motion Lab must balance three qualities:
+
+1. **Playfulness:** visitors can grab, drag, disturb, launch, stretch, and explore the animations.
+2. **Physical believability:** every movement should have convincing inertia, elasticity, damping, and natural recovery.
+3. **Visual relaxation:** the experiences should feel smooth, elegant, immersive, and calming rather than loud, chaotic, or overstimulating.
+
+These are interactive experiments, not static illustrations or generic animation cards.
+
+Every experiment must have a distinct personality while sharing a consistent design system.
+
+## Global animation rules
+
+These rules are mandatory for every experiment where interaction displaces, repels, deforms, or disturbs an object or particle system.
+
+- When the user stops touching, dragging, or hovering over an interactive object, it must smoothly return to its original resting state.
+- For mouse-repulsion effects, particles must gradually return to their stored home positions after the cursor leaves the force area.
+- Never leave particles permanently displaced or scattered after an interaction.
+- Objects should recover through spring-damped interpolation or physically appropriate forces, never through an abrupt position reset.
+- Preserve the original structure, layout, proportions, and resting arrangement of each experiment.
+- All animations must use continuous, smooth interpolation without visible jumps, flickering, jitter, or sudden scale changes.
+- Every animation must have a natural idle state and a clear recovery state.
+- Interactions should feel responsive, with no noticeable lag between pointer movement and the visual response.
+- Recovery should feel organic, with subtle overshoot where appropriate and gradually diminishing oscillations.
+- Do not force every object to recover identically. Use the appropriate physical behavior for each experiment.
+- Avoid unnecessary movement when the user is idle. Idle animations should be slow, elegant, and visually comfortable.
+- Support mouse, touch, and trackpad interaction where appropriate.
+- Respect the operating system's reduced-motion preference.
+- Do not use flashing effects, excessively rapid movement, harsh screen shakes, or aggressive color changes.
+
+Use `requestAnimationFrame`, delta-time-based physics, spring forces, damping, and efficient rendering as appropriate.
+
+---
+
+# 2. DESIGN SYSTEM AND VISUAL QUALITY
+
+Preserve the existing portfolio's design language.
+
+## Overall page design
+
+- Warm cream or off-white background.
+- Bold, carefully selected typography.
+- Black text and thin black borders.
+- Restrained red accents for important labels and active controls.
+- Subtle grid backgrounds and small technical metadata.
+- Clear hierarchy, consistent spacing, and precise alignment.
+- Crisp card borders with subtle shadows where they match the existing design.
+- Responsive layouts that work on desktop, tablet, and mobile.
+
+## Animation-stage design
+
+Use a different visual treatment inside each experiment's rendering stage.
+
+- Dark backgrounds for particles, galaxy, and tunnel experiments.
+- Realistic, soft neutral backgrounds for the helium balloon.
+- Restrained cyan, silver, white, and occasional red particles for scientific visualizations.
+- Natural blue-silver and warm ivory tones for the galaxy.
+- Carefully controlled highlights, reflections, shadows, and gradients for realistic materials.
+
+Avoid excessive neon, rainbow gradients, random colors, excessive glowing outlines, decorative clutter, oversized controls, and inconsistent card sizes.
+
+The page should look like a thoughtfully designed creative engineering portfolio, not a generic dashboard.
+
+---
+
+# 3. EXPERIMENT 01 — LIQUID METAL BALL
+
+## Concept
+
+A reflective chrome sphere that behaves like a fluid material, continuously floating in a dark, elegant rendering environment.
+
+## Animation
+
+- The sphere rotates slowly under subtle lighting.
+- Its reflective surface creates realistic metallic highlights.
+- On interaction, the sphere stretches into fluid tendrils or deforms into an organic liquid shape.
+- Dragging should produce smooth deformation.
+- Releasing the object should allow it to reform into its original spherical shape.
+- Subtle surface motion should continue during idle mode.
+
+## Interaction
+
+- Hover or move the pointer over the sphere to create a subtle local deformation.
+- Click and drag to stretch or manipulate it.
+- Release to restore its original form.
+- Provide a reset control.
+
+## Technical direction
+
+Use Three.js and custom shader materials where practical. Use mesh deformation, metaball-like techniques, or an efficient approximation appropriate to the project's existing rendering architecture.
+
+Prioritize beautiful material rendering, smooth deformation, and performance.
+
+---
+
+# 4. EXPERIMENT 02 — MOUSE-REPULSIVE ATOMIC NETWORK
+
+## Concept
+
+An interconnected network of hundreds of atoms or molecular nodes, connected by delicate elastic bonds.
+
+The network should look like a living scientific structure rather than a collection of unrelated dots.
+
+## Normal state
+
+- Nodes float with subtle, restrained motion.
+- Connections form a balanced network.
+- Small variations in particle brightness create visual depth.
+- The complete network stays within its intended rendering area.
+
+## Mouse interaction
+
+- Atoms repel the cursor inside a configurable force radius.
+- Nearby connections stretch and bend as nodes move.
+- Disturbances propagate through neighboring nodes.
+- Nodes accelerate away from the cursor with smooth, physically plausible motion.
+- When the cursor leaves, all nodes return to their original home positions.
+
+## Additional interaction
+
+Clicking creates a soft circular shockwave that travels through the network.
+
+Provide an attraction/repulsion mode switch, particle-density control, force-radius control, and reset control.
+
+## Recovery rules
+
+Every node must retain a home position. Use spring forces and damping to restore the network after the interaction ends.
+
+The network must never remain permanently scattered or lose its original structure.
+
+## Technical direction
+
+Canvas 2D or WebGL, with efficient neighbor detection, spring physics, vector forces, and delta-time-based animation.
+
+---
+
+# 5. EXPERIMENT 03 — CHAOTIC TYPOGRAPHY PLAYGROUND
+
+## Concept
+
+Interactive typography in which individual characters behave like physical objects.
+
+The text must remain readable in its normal state, while interaction creates expressive, playful motion.
+
+## Animation modes
+
+### Bounce mode
+
+- Letters bounce independently.
+- Each character has a different phase, bounce height, and spring response.
+- Letters land with subtle squash and stretch.
+- Hovering over a letter triggers a small jump.
+- Clicking a letter launches it into the air before gravity returns it to its resting position.
+
+### Explosion mode
+
+Characters scatter outward with controlled rotation and velocity, then reconstruct the original phrase.
+
+### Elastic mode
+
+Letters stretch and wobble when dragged, then recover their original shape and position.
+
+### Vortex mode
+
+Letters spiral around a central point and return to their original positions.
+
+## Controls
+
+- Custom text input.
+- Bounce height.
+- Animation speed.
+- Elasticity.
+- Play/pause.
+- Reset.
+- Randomize animation.
+
+## Recovery rules
+
+Store each character's original position and transform. After an interaction or animation, characters must return smoothly to the correct baseline and spacing.
+
+Prevent overlapping characters, broken word layouts, clipping, and unpredictable layout shifts.
+
+## Technical direction
+
+Use HTML elements for accessible, crisp typography; GSAP for timelines and easing where appropriate; and JavaScript physics for independent character movement.
+
+---
+
+# 6. EXPERIMENT 04 — INFINITE TUNNEL
+
+## Concept
+
+A continuous, immersive tunnel of rings, particles, or geometric structures that creates the sensation of travelling gently through an infinite space.
+
+This experiment must prioritize relaxation, visual rhythm, and a feeling of depth.
+
+## Visual behavior
+
+- The tunnel moves continuously without a visible ending.
+- Rings or geometric layers move toward the viewer and recede into the distance.
+- The scene creates a gentle sense of forward motion.
+- Perspective, depth, and spacing remain consistent.
+- The tunnel's animation loops seamlessly.
+- No obvious restart, sudden jump, or visible discontinuity is allowed.
+
+## Relaxation requirements
+
+- Use slow, steady movement by default.
+- Keep lighting subtle and controlled.
+- Avoid sudden acceleration, rapid zooms, flashing lights, and aggressive camera movements.
+- Use restrained monochrome, silver, muted blue, or warm neutral palettes.
+- Make the animation comfortable to watch for extended periods.
+
+## Interaction
+
+- Pointer movement gently changes the viewing direction.
+- Users may adjust speed and tunnel style.
+- Returning the pointer to its neutral position smoothly recenters the camera.
+- Include a calm idle mode that requires no interaction.
+
+## Technical direction
+
+Use Three.js or an efficient Canvas renderer, depending on the chosen tunnel implementation.
+
+Use modulo-based ring positioning, looping geometry, or equivalent techniques to ensure a genuinely continuous animation.
+
+**The tunnel must run indefinitely until the user pauses it or leaves the experiment.**
+
+---
+
+# 7. EXPERIMENT 05 — GALACTIC PARTICLE CORE
+
+## Concept
+
+Use the supplied spiral-galaxy reference as the primary visual inspiration.
+
+Create a luminous, rotating spiral galaxy made from thousands of carefully arranged particles. The galaxy should evoke cosmic wonder, divine beauty, depth, stillness, and mental relaxation.
+
+This must not look like a generic neon particle sphere. Preserve the recognizable structure of a spiral galaxy, including its bright central bulge, curved spiral arms, and scattered stellar particles.
+
+## Visual design
+
+### Galactic core
+
+- A warm, luminous ivory or soft golden-white center.
+- Smooth light falloff toward the outer region.
+- Subtle layered brightness and atmospheric depth.
+- No excessively bright white bloom or clipped highlights.
+
+### Spiral arms
+
+- Silver-blue and soft blue-gray particles.
+- Carefully defined spiral-arm geometry.
+- Fine particle detail and restrained variation in brightness.
+- Occasional subtle pink or red stellar accents.
+- Natural density variation near the core and outer arms.
+
+### Background
+
+- Deep black or very dark blue-black.
+- A sparse, subtle star field.
+- No unnecessary interface elements inside the galaxy stage.
+
+The overall result should feel celestial, serene, sophisticated, and meditative.
+
+## Continuous rotation
+
+The galaxy rotates continuously at a slow, comfortable speed.
+
+Particles retain their recognizable spiral structure. Individual particles may have subtle orbital motion, but avoid excessive turbulence.
+
+## Mouse repulsion
+
+When the cursor enters the galaxy:
+
+- Nearby particles move away smoothly.
+- A temporary opening forms around the pointer.
+- Neighboring particles react with subtle delayed motion.
+- The galaxy's overall structure remains recognizable.
+- When the cursor moves away, particles return to their original spiral positions.
+
+The mouse must not permanently damage the galaxy structure.
+
+## Grab, drag, flip, and shake
+
+Allow the user to grab the galaxy and manipulate it.
+
+- Drag horizontally to rotate it.
+- Drag vertically to tilt it.
+- Allow a controlled 180-degree flip.
+- Allow the user to shake it manually.
+- A shake can create a soft disturbance wave through the spiral arms.
+- Release the mouse to begin a smooth recovery.
+
+## Recovery behavior
+
+After release:
+
+1. The particle positions return to their stored spiral home positions.
+2. The galaxy recenters.
+3. Its orientation smoothly returns to the default resting orientation.
+4. Temporary deformations fade away.
+5. Continuous rotation resumes without a visible jump.
+
+Do not instantly overwrite particle positions or reset the whole scene. Use spring forces, damping, quaternion interpolation, and a suitable settling animation.
+
+The recovery should feel like a cosmic structure gently returning to equilibrium.
+
+## Relaxation mode
+
+Provide an optional relaxation mode that:
+
+- Slows the rotation.
+- Softens the glow.
+- Reduces interaction intensity.
+- Minimizes particle turbulence.
+- Maintains a smooth, continuous idle animation.
+
+The goal is a visually immersive, calming cosmic experience.
+
+## Technical direction
+
+Use Three.js, WebGL points, BufferGeometry, custom shaders, and efficient particle physics as appropriate.
+
+Store original particle positions and generate the galaxy procedurally. Avoid relying on a static image as the actual animation.
+
+---
+
+# 8. EXPERIMENT 06 — HELIUM BALLOON PLAYGROUND
+
+## Concept
+
+Use the supplied photograph of the blue balloon and hanging cardboard tag as the structural and interaction reference.
+
+Create a realistic, glossy **red helium balloon** floating in a soft, neutral indoor environment. A thin string connects the balloon to a small square brown cardboard tag hanging underneath it.
+
+The visitor must be able to grab the cardboard tag, pull it downward, drag it sideways, shake it, swing it, and release it.
+
+The animation must feel soft, smooth, natural, and physically believable.
+
+This is a key showcase experiment. Do not implement it as a simple image moving up and down.
+
+## Visual realism
+
+### Balloon
+
+- A rounded, slightly elongated latex shape.
+- Glossy red material with natural highlights.
+- Soft reflections that suggest a nearby window or light source.
+- Gentle shading and smooth surface curvature.
+- A small tied neck at the bottom.
+- Subtle surface deformation during fast movement.
+- No exaggerated rubbery distortion or plastic-looking highlights.
+
+### String
+
+- A thin, slightly flexible white or off-white string.
+- A natural connection between the balloon neck and cardboard tag.
+- Visible tension when the tag is pulled.
+- A small amount of curvature and oscillation when swinging.
+
+### Cardboard tag
+
+- A small square piece of brown kraft cardboard.
+- Slightly irregular paper texture.
+- A small punched hole near its upper edge.
+- The string passes through the hole naturally.
+- Minimal rotation, shadow, and perspective.
+- The cardboard is the primary draggable handle.
+
+### Environment
+
+Use a warm cream, beige, or light neutral background with subtle natural lighting and soft shadows.
+
+Keep the composition simple and realistic. The balloon, string, and tag should be the clear focus.
+
+## Normal floating behavior
+
+- The balloon floats gently upward.
+- Buoyancy balances gravity.
+- The balloon sways subtly from side to side.
+- The string hangs naturally under tension.
+- The cardboard tag swings gently and gradually settles.
+- The entire object remains inside the rendering area.
+
+The normal state must remain continuously animated, even when the user does nothing.
+
+## Grab and pull behavior
+
+The visitor must be able to grab the cardboard tag directly.
+
+When the user pulls downward:
+
+- The tag follows the pointer.
+- The string becomes taut.
+- The balloon moves downward in response.
+- The balloon tilts and lags behind the tag.
+- The balloon's surface deforms subtly under acceleration.
+- The string responds dynamically instead of behaving like a rigid rod.
+
+When the user drags sideways, the balloon swings and rotates naturally.
+
+## Shake behavior
+
+If the user shakes the tag:
+
+- The cardboard changes direction with the pointer.
+- The string oscillates under tension.
+- The balloon follows with delayed movement.
+- The balloon develops subtle wobble and squash-and-stretch deformation.
+- Faster movement creates stronger, but still controlled, reactions.
+
+Avoid exaggerated motion that makes the balloon look like a solid ball or a piece of stiff plastic.
+
+## Soft latex deformation
+
+The balloon should feel inflated and flexible.
+
+Simulate subtle deformation through mesh deformation, controlled scaling, or another appropriate technique.
+
+- Fast movement may elongate the balloon slightly.
+- Sudden directional changes can produce a gentle wobble.
+- The balloon should lag slightly behind the string's motion.
+- Deformation must remain restrained and anatomically plausible.
+- Once the motion settles, the balloon returns to its natural rounded shape.
+
+## Release and recovery
+
+When the visitor releases the cardboard tag:
+
+1. The tag leaves the pointer and swings freely.
+2. The string returns to its natural hanging shape.
+3. The balloon rises gently under buoyancy.
+4. The balloon follows with a subtle delay.
+5. The balloon's shape returns smoothly to its resting proportions.
+6. The string oscillations diminish naturally.
+7. The entire system settles into its continuous idle floating animation.
+
+The return must not be instantaneous. Use physically appropriate damping and spring forces to create a satisfying, realistic recovery.
+
+The balloon must never remain stuck in a distorted, stretched, or displaced state after release.
+
+## Interaction and accessibility
+
+- Support mouse and touch.
+- Provide a clear grab cursor over the cardboard.
+- Prevent text selection and unwanted page dragging while manipulating the object.
+- Constrain the simulation within the experiment stage.
+- Restore the default state if the pointer is released outside the canvas or the interaction is interrupted.
+- Ensure the experience remains usable on small screens.
+
+## Technical direction
+
+Use Canvas 2D or DOM-based rendering for a carefully designed 2D implementation, or Three.js if the project architecture supports realistic 3D deformation efficiently.
+
+Represent the balloon, string, and tag as separate components connected through appropriate constraints and spring forces.
+
+Use buoyancy, gravity, drag, damping, and delayed response. Preserve the object's natural proportions and apply delta-time-based physics.
+
+---
+
+# 9. GLOBAL INTERACTION AND RECOVERY ARCHITECTURE
+
+Implement a consistent interaction lifecycle for every applicable experiment.
+
+## State A — Idle
+
+The animation runs in its natural resting state.
+
+Examples:
+- The galaxy rotates slowly.
+- The balloon floats gently.
+- The atomic network moves subtly.
+- The tunnel loops indefinitely.
+- Typography remains arranged in its original layout.
+
+## State B — Interaction
+
+The visitor hovers, grabs, drags, shakes, repels, or otherwise manipulates the object.
+
+The animation reacts immediately and smoothly.
+
+## State C — Recovery
+
+When the interaction ends:
+
+- Pointer forces stop being applied.
+- Original home positions and resting transforms remain available.
+- Spring forces and damping guide the system back to equilibrium.
+- Temporary deformation gradually disappears.
+- The original structure and proportions are restored.
+
+## State D — Restored idle
+
+The experiment returns to its natural idle animation without abruptly restarting the scene.
+
+Do not implement recovery as an instant reset of every transform. Use appropriate physics and interpolation.
+
+For continuous rotation, maintain a separate rotation phase or velocity so that recovery does not cause visible jumps.
+
+---
+
+# 10. MOTION LAB PAGE STRUCTURE
+
+Create a polished page with the following elements.
+
+## Hero section
+
+- Heading: MOTION LAB
+- Supporting line: "Small experiments. Real motion. Interactive worlds."
+- Short description explaining that visitors can explore animation, physics, and generative visuals.
+- Small technical label such as "INTERACTIVE EXPERIMENTS / LIVE RENDERING".
+
+## Experiment grid
+
+Each card must include:
+
+- Experiment number.
+- Unique title.
+- Short description.
+- Technology label.
+- Live rendering preview.
+- A consistent set of appropriate controls.
+- A button to explore the full experiment.
+
+## Category filters
+
+Include categories such as:
+
+- All Experiments
+- Typography
+- Physics
+- Particle Systems
+- 3D / WebGL
+- Generative Art
+- Relaxation
+
+Filters must work correctly and must not break the layout.
+
+## Experiment detail view
+
+Opening an experiment should provide a larger stage, more controls, and a brief explanation of the technique.
+
+Where appropriate, include:
+- Play/pause.
+- Reset.
+- Fullscreen.
+- Animation speed.
+- Interaction intensity.
+- Visual parameters.
+- A code-inspection panel.
+
+Do not show controls that have no effect.
+
+---
+
+# 11. PERFORMANCE AND IMPLEMENTATION QUALITY
+
+- Inspect and reuse existing dependencies before adding new ones.
+- Keep each experiment modular and independently controllable.
+- Use efficient rendering strategies appropriate to the experiment.
+- Use delta-time-based physics so behavior remains consistent across frame rates.
+- Avoid unnecessary allocations inside animation loops.
+- Clean up animation frames, event listeners, GSAP timelines, and WebGL resources on component unmount.
+- Avoid excessive DOM elements for particle systems.
+- Use spatial partitioning or other efficient methods for large particle networks.
+- Ensure dragging remains responsive.
+- Support reduced motion and touch input.
+- Prevent animations from breaking when the window is resized.
+- Keep rendering areas responsive and prevent overflow.
+- Avoid memory leaks and duplicate animation loops.
+
+The infinite tunnel and all other designated continuous animations should run indefinitely while active, but pause appropriately when the user explicitly pauses them or when doing so is necessary to conserve resources.
+
+---
+
+# 12. IMPLEMENTATION PROCESS
+
+Follow this sequence:
+
+1. Inspect the existing repository, framework, routing, styling, and dependencies.
+2. Identify the correct location for the Motion Lab.
+3. Explain the proposed integration architecture briefly.
+4. Implement the page using the existing project conventions.
+5. Build the six experiments as independent components.
+6. Implement the real rendering and interaction behavior for each experiment.
+7. Connect the Motion Lab to the existing portfolio navigation.
+8. Implement the experiment grid, category filters, detail views, and controls.
+9. Test all pointer interactions, dragging, release behavior, resizing, and recovery states.
+10. Test the infinite tunnel for seamless looping.
+11. Test the galaxy for continuous rotation and exact structural recovery.
+12. Test the helium balloon for realistic tag dragging, string tension, delayed response, and soft deformation.
+13. Verify that all repulsion-based experiments restore their home positions after the cursor leaves.
+14. Fix console errors, broken routes, rendering issues, and performance problems.
+15. Preserve all unrelated portfolio features.
+
+Do not stop after generating a design mockup. Implement working experiments in the existing project.
+
+If the full implementation is too large for one pass, prioritize in this order:
+
+1. Helium Balloon Playground — because of its distinctive physical interaction.
+2. Galactic Particle Core — because of its immersive, calming visual quality.
+3. Mouse-Repulsive Atomic Network — because of its interactive physics.
+4. Infinite Tunnel — because of its continuous, relaxing loop.
+5. Chaotic Typography Playground.
+6. Liquid Metal Ball.
+
+Do not claim that a feature is implemented unless the corresponding functionality exists and has been tested.
+
+# FINAL QUALITY BAR
+
+The Motion Lab should feel like a collection of small, beautifully engineered interactive worlds.
+
+The balloon should feel soft, light, and real.
+
+The galaxy should feel celestial, expansive, and calming.
+
+The tunnel should create a gentle sense of infinite movement.
+
+The atomic network should feel connected, elastic, and responsive.
+
+The typography should feel playful and physical.
+
+The liquid metal should feel fluid, reflective, and alive.
+
+Across every experiment, use smooth animation, thoughtful composition, restrained color, precise layout, believable motion, and reliable recovery behavior.
+
+**The defining rule of the entire Motion Lab is this: every interaction should feel satisfying, every release should feel natural, and every experiment should return gracefully to its intended resting state.**

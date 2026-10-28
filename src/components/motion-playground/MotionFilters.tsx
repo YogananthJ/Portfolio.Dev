@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Filter, Layers } from 'lucide-react';
+import { Sparkles, Filter } from 'lucide-react';
 import { MotionCategory } from './motion-playground.types';
 
 interface MotionFiltersProps {
@@ -12,10 +12,12 @@ interface MotionFiltersProps {
 
 const CATEGORIES: { id: MotionCategory; label: string }[] = [
   { id: 'all', label: 'All Experiments' },
-  { id: 'gsap', label: 'GSAP 3.0' },
-  { id: 'threejs', label: 'Three.js / 3D' },
-  { id: 'vanillajs', label: 'CSS / Vanilla JS' },
-  { id: 'canvas', label: 'Canvas 2D' },
+  { id: 'physics', label: 'Physics' },
+  { id: 'particles', label: 'Particle Systems' },
+  { id: 'typography', label: 'Typography' },
+  { id: 'generative', label: 'Generative Art' },
+  { id: '3d', label: '3D / WebGL' },
+  { id: 'relaxation', label: 'Relaxation' },
 ];
 
 export const MotionFilters: React.FC<MotionFiltersProps> = ({

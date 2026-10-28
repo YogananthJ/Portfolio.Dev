@@ -1,4 +1,11 @@
-export type MotionCategory = 'all' | 'gsap' | 'threejs' | 'vanillajs' | 'canvas';
+export type MotionCategory = 
+  | 'all' 
+  | 'physics' 
+  | 'particles' 
+  | 'typography' 
+  | 'generative' 
+  | '3d' 
+  | 'relaxation';
 
 export interface MotionExperiment {
   id: string;

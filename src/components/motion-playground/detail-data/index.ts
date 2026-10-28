@@ -1,18 +1,17 @@
-import { ORBITING_BALLS_DETAIL } from './orbiting-balls.data';
-import { BOUNCING_BALL_DETAIL } from './bouncing-ball.data';
-import { KINETIC_TYPOGRAPHY_DETAIL } from './kinetic-typography.data';
-import { MAGNETIC_BUTTON_DETAIL } from './magnetic-button.data';
-import { FLOATING_SPHERE_DETAIL } from './floating-sphere.data';
-import { PARTICLE_FIELD_DETAIL } from './particle-field.data';
+import { LIQUID_METAL_BALL_DETAIL } from './liquid-metal-ball.data';
+import { ATOMIC_NETWORK_DETAIL } from './atomic-network.data';
+import { CHAOTIC_TYPOGRAPHY_DETAIL } from './chaotic-typography.data';
+import { INFINITE_TUNNEL_DETAIL } from './infinite-tunnel.data';
+import { GALACTIC_CORE_DETAIL } from './galactic-core.data';
+import { HELIUM_BALLOON_DETAIL } from './helium-balloon.data';
 
 export const ALL_EXPERIMENT_DETAILS = {
-  'orbiting-balls': ORBITING_BALLS_DETAIL,
-  'bouncing-ball': BOUNCING_BALL_DETAIL,
-  'kinetic-typography': KINETIC_TYPOGRAPHY_DETAIL,
-  'magnetic-button': MAGNETIC_BUTTON_DETAIL,
-  'floating-sphere-3d': FLOATING_SPHERE_DETAIL,
-  'floating-sphere': FLOATING_SPHERE_DETAIL, // Alias
-  'particle-field': PARTICLE_FIELD_DETAIL,
+  'liquid-metal-ball': LIQUID_METAL_BALL_DETAIL,
+  'atomic-network': ATOMIC_NETWORK_DETAIL,
+  'chaotic-typography': CHAOTIC_TYPOGRAPHY_DETAIL,
+  'infinite-tunnel': INFINITE_TUNNEL_DETAIL,
+  'galactic-core': GALACTIC_CORE_DETAIL,
+  'helium-balloon': HELIUM_BALLOON_DETAIL,
 };
 
-export type ExperimentDetailType = typeof ORBITING_BALLS_DETAIL;
+export type ExperimentDetailType = typeof HELIUM_BALLOON_DETAIL;

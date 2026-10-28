@@ -1,14 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import { 
   ArrowLeft, 
-  ExternalLink, 
   Layers, 
   Sparkles, 
   Code2, 
   Play, 
   RotateCcw, 
-  CheckCircle2, 
-  HelpCircle,
   Cpu,
   Target,
   Compass
@@ -18,12 +15,12 @@ import { MotionCodeViewer } from './MotionCodeViewer';
 import { MotionExplanation } from './MotionExplanation';
 
 // Live Experiment Components
-import { OrbitingBalls } from '../experiments/OrbitingBalls';
-import { BouncingBall } from '../experiments/BouncingBall';
-import { KineticTypography } from '../experiments/KineticTypography';
-import { MagneticButton } from '../experiments/MagneticButton';
-import { FloatingSphere3D } from '../experiments/FloatingSphere3D';
-import { ParticleField } from '../experiments/ParticleField';
+import { LiquidMetalBall } from '../experiments/LiquidMetalBall';
+import { AtomicNetwork } from '../experiments/AtomicNetwork';
+import { ChaoticTypography } from '../experiments/ChaoticTypography';
+import { InfiniteTunnel } from '../experiments/InfiniteTunnel';
+import { GalacticCore } from '../experiments/GalacticCore';
+import { HeliumBalloon } from '../experiments/HeliumBalloon';
 
 interface MotionExperimentPageProps {
   experimentId: string;
@@ -34,7 +31,7 @@ export const MotionExperimentPage: React.FC<MotionExperimentPageProps> = ({
   experimentId,
   onBack,
 }) => {
-  const detail = ALL_EXPERIMENT_DETAILS[experimentId as keyof typeof ALL_EXPERIMENT_DETAILS] || ALL_EXPERIMENT_DETAILS['orbiting-balls'];
+  const detail = ALL_EXPERIMENT_DETAILS[experimentId as keyof typeof ALL_EXPERIMENT_DETAILS] || ALL_EXPERIMENT_DETAILS['helium-balloon'];
   const previewControlsRef = useRef<{ reset: () => void; replay: () => void }>({
     reset: () => {},
     replay: () => {},
@@ -51,21 +48,20 @@ export const MotionExperimentPage: React.FC<MotionExperimentPageProps> = ({
 
   const renderLivePreview = () => {
     switch (detail.id) {
-      case 'orbiting-balls':
-        return <OrbitingBalls onRegisterControls={handleRegisterControls} />;
-      case 'bouncing-ball':
-        return <BouncingBall onRegisterControls={handleRegisterControls} />;
-      case 'kinetic-typography':
-        return <KineticTypography onRegisterControls={handleRegisterControls} />;
-      case 'magnetic-button':
-        return <MagneticButton onRegisterControls={handleRegisterControls} />;
-      case 'floating-sphere-3d':
-      case 'floating-sphere':
-        return <FloatingSphere3D onRegisterControls={handleRegisterControls} />;
-      case 'particle-field':
-        return <ParticleField onRegisterControls={handleRegisterControls} />;
+      case 'liquid-metal-ball':
+        return <LiquidMetalBall onRegisterControls={handleRegisterControls} className="h-[420px]" />;
+      case 'atomic-network':
+        return <AtomicNetwork onRegisterControls={handleRegisterControls} className="h-[420px]" />;
+      case 'chaotic-typography':
+        return <ChaoticTypography onRegisterControls={handleRegisterControls} className="h-[420px]" />;
+      case 'infinite-tunnel':
+        return <InfiniteTunnel onRegisterControls={handleRegisterControls} className="h-[420px]" />;
+      case 'galactic-core':
+        return <GalacticCore onRegisterControls={handleRegisterControls} className="h-[420px]" />;
+      case 'helium-balloon':
+        return <HeliumBalloon onRegisterControls={handleRegisterControls} className="h-[420px]" />;
       default:
-        return <OrbitingBalls onRegisterControls={handleRegisterControls} />;
+        return <HeliumBalloon onRegisterControls={handleRegisterControls} className="h-[420px]" />;
     }
   };
 
@@ -177,7 +173,7 @@ export const MotionExperimentPage: React.FC<MotionExperimentPageProps> = ({
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
               <span className="font-bold text-xs uppercase tracking-wider text-[var(--text-main)]">
-                LIVE INTERACTIVE PREVIEW
+                LIVE INTERACTIVE STAGE // HIGH DENSITY WORKBENCH
               </span>
             </div>
 
@@ -197,7 +193,7 @@ export const MotionExperimentPage: React.FC<MotionExperimentPageProps> = ({
                 className="px-3 py-1 bg-[var(--bg-surface)] hover:bg-[var(--accent)] hover:text-white border border-[var(--border-color)] text-xs font-bold uppercase flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <RotateCcw className="w-3 h-3" />
-                <span>Reset</span>
+                <span>Reset Stage</span>
               </button>
             </div>
           </div>
@@ -240,10 +236,10 @@ export const MotionExperimentPage: React.FC<MotionExperimentPageProps> = ({
           <div className="space-y-1">
             <div className="font-bold text-[var(--text-main)] flex items-center gap-2">
               <Compass className="w-4 h-4 text-[var(--accent)]" />
-              <span>READY TO FORK OR EXPERIMENT IN ONLINE SANDBOX?</span>
+              <span>EXPERIMENTATION OVER CANNED PLUGINS</span>
             </div>
             <p className="text-[var(--text-muted)] text-[11px] leading-relaxed">
-              Launch an editable online environment in StackBlitz / CodeSandbox with all dependencies configured, or copy the standalone code to drop directly into your project.
+              Every animation in this lab runs directly in the browser with zero video fallbacks. Copy clean, modular TypeScript source code to drop directly into your project.
             </p>
           </div>
 

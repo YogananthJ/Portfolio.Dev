@@ -1,14 +1,14 @@
 import React, { useState, useRef, useImperativeHandle, forwardRef } from 'react';
-import { Code2, Play, RotateCcw, Sparkles, Terminal, Layers } from 'lucide-react';
+import { Code2, Play, RotateCcw } from 'lucide-react';
 import { MotionExperiment } from './motion-playground.types';
 import { MotionCodePanel } from './MotionCodePanel';
 
-import { OrbitingBalls } from './experiments/OrbitingBalls';
-import { BouncingBall } from './experiments/BouncingBall';
-import { KineticTypography } from './experiments/KineticTypography';
-import { MagneticButton } from './experiments/MagneticButton';
-import { FloatingSphere3D } from './experiments/FloatingSphere3D';
-import { ParticleField } from './experiments/ParticleField';
+import { LiquidMetalBall } from './experiments/LiquidMetalBall';
+import { AtomicNetwork } from './experiments/AtomicNetwork';
+import { ChaoticTypography } from './experiments/ChaoticTypography';
+import { InfiniteTunnel } from './experiments/InfiniteTunnel';
+import { GalacticCore } from './experiments/GalacticCore';
+import { HeliumBalloon } from './experiments/HeliumBalloon';
 
 export interface MotionCardHandle {
   replay: () => void;
@@ -52,18 +52,18 @@ export const MotionCard = forwardRef<MotionCardHandle, MotionCardProps>(({ exper
 
   const renderExperimentPreview = () => {
     switch (experiment.id) {
-      case 'orbiting-balls':
-        return <OrbitingBalls onRegisterControls={handleRegisterControls} />;
-      case 'bouncing-ball':
-        return <BouncingBall onRegisterControls={handleRegisterControls} />;
-      case 'kinetic-typography':
-        return <KineticTypography onRegisterControls={handleRegisterControls} />;
-      case 'magnetic-button':
-        return <MagneticButton onRegisterControls={handleRegisterControls} />;
-      case 'floating-sphere-3d':
-        return <FloatingSphere3D onRegisterControls={handleRegisterControls} />;
-      case 'particle-field':
-        return <ParticleField onRegisterControls={handleRegisterControls} />;
+      case 'liquid-metal-ball':
+        return <LiquidMetalBall onRegisterControls={handleRegisterControls} />;
+      case 'atomic-network':
+        return <AtomicNetwork onRegisterControls={handleRegisterControls} />;
+      case 'chaotic-typography':
+        return <ChaoticTypography onRegisterControls={handleRegisterControls} />;
+      case 'infinite-tunnel':
+        return <InfiniteTunnel onRegisterControls={handleRegisterControls} />;
+      case 'galactic-core':
+        return <GalacticCore onRegisterControls={handleRegisterControls} />;
+      case 'helium-balloon':
+        return <HeliumBalloon onRegisterControls={handleRegisterControls} />;
       default:
         return null;
     }
@@ -94,7 +94,7 @@ export const MotionCard = forwardRef<MotionCardHandle, MotionCardProps>(({ exper
           <button
             onClick={() => controlsRef.current.replay()}
             type="button"
-            className="p-1 bg-[var(--bg-card)] hover:bg-[var(--accent)] hover:text-white border border-[var(--border-color)] text-[var(--text-main)] transition-colors"
+            className="p-1 bg-[var(--bg-card)] hover:bg-[var(--accent)] hover:text-white border border-[var(--border-color)] text-[var(--text-main)] transition-colors cursor-pointer"
             title="Replay sequence"
             aria-label="Replay sequence"
           >
@@ -103,7 +103,7 @@ export const MotionCard = forwardRef<MotionCardHandle, MotionCardProps>(({ exper
           <button
             onClick={() => controlsRef.current.reset()}
             type="button"
-            className="p-1 bg-[var(--bg-card)] hover:bg-[var(--accent)] hover:text-white border border-[var(--border-color)] text-[var(--text-main)] transition-colors"
+            className="p-1 bg-[var(--bg-card)] hover:bg-[var(--accent)] hover:text-white border border-[var(--border-color)] text-[var(--text-main)] transition-colors cursor-pointer"
             title="Reset animation"
             aria-label="Reset animation"
           >
