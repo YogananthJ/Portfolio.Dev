@@ -8,27 +8,26 @@ interface GalacticCoreProps {
 
 interface GalacticParticle {
   // Base orbital parameters
-  armIndex: number;
-  r: number;        // radial distance from galactic center
-  theta: number;    // orbital angle in radians
+  armIndex: number; // -1 for core bar, 0 or 1 for spiral arms
+  r: number;        // radial distance from galactic nucleus
+  theta: number;    // base polar angle
   z: number;        // vertical thickness of galactic disk
   size: number;
   color: string;
   isCore: boolean;
-  isHII: boolean;   // pink/magenta stellar nursery accent
+  isHII: boolean;   // pink/magenta star-forming nursery knot
+  isDustLane: boolean; // dark dust lane accent
 
   // Current dynamic 3D coordinates
   x: number;
   y: number;
   currentZ: number;
 
-  // Displacement physics (mouse repulsion & shockwaves)
+  // Displacement physics (repulsion & shockwaves)
   dispX: number;
   dispY: number;
-  dispZ: number;
   vx: number;
   vy: number;
-  vz: number;
 }
 
 export const GalacticCore: React.FC<GalacticCoreProps> = ({
@@ -38,27 +37,25 @@ export const GalacticCore: React.FC<GalacticCoreProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isRelaxMode, setIsRelaxMode] = useState<boolean>(false);
   const [isFlipped, setIsFlipped] = useState<boolean>(false);
-  const [interactionStatus, setInteractionStatus] = useState<string>('CONTINUOUS ORBIT');
+  const [interactionStatus, setInteractionStatus] = useState<string>('KEPLERIAN ORBIT');
 
   const galaxyStateRef = useRef({
     particles: [] as GalacticParticle[],
     rotationAngle: 0,
-    baseSpeed: 0.0035,
+    baseSpeed: 0.0032,
     relaxMode: false,
 
     // 3D camera / orientation
-    tiltX: 0.52,      // default viewing inclination ~30 degrees
+    tiltX: 0.48,      // default viewing inclination ~28 degrees
     tiltY: 0,         // yaw
     flipAngle: 0,     // flip 180 transition
-    targetTiltX: 0.52,
+    targetTiltX: 0.48,
     targetTiltY: 0,
     targetFlipAngle: 0,
 
-    // Center panning
+    // Center coordinates
     centerX: 0,
     centerY: 0,
-    targetCenterX: 0,
-    targetCenterY: 0,
 
     // Pointer state
     isDragging: false,
@@ -72,96 +69,104 @@ export const GalacticCore: React.FC<GalacticCoreProps> = ({
 
     // Gravitational shockwave
     shockwaves: [] as { x: number; y: number; radius: number; maxRadius: number; strength: number }[],
+    time: 0,
   });
 
-  // Generate galaxy particles procedurally matching reference image
+  galaxyStateRef.current.relaxMode = isRelaxMode;
+
+  // Generate 3,200+ particles matching photographic reference image (Barred Spiral Galaxy)
   const initGalaxy = useCallback((width: number, height: number) => {
     const particles: GalacticParticle[] = [];
-    const count = 2600; // Optimal density & high performance
-    const maxRadius = Math.min(width, height) * 0.44;
+    const count = 3200; // Dense, fluid, high-fidelity particle field
+    const maxRadius = Math.min(width, height) * 0.45;
 
     galaxyStateRef.current.centerX = width / 2;
     galaxyStateRef.current.centerY = height / 2;
-    galaxyStateRef.current.targetCenterX = width / 2;
-    galaxyStateRef.current.targetCenterY = height / 2;
 
-    // 1. Central Bar & Bulge (warm ivory & golden champagne)
-    const coreCount = 700;
+    // 1. Central Bar & Bulge: Dense golden-ivory nucleus with preserved inner detail
+    const coreCount = 950;
+    const barLength = maxRadius * 0.28;
+    const barWidth = maxRadius * 0.12;
+
     for (let i = 0; i < coreCount; i++) {
-      // Elongated bar distribution (as in reference image image_06d9839a.png)
+      // Elongated barred ellipsoid distribution
       const u = (Math.random() - 0.5) * 2;
-      const barLength = maxRadius * 0.28;
-      const barWidth = maxRadius * 0.12;
-      const bx = u * barLength + (Math.random() - 0.5) * 12;
-      const by = (Math.random() - 0.5) * barWidth * Math.sqrt(Math.max(0, 1 - (u * 0.9) ** 2));
+      const bx = u * barLength + (Math.random() - 0.5) * 14;
+      const by = (Math.random() - 0.5) * barWidth * Math.sqrt(Math.max(0, 1 - (u * 0.88) ** 2));
       const r = Math.hypot(bx, by);
       const theta = Math.atan2(by, bx);
-      const z = (Math.random() - 0.5) * 16 * (1 - r / (barLength * 1.2));
+      const z = (Math.random() - 0.5) * 16 * (1 - r / (barLength * 1.3));
 
-      // Color gradation: pure warm white/gold in very center to golden ivory
-      const coreRatio = Math.min(1, r / (barLength * 0.8));
-      const color = coreRatio < 0.35 
-        ? '#FFFDF0' 
-        : coreRatio < 0.7 
-          ? '#FFE6A3' 
-          : '#F7D08A';
+      // Color gradation: pure warm white/gold in nucleus to golden ivory
+      const coreRatio = Math.min(1, r / (barLength * 0.85));
+      let color = '#FFFDF0'; // Pure luminous core
+      if (coreRatio > 0.65) {
+        color = '#FDE68A'; // Warm champagne amber
+      } else if (coreRatio > 0.3) {
+        color = '#FEF3C7'; // Golden ivory
+      }
 
       particles.push({
         armIndex: -1,
         r,
         theta,
         z,
-        size: Math.random() * 2.2 + 0.8,
+        size: Math.random() * 2.1 + 0.8,
         color,
         isCore: true,
         isHII: false,
+        isDustLane: false,
         x: 0,
         y: 0,
         currentZ: 0,
         dispX: 0,
         dispY: 0,
-        dispZ: 0,
         vx: 0,
         vy: 0,
-        vz: 0,
       });
     }
 
-    // 2. Spiral Arms (Silver-blue, blue-gray, with pink/magenta H-II starburst knots)
+    // 2. Sweeping Logarithmic Spiral Arms & Dust Lanes (silver-blue + pink/magenta H-II knots)
     const armCount = count - coreCount;
-    const numArms = 2; // Two main barred spiral arms sweeping outwards
-    const b = 0.28;    // Logarithmic spiral pitch angle
+    const numArms = 2; // Two main barred spiral arms sweeping outward from bar tips
+    const b = 0.26;    // Logarithmic spiral pitch factor
 
     for (let i = 0; i < armCount; i++) {
       const arm = i % numArms;
-      const armOffset = (arm * Math.PI) + (Math.PI * 0.12); // Start at bar tips
-      // Radial distance distributed outward
-      const t = Math.pow(Math.random(), 0.75); // denser near inner arms
+      const armOffset = (arm * Math.PI) + (Math.PI * 0.14); // Connect to bar ends
+      const t = Math.pow(Math.random(), 0.72); // Dense along inner arms, tapering outwards
       const r = maxRadius * 0.22 + t * (maxRadius * 0.78);
-      
+
       // Logarithmic spiral angle + natural stellar scatter
       const spiralTheta = Math.log(r / (maxRadius * 0.22)) / b + armOffset;
-      const scatter = (Math.random() - 0.5) * (0.28 + (r / maxRadius) * 0.22);
+      const scatter = (Math.random() - 0.5) * (0.24 + (r / maxRadius) * 0.20);
       const theta = spiralTheta + scatter;
 
       // Disk thickness decreases with radius
-      const z = (Math.random() - 0.5) * 18 * Math.exp(-r / (maxRadius * 0.6));
+      const z = (Math.random() - 0.5) * 16 * Math.exp(-r / (maxRadius * 0.65));
 
-      // Pink/magenta H-II nebula region chance (5% along arms, like photo!)
-      const isHII = Math.random() < 0.055 && r > maxRadius * 0.3;
-      
-      // Color grading: silver-blue near inner arms, misty blue outer arms
-      let color: string;
+      // Pink/magenta H-II nebula region chance (~6% along spiral arms, matching photo)
+      const isHII = Math.random() < 0.065 && r > maxRadius * 0.28;
+      // Dark dust lane accent (~4% framing inner curve of arms)
+      const isDustLane = Math.random() < 0.045 && r > maxRadius * 0.25;
+
+      let color = '#D1E3F8'; // Silver-blue stellar dust
+      let size = Math.random() * 1.8 + 0.8;
+
       if (isHII) {
-        color = '#F472B6'; // Pink/magenta nebular cluster
+        color = '#F472B6'; // Pink/magenta starburst knot
+        size = Math.random() * 2.2 + 1.2;
+      } else if (isDustLane) {
+        color = '#334155'; // Dark dust silhouette
+        size = Math.random() * 1.5 + 0.7;
       } else {
         const normR = r / maxRadius;
         if (normR < 0.45) {
-          color = '#D1E3F8'; // Silver-blue highlight
+          color = '#E2E8F0'; // Silver-white inner arm stars
         } else if (normR < 0.75) {
-          color = '#93BBE5'; // Celestial blue
+          color = '#93BBE5'; // Classical blue stellar population
         } else {
-          color = '#6488B4'; // Muted outer blue
+          color = '#64748B'; // Muted outer halo
         }
       }
 
@@ -170,80 +175,92 @@ export const GalacticCore: React.FC<GalacticCoreProps> = ({
         r,
         theta,
         z,
-        size: isHII ? (Math.random() * 2.2 + 1.2) : (Math.random() * 1.8 + 0.6),
+        size,
         color,
         isCore: false,
         isHII,
+        isDustLane,
         x: 0,
         y: 0,
         currentZ: 0,
         dispX: 0,
         dispY: 0,
-        dispZ: 0,
         vx: 0,
         vy: 0,
-        vz: 0,
       });
     }
 
     galaxyStateRef.current.particles = particles;
   }, []);
 
-  // Trigger Gravitational Pulse (Shockwave disturbance)
-  const triggerShockwave = useCallback(() => {
-    const g = galaxyStateRef.current;
-    g.shockwaves.push({
-      x: g.centerX,
-      y: g.centerY,
-      radius: 0,
-      maxRadius: 280,
-      strength: 75,
-    });
-    setInteractionStatus('GRAVITATIONAL PULSE');
-    setTimeout(() => setInteractionStatus('CONTINUOUS ORBIT'), 1800);
-  }, []);
-
-  // Flip Galaxy 180 degrees
+  // 180-Degree 3D Flip Transition
   const toggleFlip = useCallback(() => {
     setIsFlipped((prev) => {
       const next = !prev;
       galaxyStateRef.current.targetFlipAngle = next ? Math.PI : 0;
+      setInteractionStatus(next ? 'FLIPPED 180°' : 'STANDARD VIEW');
+      setTimeout(() => setInteractionStatus('KEPLERIAN ORBIT'), 1400);
       return next;
     });
-    setInteractionStatus('AXIAL FLIP');
-    setTimeout(() => setInteractionStatus('CONTINUOUS ORBIT'), 1600);
   }, []);
 
-  // Reset View to Equilibrium Resting state
-  const resetGalaxy = useCallback(() => {
+  // Shake / Gravitational Shockwave impulse
+  const triggerShake = useCallback(() => {
     const g = galaxyStateRef.current;
-    g.targetTiltX = 0.52;
+    for (let i = 0; i < g.particles.length; i++) {
+      const p = g.particles[i];
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 75 + Math.random() * 110;
+      p.vx += Math.cos(angle) * speed;
+      p.vy += Math.sin(angle) * speed;
+    }
+
+    g.shockwaves.push({
+      x: g.centerX,
+      y: g.centerY,
+      radius: 5,
+      maxRadius: 280,
+      strength: 120,
+    });
+
+    setInteractionStatus('GRAVITATIONAL DISRUPTION');
+    setTimeout(() => setInteractionStatus('RECOVERING SPIRAL ORBIT'), 1200);
+    setTimeout(() => setInteractionStatus('KEPLERIAN ORBIT'), 2800);
+  }, []);
+
+  // Reset to equilibrium
+  const handleReset = useCallback(() => {
+    const g = galaxyStateRef.current;
+    g.targetTiltX = 0.48;
     g.targetTiltY = 0;
     g.targetFlipAngle = 0;
     setIsFlipped(false);
-    const canvas = canvasRef.current;
-    if (canvas) {
-      g.targetCenterX = canvas.clientWidth / 2;
-      g.targetCenterY = canvas.clientHeight / 2;
+    g.shockwaves = [];
+
+    for (let i = 0; i < g.particles.length; i++) {
+      const p = g.particles[i];
+      p.dispX = 0;
+      p.dispY = 0;
+      p.vx = 0;
+      p.vy = 0;
     }
-    setInteractionStatus('RESTORED TO EQUILIBRIUM');
-    setTimeout(() => setInteractionStatus('CONTINUOUS ORBIT'), 1500);
+
+    setInteractionStatus('KEPLERIAN ORBIT');
   }, []);
 
   // Register parent controls
   useEffect(() => {
     if (onRegisterControls) {
       onRegisterControls({
-        reset: resetGalaxy,
+        reset: handleReset,
         replay: () => {
-          triggerShockwave();
-          setTimeout(toggleFlip, 400);
+          triggerShake();
         },
       });
     }
-  }, [onRegisterControls, resetGalaxy, triggerShockwave, toggleFlip]);
+  }, [onRegisterControls, handleReset, triggerShake]);
 
-  // Main rendering & physics loop
+  // Main 60fps simulation & rendering loop
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -270,79 +287,81 @@ export const GalacticCore: React.FC<GalacticCoreProps> = ({
     window.addEventListener('resize', handleResize);
 
     const step = (now: number) => {
-      const dt = Math.min((now - lastTime) / 1000, 0.05);
+      const dt = Math.min((now - lastTime) / 1000, 0.045);
       lastTime = now;
 
       const g = galaxyStateRef.current;
+      g.time += dt;
+
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
+      const speedMultiplier = isRelaxMode ? 0.35 : 1.0;
 
-      // 1. Continuous differential rotation
-      const speedMultiplier = isRelaxMode ? 0.38 : 1.0;
+      // Continuous differential orbital rotation
       g.rotationAngle += g.baseSpeed * speedMultiplier;
 
-      // Smooth camera recovery to target tilt/orientation via spring interpolation
+      // Smooth camera tilt & 180° flip interpolation
       g.tiltX += (g.targetTiltX - g.tiltX) * 4.5 * dt;
       g.tiltY += (g.targetTiltY - g.tiltY) * 4.5 * dt;
-      g.flipAngle += (g.targetFlipAngle - g.flipAngle) * 4.0 * dt;
-      g.centerX += (g.targetCenterX - g.centerX) * 5.0 * dt;
-      g.centerY += (g.targetCenterY - g.centerY) * 5.0 * dt;
+      g.flipAngle += (g.targetFlipAngle - g.flipAngle) * 4.5 * dt;
 
       // Update shockwaves
-      for (let s = g.shockwaves.length - 1; s >= 0; s--) {
-        const sw = g.shockwaves[s];
+      for (let w = g.shockwaves.length - 1; w >= 0; w--) {
+        const sw = g.shockwaves[w];
         sw.radius += 240 * dt;
-        sw.strength *= 0.94;
-        if (sw.radius >= sw.maxRadius || sw.strength < 0.5) {
-          g.shockwaves.splice(s, 1);
+        sw.strength *= 0.95;
+        if (sw.radius >= sw.maxRadius || sw.strength < 0.6) {
+          g.shockwaves.splice(w, 1);
         }
       }
 
-      // Repulsion radius and force parameters
-      const repelRadius = isRelaxMode ? 65 : 95;
-      const repelForce = isRelaxMode ? 85 : 170;
-      const springK = 8.5;  // Hooke's constant pulling back to orbital home
-      const damping = 0.88; // Viscous damping
+      // Physics parameters
+      const repelRadius = isRelaxMode ? 65 : 100;
+      const repelForce = isRelaxMode ? 90 : 190;
+      const springK = 8.5;  // Hooke's return to dynamic orbital coordinates
+      const damping = 0.88; // Viscous decay
 
-      // 2. Physics & Projection for all particles
-      const particles = g.particles;
+      // 3D rotation transform trigonometry
       const cosPitch = Math.cos(g.tiltX);
       const sinPitch = Math.sin(g.tiltX);
       const cosYaw = Math.cos(g.tiltY + g.flipAngle);
       const sinYaw = Math.sin(g.tiltY + g.flipAngle);
 
+      const particles = g.particles;
+
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
 
-        // Differential orbital angular velocity: core rotates slightly faster
-        const omega = (0.24 / (p.r * 0.05 + 1)) * speedMultiplier;
-        const currentTheta = p.theta + g.rotationAngle * (1 + omega * 0.35);
+        // Keplerian differential rotation: inner stars orbit slightly faster than outer arms
+        const keplerFactor = (0.28 / (p.r * 0.04 + 1)) * speedMultiplier;
+        const currentTheta = p.theta + g.rotationAngle * (1 + keplerFactor * 0.4);
 
-        // Theoretical undisturbed home 3D coordinate on rotating galaxy disk
-        const homeDiskX = Math.cos(currentTheta) * p.r;
-        const homeDiskY = Math.sin(currentTheta) * p.r;
-        const homeDiskZ = p.z;
+        // Theoretical undisturbed orbital coordinate on galaxy disk
+        const diskX = Math.cos(currentTheta) * p.r;
+        const diskY = Math.sin(currentTheta) * p.r;
+        const diskZ = p.z;
 
-        // 3D rotation transform (Pitch & Yaw)
-        // Rotate around Y axis (Yaw)
-        const rotY_X = homeDiskX * cosYaw - homeDiskZ * sinYaw;
-        const rotY_Z = homeDiskX * sinYaw + homeDiskZ * cosYaw;
-        // Rotate around X axis (Pitch)
-        const rotX_Y = homeDiskY * cosPitch - rotY_Z * sinPitch;
-        const rotX_Z = homeDiskY * sinPitch + rotY_Z * cosPitch;
+        // 3D rotation transform (Yaw then Pitch)
+        const rotY_X = diskX * cosYaw - diskZ * sinYaw;
+        const rotY_Z = diskX * sinYaw + diskZ * cosYaw;
+        const rotX_Y = diskY * cosPitch - rotY_Z * sinPitch;
+        const rotX_Z = diskY * sinPitch + rotY_Z * cosPitch;
 
-        // Base screen projected position
+        // Screen base coordinates
         const screenBaseX = g.centerX + rotY_X;
         const screenBaseY = g.centerY + rotX_Y;
 
-        // Cursor Repulsion Physics
+        // Pointer Repulsion Physics (creates an authentic clearing void)
         if (g.pointerActive) {
-          const dx = (screenBaseX + p.dispX) - g.pointerX;
-          const dy = (screenBaseY + p.dispY) - g.pointerY;
+          const curX = screenBaseX + p.dispX;
+          const curY = screenBaseY + p.dispY;
+          const dx = curX - g.pointerX;
+          const dy = curY - g.pointerY;
           const dist = Math.hypot(dx, dy);
 
           if (dist < repelRadius && dist > 1) {
-            const force = (1 - dist / repelRadius) * repelForce;
+            const factor = 1 - dist / repelRadius;
+            const force = factor * factor * repelForce;
             const nx = dx / dist;
             const ny = dy / dist;
             p.vx += nx * force * dt;
@@ -350,7 +369,7 @@ export const GalacticCore: React.FC<GalacticCoreProps> = ({
           }
         }
 
-        // Gravitational Shockwave Physics
+        // Gravitational shockwave displacement
         for (let s = 0; s < g.shockwaves.length; s++) {
           const sw = g.shockwaves[s];
           const curX = screenBaseX + p.dispX;
@@ -358,79 +377,68 @@ export const GalacticCore: React.FC<GalacticCoreProps> = ({
           const distToCenter = Math.hypot(curX - sw.x, curY - sw.y);
           const waveDist = Math.abs(distToCenter - sw.radius);
 
-          if (waveDist < 25) {
-            const push = (1 - waveDist / 25) * sw.strength;
+          if (waveDist < 26) {
+            const push = (1 - waveDist / 26) * sw.strength;
             const nx = (curX - sw.x) / (distToCenter || 1);
             const ny = (curY - sw.y) / (distToCenter || 1);
-            p.vx += nx * push * dt * 10;
-            p.vy += ny * push * dt * 10;
+            p.vx += nx * push * dt * 9;
+            p.vy += ny * push * dt * 9;
           }
         }
 
-        // Spring-Damped Harmonic Recovery to exact home orbital position
-        // F = -k * displacement - damping * v
-        const springForceX = -springK * p.dispX;
-        const springForceY = -springK * p.dispY;
+        // Hooke's spring-damped return to dynamic spiral positions
+        const springFx = -springK * p.dispX;
+        const springFy = -springK * p.dispY;
 
-        p.vx += springForceX * dt;
-        p.vy += springForceY * dt;
+        p.vx += springFx * dt;
+        p.vy += springFy * dt;
         p.vx *= damping;
         p.vy *= damping;
 
         p.dispX += p.vx * dt;
         p.dispY += p.vy * dt;
 
-        // Final screen coordinates
         p.x = screenBaseX + p.dispX;
         p.y = screenBaseY + p.dispY;
         p.currentZ = rotX_Z;
       }
 
-      // 3. Clear canvas & render celestial deep space
-      ctx.fillStyle = '#06080D'; // Deep cosmic indigo-black
+      // --- Rendering ---
+      ctx.fillStyle = '#05070D'; // Deep cosmic indigo-black
       ctx.fillRect(0, 0, width, height);
 
-      // Render subtle background stars
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
-      ctx.fillRect(width * 0.15, height * 0.2, 1, 1);
-      ctx.fillRect(width * 0.85, height * 0.28, 1.2, 1.2);
-      ctx.fillRect(width * 0.22, height * 0.8, 0.8, 0.8);
-      ctx.fillRect(width * 0.78, height * 0.82, 1, 1);
-
-      // Ambient galactic glow behind core
+      // Ambient galactic glow behind the barred core
       const glowGrad = ctx.createRadialGradient(
         g.centerX, g.centerY, 4,
-        g.centerX, g.centerY, Math.min(width, height) * 0.38
+        g.centerX, g.centerY, Math.min(width, height) * 0.42
       );
-      glowGrad.addColorStop(0, isRelaxMode ? 'rgba(255, 235, 175, 0.22)' : 'rgba(255, 235, 175, 0.32)');
-      glowGrad.addColorStop(0.25, 'rgba(147, 187, 229, 0.14)');
-      glowGrad.addColorStop(0.65, 'rgba(50, 75, 120, 0.05)');
-      glowGrad.addColorStop(1, 'rgba(6, 8, 13, 0)');
+      glowGrad.addColorStop(0, isRelaxMode ? 'rgba(255, 235, 175, 0.22)' : 'rgba(255, 238, 185, 0.32)');
+      glowGrad.addColorStop(0.24, 'rgba(147, 187, 229, 0.15)');
+      glowGrad.addColorStop(0.65, 'rgba(45, 65, 105, 0.05)');
+      glowGrad.addColorStop(1, 'rgba(5, 7, 13, 0)');
       ctx.fillStyle = glowGrad;
       ctx.fillRect(0, 0, width, height);
 
-      // Draw all galaxy particles
-      // Use 'lighter' composite mode for radiant celestial additive blending
+      // Draw all galaxy particles with additive blending
       ctx.globalCompositeOperation = 'lighter';
 
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
         if (p.x < -10 || p.x > width + 10 || p.y < -10 || p.y > height + 10) continue;
 
-        // Depth perspective scale & alpha
-        const depthAlpha = Math.max(0.3, Math.min(1.0, 0.7 + (p.currentZ / 120)));
-        ctx.globalAlpha = depthAlpha * (isRelaxMode ? 0.75 : 0.95);
+        const depthAlpha = Math.max(0.3, Math.min(1.0, 0.7 + (p.currentZ / 130)));
+        ctx.globalAlpha = depthAlpha * (isRelaxMode ? 0.72 : 0.95);
         ctx.fillStyle = p.color;
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
 
-        // Extra soft glow for prominent core or H-II particles
-        if (p.isCore && p.r < 30) {
+        // Extra soft atmospheric glow for prominent core nucleus particles
+        if (p.isCore && p.r < 25) {
           ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size * 2.2, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(255, 248, 220, 0.15)';
+          ctx.arc(p.x, p.y, p.size * 2.4, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255, 248, 220, 0.16)';
           ctx.fill();
         }
       }
@@ -450,7 +458,7 @@ export const GalacticCore: React.FC<GalacticCoreProps> = ({
     };
   }, [initGalaxy, isRelaxMode]);
 
-  // Pointer event handlers for Grab, Drag, Tilt, Repulsion
+  // Pointer drag to rotate 3D view
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -458,7 +466,6 @@ export const GalacticCore: React.FC<GalacticCoreProps> = ({
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    canvas.setPointerCapture(e.pointerId);
     const g = galaxyStateRef.current;
     g.isDragging = true;
     g.lastPointerX = x;
@@ -466,7 +473,7 @@ export const GalacticCore: React.FC<GalacticCoreProps> = ({
     g.pointerX = x;
     g.pointerY = y;
     g.pointerActive = true;
-    setInteractionStatus('DRAGGING & ROTATING');
+    canvas.setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -487,14 +494,9 @@ export const GalacticCore: React.FC<GalacticCoreProps> = ({
       g.lastPointerX = x;
       g.lastPointerY = y;
 
-      // Drag horizontally to rotate azimuth (Yaw)
-      g.tiltY += dx * 0.008;
-      // Drag vertically to tilt inclination (Pitch)
-      g.tiltX = Math.max(-0.2, Math.min(1.2, g.tiltX + dy * 0.006));
-
-      // Drag velocity for momentum
-      g.dragVx = dx;
-      g.dragVy = dy;
+      // Adjust camera tilt & yaw
+      g.targetTiltY += dx * 0.008;
+      g.targetTiltX = Math.max(0.1, Math.min(1.3, g.targetTiltX + dy * 0.006));
     }
   };
 
@@ -504,102 +506,93 @@ export const GalacticCore: React.FC<GalacticCoreProps> = ({
     g.pointerActive = false;
     g.pointerX = -9999;
     g.pointerY = -9999;
-
     try {
       canvasRef.current?.releasePointerCapture(e.pointerId);
     } catch {
       // Safe catch
     }
-
-    // Natural recovery: smoothly spring back to default comfortable angle (30 deg pitch, 0 yaw)
-    g.targetTiltX = 0.52;
-    g.targetTiltY = 0;
-    setInteractionStatus('RECOVERING TO EQUILIBRIUM');
-    setTimeout(() => setInteractionStatus('CONTINUOUS ORBIT'), 1400);
   };
 
   return (
     <div
-      className={`relative w-full h-[320px] bg-[#06080D] border border-[var(--border-color)] overflow-hidden select-none flex flex-col justify-between ${className}`}
+      className={`relative w-full h-[320px] bg-[#05070D] border border-[var(--border-color)] overflow-hidden select-none flex flex-col justify-between ${className}`}
     >
-      {/* Top Status Bar */}
+      {/* Top Status */}
       <div className="absolute top-2 left-3 right-3 flex items-center justify-between z-10 pointer-events-none">
         <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/10 backdrop-blur-xs text-white rounded text-[10px] font-mono">
           <span className="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
-          <span>BARRED_SPIRAL // 2,600 STELLAR PARTICLES</span>
+          <span>BARRED_SPIRAL // 3,200+ STELLAR BODIES</span>
         </div>
 
-        <div className="text-[10px] font-mono font-bold text-amber-200 bg-amber-950/60 border border-amber-500/30 px-2 py-0.5 rounded">
+        <div className="text-[10px] font-mono font-bold text-amber-200 bg-black/60 border border-white/15 px-2 py-0.5 rounded">
           {interactionStatus}
         </div>
       </div>
 
-      {/* Galaxy Canvas */}
+      {/* Canvas */}
       <canvas
         ref={canvasRef}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        onPointerLeave={() => {
-          galaxyStateRef.current.pointerActive = false;
-        }}
         className="w-full h-full block touch-none cursor-grab active:cursor-grabbing"
       />
 
-      {/* Floating Action Controls */}
+      {/* Bottom Controls */}
       <div className="absolute bottom-2 left-3 right-3 flex flex-wrap items-center justify-between gap-2 z-10">
         <div className="flex items-center gap-1.5 bg-black/80 backdrop-blur-xs p-1 border border-white/15 rounded shadow-xs">
           {/* Relaxation Mode Toggle */}
           <button
             onClick={() => setIsRelaxMode(!isRelaxMode)}
             type="button"
-            className={`px-2.5 py-1 text-[10px] font-mono font-bold uppercase transition-colors flex items-center gap-1 cursor-pointer rounded ${
+            className={`px-2 py-1 text-[10px] font-mono font-bold uppercase transition-colors rounded cursor-pointer flex items-center gap-1 ${
               isRelaxMode
-                ? 'bg-amber-400 text-black'
-                : 'bg-white/10 text-white hover:bg-white/20'
+                ? 'bg-amber-400 text-black shadow-xs'
+                : 'bg-white/10 text-white/70 hover:text-white'
             }`}
-            title="Toggle calming relaxation mode"
           >
-            <Moon className="w-3 h-3 text-amber-300" />
-            <span>{isRelaxMode ? 'Relaxing On' : 'Relax Mode'}</span>
+            <Moon className="w-3 h-3" />
+            <span>Relax Mode: {isRelaxMode ? 'ON' : 'OFF'}</span>
           </button>
 
-          {/* 180 Flip */}
+          {/* 180° Flip View */}
           <button
             onClick={toggleFlip}
             type="button"
-            className="px-2 py-1 bg-white/10 hover:bg-white/20 text-white text-[10px] font-mono font-bold uppercase transition-colors flex items-center gap-1 cursor-pointer rounded"
-            title="Flip galaxy 180 degrees"
+            className={`px-2 py-1 text-[10px] font-mono font-bold uppercase transition-colors rounded cursor-pointer flex items-center gap-1 ${
+              isFlipped
+                ? 'bg-cyan-400 text-black'
+                : 'bg-white/10 text-white/70 hover:text-white'
+            }`}
           >
-            <Rotate3d className="w-3 h-3 text-cyan-400" />
-            <span>Flip 180°</span>
+            <Rotate3d className="w-3 h-3" />
+            <span>180° Flip</span>
           </button>
 
-          {/* Gravitational Shockwave Pulse */}
+          {/* Shake Disruption */}
           <button
-            onClick={triggerShockwave}
+            onClick={triggerShake}
             type="button"
             className="px-2 py-1 bg-white/10 hover:bg-white/20 text-white text-[10px] font-mono font-bold uppercase transition-colors flex items-center gap-1 cursor-pointer rounded"
-            title="Create gravitational shockwave ripple"
           >
             <Zap className="w-3 h-3 text-amber-300" />
-            <span>Grav Pulse</span>
+            <span>Shake</span>
           </button>
 
-          {/* Reset View */}
+          {/* Reset */}
           <button
-            onClick={resetGalaxy}
+            onClick={handleReset}
             type="button"
             className="p-1 hover:bg-white/20 text-white/80 transition-colors cursor-pointer rounded"
-            title="Reset to default resting orientation"
+            title="Reset galactic core view"
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
         </div>
 
         <div className="text-[10px] font-mono text-white/50 bg-black/60 px-2 py-1 rounded border border-white/10 hidden sm:block">
-          HOVER TO REPEL · DRAG TO TILT & ROTATE
+          DRAG TO TILT 3D · HOVER TO REPEL STARS
         </div>
       </div>
     </div>

@@ -1,9 +1,17 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Droplet, RotateCcw, Sparkles, Activity, Shield } from 'lucide-react';
+import { Droplet, RotateCcw, Activity } from 'lucide-react';
 
 interface LiquidMetalBallProps {
   onRegisterControls?: (controls: { reset: () => void; replay: () => void }) => void;
   className?: string;
+}
+
+interface FluidVertex {
+  baseAngle: number;
+  r: number;        // current radial distance
+  targetR: number;  // baseline resting radius
+  vr: number;       // radial velocity
+  tangentV: number; // transverse ripple velocity
 }
 
 export const LiquidMetalBall: React.FC<LiquidMetalBallProps> = ({
@@ -16,24 +24,26 @@ export const LiquidMetalBall: React.FC<LiquidMetalBallProps> = ({
   const [statusMessage, setStatusMessage] = useState<string>('SURFACE TENSION IDLE');
 
   const stateRef = useRef({
-    // Central sphere position
+    // Central fluid droplet center
     cx: 0,
     cy: 0,
     baseRadius: 65,
 
-    // Liquid surface vertex points for deformable organic shape
-    numVertices: 64,
-    vertices: [] as { baseAngle: number; r: number; targetR: number; vr: number }[],
+    // Liquid surface vertices
+    numVertices: 72,
+    vertices: [] as FluidVertex[],
 
     // Viscosity parameters
     viscosityMode: 'mercury' as 'chrome' | 'mercury' | 'molten',
-    surfaceTension: 35.0,
-    damping: 0.88,
+    surfaceTension: 38.0,
+    damping: 0.90,
 
     // Pointer interaction
     isDragging: false,
-    dragOffsetR: 0,
+    dragDistance: 0,
     dragAngle: 0,
+    dragStartX: 0,
+    dragStartY: 0,
     pointerX: -9999,
     pointerY: -9999,
     pointerActive: false,
@@ -44,13 +54,13 @@ export const LiquidMetalBall: React.FC<LiquidMetalBallProps> = ({
 
   stateRef.current.viscosityMode = viscosity;
   if (viscosity === 'chrome') {
-    stateRef.current.surfaceTension = 65.0; // Stiff chrome
-    stateRef.current.damping = 0.82;
+    stateRef.current.surfaceTension = 70.0; // Stiff chrome
+    stateRef.current.damping = 0.84;
   } else if (viscosity === 'mercury') {
-    stateRef.current.surfaceTension = 32.0; // Bouncy liquid mercury
-    stateRef.current.damping = 0.89;
+    stateRef.current.surfaceTension = 36.0; // Bouncy fluid mercury
+    stateRef.current.damping = 0.90;
   } else {
-    stateRef.current.surfaceTension = 15.0; // Molten fluid
+    stateRef.current.surfaceTension = 18.0; // Molten fluid
     stateRef.current.damping = 0.93;
   }
 
@@ -59,9 +69,9 @@ export const LiquidMetalBall: React.FC<LiquidMetalBallProps> = ({
     const s = stateRef.current;
     s.cx = width / 2;
     s.cy = height / 2;
-    s.baseRadius = Math.min(width, height) * 0.24;
+    s.baseRadius = Math.min(width, height) * 0.23;
 
-    const vertices = [];
+    const vertices: FluidVertex[] = [];
     const count = s.numVertices;
     for (let i = 0; i < count; i++) {
       const baseAngle = (i / count) * Math.PI * 2;
@@ -70,6 +80,7 @@ export const LiquidMetalBall: React.FC<LiquidMetalBallProps> = ({
         r: s.baseRadius,
         targetR: s.baseRadius,
         vr: 0,
+        tangentV: 0,
       });
     }
     s.vertices = vertices;
@@ -80,8 +91,8 @@ export const LiquidMetalBall: React.FC<LiquidMetalBallProps> = ({
     const s = stateRef.current;
     for (let i = 0; i < s.vertices.length; i++) {
       const v = s.vertices[i];
-      const impulse = Math.sin(v.baseAngle * 3 + Math.PI * 0.2) * 28 + (Math.random() - 0.5) * 20;
-      v.vr += impulse * 12;
+      const impulse = Math.sin(v.baseAngle * 4 + s.time * 2) * 32 + (Math.random() - 0.5) * 24;
+      v.vr += impulse * 14;
     }
     setStatusMessage('FLUID AGITATED');
     setTimeout(() => setStatusMessage('SURFACE TENSION IDLE'), 1400);
@@ -92,9 +103,10 @@ export const LiquidMetalBall: React.FC<LiquidMetalBallProps> = ({
     const s = stateRef.current;
     for (let i = 0; i < s.vertices.length; i++) {
       const v = s.vertices[i];
-      // Elongate into liquid teardrop dripping downwards
+      // Elongate into liquid teardrop dripping downwards with lateral squeeze
       const downFactor = Math.sin(v.baseAngle);
-      v.vr += (downFactor > 0 ? downFactor * 55 : -25) * 8;
+      const impulse = downFactor > 0 ? downFactor * 70 : -35;
+      v.vr += impulse * 9;
     }
     setStatusMessage('LIQUEFYING & REFORMING');
     setTimeout(() => setStatusMessage('SURFACE TENSION IDLE'), 1800);
@@ -107,7 +119,9 @@ export const LiquidMetalBall: React.FC<LiquidMetalBallProps> = ({
       s.vertices[i].r = s.baseRadius;
       s.vertices[i].targetR = s.baseRadius;
       s.vertices[i].vr = 0;
+      s.vertices[i].tangentV = 0;
     }
+    s.isDragging = false;
     setStatusMessage('SPHERICAL RESTORE');
     setTimeout(() => setStatusMessage('SURFACE TENSION IDLE'), 1200);
   }, []);
@@ -125,7 +139,7 @@ export const LiquidMetalBall: React.FC<LiquidMetalBallProps> = ({
     }
   }, [onRegisterControls, handleReset, meltAndReform, agitateLiquid]);
 
-  // Main rendering loop
+  // Main rendering & physics loop
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -157,66 +171,89 @@ export const LiquidMetalBall: React.FC<LiquidMetalBallProps> = ({
 
       const s = stateRef.current;
       s.time += dt;
-      s.lightAngle += 0.2 * dt; // slow studio lighting rotation
+      s.lightAngle += 0.25 * dt; // slow studio HDRI rotation
 
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
       const vertices = s.vertices;
 
-      // Physics: Update deformable liquid vertices
+      // 1. Physics: Deformable fluid mesh simulation
       for (let i = 0; i < vertices.length; i++) {
         const v = vertices[i];
 
-        // 1. Idle organic harmonic standing waves (fluid surface tension)
-        const idleWave = Math.sin(s.time * 2.2 + v.baseAngle * 3) * 2.5 +
-                         Math.cos(s.time * 1.4 + v.baseAngle * 2) * 1.8;
-        const targetRadius = s.baseRadius + idleWave;
+        // Idle organic harmonic surface standing waves (continuous fluid shimmer)
+        const idleWave = Math.sin(s.time * 2.4 + v.baseAngle * 3) * 2.4 +
+                         Math.cos(s.time * 1.6 + v.baseAngle * 2) * 1.8 +
+                         Math.sin(s.time * 3.8 + v.baseAngle * 5) * 0.8;
+        let dynamicTargetR = s.baseRadius + idleWave;
 
-        // 2. Cursor deformation (dimpling or dragging)
-        if (s.pointerActive) {
+        // Hover dimple / indentation
+        if (s.pointerActive && !s.isDragging) {
           const curX = s.cx + Math.cos(v.baseAngle) * v.r;
           const curY = s.cy + Math.sin(v.baseAngle) * v.r;
           const distToCursor = Math.hypot(curX - s.pointerX, curY - s.pointerY);
 
-          if (s.isDragging) {
-            // Drag pulls closest vertices towards pointer
-            const angleDiff = Math.abs(Math.atan2(Math.sin(v.baseAngle - s.dragAngle), Math.cos(v.baseAngle - s.dragAngle)));
-            if (angleDiff < Math.PI * 0.45) {
-              const pullFactor = Math.cos(angleDiff / 0.45 * (Math.PI * 0.5));
-              v.vr += pullFactor * (s.dragOffsetR - v.r) * 12 * dt;
-            }
-          } else if (distToCursor < 65) {
-            // Hover indentation / surface dimple
-            const push = (1 - distToCursor / 65) * 45;
-            v.vr -= push * dt * 10;
+          if (distToCursor < 75) {
+            // Depress surface inwards when cursor is near
+            const push = (1 - distToCursor / 75) * 38;
+            v.vr -= push * dt * 14;
           }
         }
 
-        // 3. Surface Tension Spring Force (Hooke's return to spherical radius)
+        // Dragging deformation: stretch fluid into elongated droplet tendril along drag vector
+        if (s.isDragging) {
+          let angleDiff = v.baseAngle - s.dragAngle;
+          while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+          while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+
+          const absDiff = Math.abs(angleDiff);
+          // Facing drag direction -> pull out into tendril
+          if (absDiff < Math.PI * 0.42) {
+            const pullFactor = Math.pow(Math.cos((absDiff / 0.42) * (Math.PI * 0.5)), 1.4);
+            const stretchAmount = (s.dragDistance - s.baseRadius);
+            if (stretchAmount > 0) {
+              const targetStretch = s.baseRadius + stretchAmount * pullFactor * 1.15;
+              dynamicTargetR = Math.max(dynamicTargetR, targetStretch);
+            }
+          } else if (absDiff > Math.PI * 0.55 && absDiff < Math.PI * 0.9) {
+            // Lateral volume preservation pinch: fluid squeezes in perpendicularly
+            const pinchFactor = Math.sin((absDiff - Math.PI * 0.55) / (Math.PI * 0.35) * Math.PI);
+            const pinchAmount = Math.min(22, (s.dragDistance - s.baseRadius) * 0.25);
+            dynamicTargetR -= pinchFactor * pinchAmount;
+          }
+        }
+
+        // Restorative spring force: Hooke's return to target radius
         // F = -k * (r - targetR) - c * vr
-        const springForce = -s.surfaceTension * (v.r - targetRadius);
+        const springForce = -s.surfaceTension * (v.r - dynamicTargetR);
         v.vr += springForce * dt;
         v.vr *= s.damping;
         v.r += v.vr * dt;
       }
 
-      // Smooth neighbor tension diffusion (fluid cohesion)
-      for (let i = 0; i < vertices.length; i++) {
-        const prev = vertices[(i - 1 + vertices.length) % vertices.length];
-        const next = vertices[(i + 1) % vertices.length];
-        const avg = (prev.r + next.r) * 0.5;
-        vertices[i].r += (avg - vertices[i].r) * 0.14;
+      // 2. Neighbor surface tension diffusion (fluid cohesion / wave propagation)
+      const len = vertices.length;
+      for (let i = 0; i < len; i++) {
+        const prev = vertices[(i - 1 + len) % len];
+        const next = vertices[(i + 1) % len];
+        const avgR = (prev.r + next.r) * 0.5;
+        vertices[i].r += (avgR - vertices[i].r) * 0.16;
+        vertices[i].vr += (prev.vr + next.vr - 2 * vertices[i].vr) * 0.08;
       }
 
-      // --- Rendering ---
-      ctx.fillStyle = '#090B10'; // Dark elegant luxury studio background
+      // --- 3. Rendering ---
+      ctx.fillStyle = '#080A10'; // Deep dark luxury studio obsidian
       ctx.fillRect(0, 0, width, height);
 
-      // Studio floor soft shadow
+      // Studio floor soft shadow (warps as liquid deforms)
+      let avgBottomRadius = s.baseRadius;
+      if (vertices.length > 0) {
+        avgBottomRadius = (vertices[Math.floor(len * 0.25)].r + vertices[Math.floor(len * 0.3)].r) * 0.5;
+      }
       ctx.beginPath();
-      ctx.ellipse(s.cx, s.cy + s.baseRadius * 1.25, s.baseRadius * 1.1, 14, 0, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-      ctx.filter = 'blur(6px)';
+      ctx.ellipse(s.cx, s.cy + avgBottomRadius * 1.25, avgBottomRadius * 1.05, 12, 0, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+      ctx.filter = 'blur(8px)';
       ctx.fill();
       ctx.filter = 'none';
 
@@ -243,34 +280,35 @@ export const LiquidMetalBall: React.FC<LiquidMetalBallProps> = ({
 
         // Fluid Chrome Metallic Material Gradient
         const chromeGrad = ctx.createRadialGradient(
-          s.cx - s.baseRadius * 0.35, s.cy - s.baseRadius * 0.35, s.baseRadius * 0.1,
-          s.cx, s.cy, s.baseRadius * 1.25
+          s.cx - s.baseRadius * 0.35, s.cy - s.baseRadius * 0.35, s.baseRadius * 0.08,
+          s.cx, s.cy, s.baseRadius * 1.35
         );
         chromeGrad.addColorStop(0, '#FFFFFF'); // Pure white specular core
-        chromeGrad.addColorStop(0.18, '#E2E8F0');
-        chromeGrad.addColorStop(0.42, '#94A3B8');
-        chromeGrad.addColorStop(0.68, '#475569');
-        chromeGrad.addColorStop(0.92, '#1E293B');
-        chromeGrad.addColorStop(1, '#0F172A'); // Deep dark rim
+        chromeGrad.addColorStop(0.16, '#F1F5F9');
+        chromeGrad.addColorStop(0.38, '#94A3B8');
+        chromeGrad.addColorStop(0.65, '#475569');
+        chromeGrad.addColorStop(0.88, '#1E293B');
+        chromeGrad.addColorStop(1, '#090D16'); // Deep dark metallic rim
 
         ctx.fillStyle = chromeGrad;
         ctx.fill();
 
-        // Chrome Surface Reflection Streaks & Horizon Band (Simulates HDRI studio reflection)
+        // Chrome Surface Reflection Streaks & Horizon Band (Simulates studio HDRI reflections)
         ctx.clip(); // Clip inside metallic ball
 
-        // Curved chrome horizon reflection band
+        // Curved chrome horizon reflection band that warps with studio light
         ctx.beginPath();
-        ctx.ellipse(s.cx, s.cy + s.baseRadius * 0.15, s.baseRadius * 1.2, s.baseRadius * 0.45, s.lightAngle, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+        ctx.ellipse(s.cx, s.cy + s.baseRadius * 0.12, s.baseRadius * 1.3, s.baseRadius * 0.45, s.lightAngle, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
         ctx.fill();
 
         // Primary Specular Hotspot Highlight
         const specX = s.cx - s.baseRadius * 0.42;
         const specY = s.cy - s.baseRadius * 0.42;
         const specGrad = ctx.createRadialGradient(specX, specY, 2, specX, specY, s.baseRadius * 0.55);
-        specGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
-        specGrad.addColorStop(0.35, 'rgba(255, 255, 255, 0.45)');
+        specGrad.addColorStop(0, 'rgba(255, 255, 255, 0.98)');
+        specGrad.addColorStop(0.32, 'rgba(255, 255, 255, 0.55)');
+        specGrad.addColorStop(0.65, 'rgba(226, 232, 240, 0.2)');
         specGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
         ctx.fillStyle = specGrad;
         ctx.beginPath();
@@ -279,18 +317,31 @@ export const LiquidMetalBall: React.FC<LiquidMetalBallProps> = ({
 
         // Secondary bottom bounce light (Ground reflection)
         const bounceGrad = ctx.createRadialGradient(
-          s.cx, s.cy + s.baseRadius * 0.8, 4,
-          s.cx, s.cy + s.baseRadius * 0.8, s.baseRadius * 0.5
+          s.cx, s.cy + s.baseRadius * 0.82, 4,
+          s.cx, s.cy + s.baseRadius * 0.82, s.baseRadius * 0.55
         );
-        bounceGrad.addColorStop(0, 'rgba(148, 163, 184, 0.45)');
+        bounceGrad.addColorStop(0, 'rgba(148, 163, 184, 0.42)');
         bounceGrad.addColorStop(1, 'rgba(15, 23, 42, 0)');
         ctx.fillStyle = bounceGrad;
-        ctx.fillRect(s.cx - s.baseRadius, s.cy, s.baseRadius * 2, s.baseRadius);
+        ctx.fillRect(s.cx - s.baseRadius * 1.2, s.cy, s.baseRadius * 2.4, s.baseRadius * 1.2);
+
+        // Fluid tendril highlight when dragged
+        if (s.isDragging && s.dragDistance > s.baseRadius * 1.2) {
+          const tendrilTipX = s.cx + Math.cos(s.dragAngle) * (s.dragDistance * 0.85);
+          const tendrilTipY = s.cy + Math.sin(s.dragAngle) * (s.dragDistance * 0.85);
+          const tendrilGrad = ctx.createRadialGradient(tendrilTipX, tendrilTipY, 2, tendrilTipX, tendrilTipY, 30);
+          tendrilGrad.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
+          tendrilGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          ctx.fillStyle = tendrilGrad;
+          ctx.beginPath();
+          ctx.arc(tendrilTipX, tendrilTipY, 30, 0, Math.PI * 2);
+          ctx.fill();
+        }
 
         ctx.restore();
 
-        // Crisp metallic rim outline
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+        // Crisp metallic fresnel rim outline
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
         ctx.lineWidth = 1.2;
         ctx.stroke();
       }
@@ -306,7 +357,7 @@ export const LiquidMetalBall: React.FC<LiquidMetalBallProps> = ({
     };
   }, [initVertices]);
 
-  // Pointer interactions for stretching & deforming
+  // Pointer interactions with global window listeners to prevent getting stuck
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -314,7 +365,6 @@ export const LiquidMetalBall: React.FC<LiquidMetalBallProps> = ({
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    canvas.setPointerCapture(e.pointerId);
     const s = stateRef.current;
     const dx = x - s.cx;
     const dy = y - s.cy;
@@ -324,10 +374,12 @@ export const LiquidMetalBall: React.FC<LiquidMetalBallProps> = ({
     s.pointerY = y;
     s.pointerActive = true;
 
-    if (dist < s.baseRadius * 1.35) {
+    if (dist < s.baseRadius * 1.4) {
       s.isDragging = true;
+      s.dragStartX = x;
+      s.dragStartY = y;
       s.dragAngle = Math.atan2(dy, dx);
-      s.dragOffsetR = dist;
+      s.dragDistance = dist;
       setStatusMessage('STRETCHING LIQUID METAL');
     }
   };
@@ -348,30 +400,40 @@ export const LiquidMetalBall: React.FC<LiquidMetalBallProps> = ({
       const dx = x - s.cx;
       const dy = y - s.cy;
       s.dragAngle = Math.atan2(dy, dx);
-      s.dragOffsetR = Math.min(s.baseRadius * 2.2, Math.hypot(dx, dy));
+      // Cap maximum elongation for natural fluid surface tension
+      s.dragDistance = Math.min(s.baseRadius * 2.3, Math.hypot(dx, dy));
     }
   };
 
-  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+  const handlePointerUp = () => {
     const s = stateRef.current;
-    s.isDragging = false;
+    if (s.isDragging) {
+      s.isDragging = false;
+      setStatusMessage('SURFACE TENSION SNAP');
+      setTimeout(() => setStatusMessage('SURFACE TENSION IDLE'), 1200);
+    }
     s.pointerActive = false;
     s.pointerX = -9999;
     s.pointerY = -9999;
-
-    try {
-      canvasRef.current?.releasePointerCapture(e.pointerId);
-    } catch {
-      // Safe catch
-    }
-
-    setStatusMessage('SURFACE TENSION SNAP');
-    setTimeout(() => setStatusMessage('SURFACE TENSION IDLE'), 1200);
   };
+
+  // Add global window pointerup so release is never missed
+  useEffect(() => {
+    const onWindowPointerUp = () => {
+      const s = stateRef.current;
+      if (s.isDragging) {
+        s.isDragging = false;
+        setStatusMessage('SURFACE TENSION SNAP');
+        setTimeout(() => setStatusMessage('SURFACE TENSION IDLE'), 1200);
+      }
+    };
+    window.addEventListener('pointerup', onWindowPointerUp);
+    return () => window.removeEventListener('pointerup', onWindowPointerUp);
+  }, []);
 
   return (
     <div
-      className={`relative w-full h-[320px] bg-[#090B10] border border-[var(--border-color)] overflow-hidden select-none flex flex-col justify-between ${className}`}
+      className={`relative w-full h-[320px] bg-[#080A10] border border-[var(--border-color)] overflow-hidden select-none flex flex-col justify-between ${className}`}
     >
       {/* Top Status Bar */}
       <div className="absolute top-2 left-3 right-3 flex items-center justify-between z-10 pointer-events-none">
@@ -393,7 +455,9 @@ export const LiquidMetalBall: React.FC<LiquidMetalBallProps> = ({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
         onPointerLeave={() => {
-          stateRef.current.pointerActive = false;
+          if (!stateRef.current.isDragging) {
+            stateRef.current.pointerActive = false;
+          }
         }}
         className="w-full h-full block touch-none cursor-pointer"
       />

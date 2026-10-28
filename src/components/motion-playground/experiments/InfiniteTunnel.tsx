@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Play, Pause, RotateCcw, Compass, Palette, FastForward } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 
 interface InfiniteTunnelProps {
   onRegisterControls?: (controls: { reset: () => void; replay: () => void }) => void;
@@ -13,27 +13,28 @@ export const InfiniteTunnel: React.FC<InfiniteTunnelProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
-  const [speedTier, setSpeedTier] = useState<'relax' | 'cruise' | 'flow'>('relax');
+  const [speedTier, setSpeedTier] = useState<'relaxing' | 'cruise' | 'warp'>('relaxing');
   const [geometryType, setGeometryType] = useState<'octagon' | 'hexagon' | 'circle'>('octagon');
-  const [colorTheme, setColorTheme] = useState<'silver' | 'azure' | 'warm'>('silver');
+  const [colorTheme, setColorTheme] = useState<'silver' | 'slate' | 'charcoal'>('silver');
 
   const stateRef = useRef({
     isPlaying: true,
-    speed: 120, // speed units / sec
+    speed: 65, // gentle relaxing default speed
     geometryType: 'octagon' as 'octagon' | 'hexagon' | 'circle',
-    colorTheme: 'silver' as 'silver' | 'azure' | 'warm',
+    colorTheme: 'silver' as 'silver' | 'slate' | 'charcoal',
 
     // Continuous modulo depth
     travelDistance: 0,
-    totalRingCount: 28,
-    ringSpacing: 40,
-    maxDepth: 1120,
+    totalRingCount: 30,
+    ringSpacing: 42,
 
-    // Parallax camera tilt
+    // Pointer-controlled camera parallax with damped spring return
     camX: 0,
     camY: 0,
     targetCamX: 0,
     targetCamY: 0,
+    camVx: 0,
+    camVy: 0,
 
     time: 0,
   });
@@ -41,7 +42,7 @@ export const InfiniteTunnel: React.FC<InfiniteTunnelProps> = ({
   stateRef.current.isPlaying = isPlaying;
   stateRef.current.geometryType = geometryType;
   stateRef.current.colorTheme = colorTheme;
-  stateRef.current.speed = speedTier === 'relax' ? 90 : speedTier === 'cruise' ? 170 : 260;
+  stateRef.current.speed = speedTier === 'relaxing' ? 65 : speedTier === 'cruise' ? 140 : 250;
 
   // Reset function
   const handleReset = useCallback(() => {
@@ -50,6 +51,8 @@ export const InfiniteTunnel: React.FC<InfiniteTunnelProps> = ({
     stateRef.current.targetCamY = 0;
     stateRef.current.camX = 0;
     stateRef.current.camY = 0;
+    stateRef.current.camVx = 0;
+    stateRef.current.camVy = 0;
   }, []);
 
   // Register parent controls
@@ -90,7 +93,7 @@ export const InfiniteTunnel: React.FC<InfiniteTunnelProps> = ({
     window.addEventListener('resize', handleResize);
 
     const step = (now: number) => {
-      const dt = Math.min((now - lastTime) / 1000, 0.05);
+      const dt = Math.min((now - lastTime) / 1000, 0.045);
       lastTime = now;
 
       const s = stateRef.current;
@@ -102,123 +105,140 @@ export const InfiniteTunnel: React.FC<InfiniteTunnelProps> = ({
         s.travelDistance += s.speed * dt;
       }
 
-      // Smooth camera tilt recentering
-      s.camX += (s.targetCamX - s.camX) * 4.0 * dt;
-      s.camY += (s.targetCamY - s.camY) * 4.0 * dt;
+      // Camera parallax spring-damping back to exact center (0, 0)
+      const camSpringK = 18.0;
+      const camDamping = 0.84;
+      const forceCamX = -camSpringK * (s.camX - s.targetCamX);
+      const forceCamY = -camSpringK * (s.camY - s.targetCamY);
+      s.camVx += forceCamX * dt;
+      s.camVy += forceCamY * dt;
+      s.camVx *= camDamping;
+      s.camVy *= camDamping;
+      s.camX += s.camVx * dt;
+      s.camY += s.camVy * dt;
 
       const centerX = width / 2 + s.camX;
       const centerY = height / 2 + s.camY;
-      const focalLength = 320;
+      const focalLength = 310;
 
-      // Clear dark background
-      ctx.fillStyle = '#07090E'; // Hypnotic deep obsidian
+      // Deep dark background
+      ctx.fillStyle = '#06080D'; // Deep charcoal/obsidian
       ctx.fillRect(0, 0, width, height);
 
-      // Distant horizon vanishing glow
-      const horizonGrad = ctx.createRadialGradient(centerX, centerY, 2, centerX, centerY, 140);
+      // Distant horizon vanishing point glow
+      const horizonGrad = ctx.createRadialGradient(centerX, centerY, 2, centerX, centerY, 130);
       if (s.colorTheme === 'silver') {
-        horizonGrad.addColorStop(0, 'rgba(226, 232, 240, 0.18)');
-        horizonGrad.addColorStop(1, 'rgba(7, 9, 14, 0)');
-      } else if (s.colorTheme === 'azure') {
-        horizonGrad.addColorStop(0, 'rgba(56, 189, 248, 0.22)');
-        horizonGrad.addColorStop(1, 'rgba(7, 9, 14, 0)');
+        horizonGrad.addColorStop(0, 'rgba(241, 245, 249, 0.16)');
+        horizonGrad.addColorStop(0.5, 'rgba(148, 163, 184, 0.06)');
+        horizonGrad.addColorStop(1, 'rgba(6, 8, 13, 0)');
+      } else if (s.colorTheme === 'slate') {
+        horizonGrad.addColorStop(0, 'rgba(125, 211, 252, 0.18)');
+        horizonGrad.addColorStop(0.5, 'rgba(56, 189, 248, 0.06)');
+        horizonGrad.addColorStop(1, 'rgba(6, 8, 13, 0)');
       } else {
-        horizonGrad.addColorStop(0, 'rgba(251, 191, 36, 0.22)');
-        horizonGrad.addColorStop(1, 'rgba(7, 9, 14, 0)');
+        horizonGrad.addColorStop(0, 'rgba(148, 163, 184, 0.14)');
+        horizonGrad.addColorStop(0.5, 'rgba(71, 85, 105, 0.05)');
+        horizonGrad.addColorStop(1, 'rgba(6, 8, 13, 0)');
       }
       ctx.fillStyle = horizonGrad;
       ctx.fillRect(0, 0, width, height);
 
-      // Loop rings using mathematical modulo for 100% seamless infinite continuity
-      // Rings travel from maxDepth (deep horizon) towards viewer (z = 0)
+      // Perspective rings with seamless modulo recycling
       const numRings = s.totalRingCount;
-      const ringSpacing = s.ringSpacing;
-      const maxZ = numRings * ringSpacing;
-      const currentOffset = s.travelDistance % ringSpacing;
+      const spacing = s.ringSpacing;
+      const maxZ = numRings * spacing;
+      const offset = s.travelDistance % maxZ;
 
       // Color palette definitions
-      let primaryColor = '226, 232, 240'; // silver
-      let accentColor = '148, 163, 184';
-      if (s.colorTheme === 'azure') {
-        primaryColor = '56, 189, 248';
-        accentColor = '14, 165, 233';
-      } else if (s.colorTheme === 'warm') {
-        primaryColor = '251, 191, 36';
-        accentColor = '245, 158, 11';
+      let r = 226, g = 232, b = 240; // Silver
+      if (s.colorTheme === 'slate') {
+        r = 148; g = 197; b = 230; // Muted blue-gray
+      } else if (s.colorTheme === 'charcoal') {
+        r = 160; g = 174; b = 192; // Charcoal
       }
 
-      // Draw perspective tunnel rings from back to front
-      for (let i = numRings - 1; i >= 0; i--) {
-        // Continuous z coordinate
-        const z = maxZ - (i * ringSpacing + currentOffset);
-        if (z <= 12) continue; // Clip near viewer
+      // Collect ring depths and sort from back to front
+      const ringDepths: { z: number; ringIndex: number }[] = [];
+      for (let i = 0; i < numRings; i++) {
+        // Continuous depth coordinate with modulo recycling
+        let z = maxZ - ((i * spacing + offset) % maxZ);
+        if (z < 16) z += maxZ;
+        ringDepths.push({ z, ringIndex: i });
+      }
+      ringDepths.sort((a, b) => b.z - a.z); // Render from furthest to nearest
 
-        // Perspective scale factor
+      for (let idx = 0; idx < ringDepths.length; idx++) {
+        const { z, ringIndex } = ringDepths[idx];
+        if (z < 18) continue;
+
         const scale = focalLength / z;
         const ringRadius = 260 * scale;
 
-        // Depth fog / alpha
-        const depthNorm = Math.max(0, Math.min(1, 1 - (z / maxZ)));
-        const alpha = Math.pow(depthNorm, 1.4) * 0.85;
+        // Smooth depth fog: fades in at maxZ, fades out before clipping at near plane
+        let alpha = Math.min(1.0, (1 - z / maxZ) * 1.3);
+        if (z > maxZ - 120) {
+          // Smooth fade-in at the far horizon (prevents pop-in)
+          alpha *= Math.max(0, (maxZ - z) / 120);
+        }
+        if (z < 60) {
+          // Smooth fade-out near the eye (prevents sudden pop-out)
+          alpha *= Math.max(0, (z - 18) / 42);
+        }
 
-        // Subtle geometric twist along tunnel depth
-        const twistAngle = (z * 0.0018) + (s.time * 0.12);
+        if (alpha <= 0.005) continue;
+
+        // Subtle twist along depth
+        const ringTwist = ringIndex * 0.045 + s.time * 0.15;
 
         ctx.save();
         ctx.translate(centerX, centerY);
-        ctx.rotate(twistAngle);
+        ctx.rotate(ringTwist);
 
-        ctx.strokeStyle = `rgba(${primaryColor}, ${alpha})`;
-        ctx.lineWidth = Math.max(1, 2.5 * scale);
+        ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha * 0.75})`;
+        ctx.lineWidth = Math.max(0.8, 2.2 * scale);
 
-        // Draw geometric shape
-        if (s.geometryType === 'circle') {
-          ctx.beginPath();
-          ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
-          ctx.stroke();
-        } else {
-          const sides = s.geometryType === 'octagon' ? 8 : 6;
-          ctx.beginPath();
-          for (let pt = 0; pt < sides; pt++) {
-            const angle = (pt / sides) * Math.PI * 2;
+        ctx.beginPath();
+        if (s.geometryType === 'octagon') {
+          const sides = 8;
+          for (let k = 0; k < sides; k++) {
+            const angle = (k / sides) * Math.PI * 2;
             const px = Math.cos(angle) * ringRadius;
             const py = Math.sin(angle) * ringRadius;
-            if (pt === 0) ctx.moveTo(px, py);
+            if (k === 0) ctx.moveTo(px, py);
             else ctx.lineTo(px, py);
           }
           ctx.closePath();
-          ctx.stroke();
+        } else if (s.geometryType === 'hexagon') {
+          const sides = 6;
+          for (let k = 0; k < sides; k++) {
+            const angle = (k / sides) * Math.PI * 2;
+            const px = Math.cos(angle) * ringRadius;
+            const py = Math.sin(angle) * ringRadius;
+            if (k === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          ctx.closePath();
+        } else {
+          // Circle
+          ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
+        }
+        ctx.stroke();
 
-          // Small vertex nodes on front rings
-          if (z < 350) {
-            ctx.fillStyle = `rgba(${accentColor}, ${alpha * 1.2})`;
-            for (let pt = 0; pt < sides; pt++) {
-              const angle = (pt / sides) * Math.PI * 2;
-              const px = Math.cos(angle) * ringRadius;
-              const py = Math.sin(angle) * ringRadius;
-              ctx.beginPath();
-              ctx.arc(px, py, Math.max(1.5, 3.5 * scale), 0, Math.PI * 2);
-              ctx.fill();
-            }
+        // Longitudinal guide rails / grid connectors on selected rings
+        if (ringIndex % 4 === 0) {
+          ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha * 0.9})`;
+          const numDots = s.geometryType === 'hexagon' ? 6 : 8;
+          for (let k = 0; k < numDots; k++) {
+            const angle = (k / numDots) * Math.PI * 2;
+            const px = Math.cos(angle) * ringRadius;
+            const py = Math.sin(angle) * ringRadius;
+            ctx.beginPath();
+            ctx.arc(px, py, Math.max(0.6, 2.0 * scale), 0, Math.PI * 2);
+            ctx.fill();
           }
         }
 
         ctx.restore();
-      }
-
-      // 4 Longitudinal perspective guide lines towards vanishing center
-      const guideSides = s.geometryType === 'octagon' ? 8 : s.geometryType === 'hexagon' ? 6 : 4;
-      ctx.lineWidth = 1;
-      ctx.strokeStyle = `rgba(${accentColor}, 0.15)`;
-      for (let g = 0; g < guideSides; g++) {
-        const angle = (g / guideSides) * Math.PI * 2;
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY);
-        ctx.lineTo(
-          centerX + Math.cos(angle) * (width * 0.9),
-          centerY + Math.sin(angle) * (height * 0.9)
-        );
-        ctx.stroke();
       }
 
       animId = requestAnimationFrame(step);
@@ -232,39 +252,38 @@ export const InfiniteTunnel: React.FC<InfiniteTunnelProps> = ({
     };
   }, []);
 
-  // Pointer parallax interaction
+  // Subtle pointer camera parallax
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const nx = (e.clientX - rect.left) / rect.width - 0.5;
+    const ny = (e.clientY - rect.top) / rect.height - 0.5;
 
-    const normX = (x / canvas.clientWidth - 0.5) * 2;
-    const normY = (y / canvas.clientHeight - 0.5) * 2;
-
-    stateRef.current.targetCamX = normX * 42;
-    stateRef.current.targetCamY = normY * 32;
+    // Subtle parallax offset
+    stateRef.current.targetCamX = nx * 38;
+    stateRef.current.targetCamY = ny * 38;
   };
 
   const handlePointerLeave = () => {
+    // Return to exact center with damped spring
     stateRef.current.targetCamX = 0;
     stateRef.current.targetCamY = 0;
   };
 
   return (
     <div
-      className={`relative w-full h-[320px] bg-[#07090E] border border-[var(--border-color)] overflow-hidden select-none flex flex-col justify-between ${className}`}
+      className={`relative w-full h-[320px] bg-[#06080D] border border-[var(--border-color)] overflow-hidden select-none flex flex-col justify-between ${className}`}
     >
-      {/* Top Status Bar */}
+      {/* Top Status */}
       <div className="absolute top-2 left-3 right-3 flex items-center justify-between z-10 pointer-events-none">
         <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/10 backdrop-blur-xs text-white rounded text-[10px] font-mono">
-          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
-          <span>MODULO_DEPTH // SEAMLESS INFINITE VOYAGE</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-slate-300 animate-pulse"></span>
+          <span>INFINITE_TUNNEL // MODULO DEPTH RECYCLING</span>
         </div>
 
         <div className="text-[10px] font-mono font-bold text-slate-300 bg-black/60 border border-white/15 px-2 py-0.5 rounded">
-          {isPlaying ? 'CONTINUOUS LOOP' : 'PAUSED'}
+          {speedTier.toUpperCase()} // {geometryType.toUpperCase()}
         </div>
       </div>
 
@@ -273,80 +292,73 @@ export const InfiniteTunnel: React.FC<InfiniteTunnelProps> = ({
         ref={canvasRef}
         onPointerMove={handlePointerMove}
         onPointerLeave={handlePointerLeave}
-        className="w-full h-full block touch-none cursor-move"
+        className="w-full h-full block touch-none cursor-pointer"
       />
 
       {/* Bottom Controls */}
       <div className="absolute bottom-2 left-3 right-3 flex flex-wrap items-center justify-between gap-2 z-10">
         <div className="flex items-center gap-1.5 bg-black/80 backdrop-blur-xs p-1 border border-white/15 rounded shadow-xs">
-          {/* Play/Pause */}
-          <button
-            onClick={() => setIsPlaying(!isPlaying)}
-            type="button"
-            className="p-1 hover:bg-white/20 text-white transition-colors cursor-pointer rounded"
-            title={isPlaying ? 'Pause infinite tunnel' : 'Resume'}
-          >
-            {isPlaying ? <Pause className="w-3.5 h-3.5 text-amber-300" /> : <Play className="w-3.5 h-3.5 text-emerald-400" />}
-          </button>
+          {/* Speed Presets */}
+          {(['relaxing', 'cruise', 'warp'] as const).map((sp) => (
+            <button
+              key={sp}
+              onClick={() => setSpeedTier(sp)}
+              type="button"
+              className={`px-2 py-1 text-[10px] font-mono font-bold uppercase transition-colors rounded cursor-pointer ${
+                speedTier === sp
+                  ? 'bg-slate-200 text-black shadow-xs'
+                  : 'bg-white/10 text-white/70 hover:text-white'
+              }`}
+            >
+              {sp}
+            </button>
+          ))}
 
-          {/* Speed Tier */}
-          <button
-            onClick={() => {
-              if (speedTier === 'relax') setSpeedTier('cruise');
-              else if (speedTier === 'cruise') setSpeedTier('flow');
-              else setSpeedTier('relax');
-            }}
-            type="button"
-            className="px-2 py-1 bg-white/10 hover:bg-white/20 text-white text-[10px] font-mono font-bold uppercase transition-colors flex items-center gap-1 cursor-pointer rounded"
-            title="Adjust voyage speed"
-          >
-            <FastForward className="w-3 h-3 text-cyan-300" />
-            <span>Speed: {speedTier}</span>
-          </button>
+          {/* Geometry Presets */}
+          {(['octagon', 'hexagon', 'circle'] as const).map((geo) => (
+            <button
+              key={geo}
+              onClick={() => setGeometryType(geo)}
+              type="button"
+              className={`px-2 py-1 text-[10px] font-mono font-bold uppercase transition-colors rounded cursor-pointer ${
+                geometryType === geo
+                  ? 'bg-slate-400 text-black'
+                  : 'bg-white/10 text-white/70 hover:text-white'
+              }`}
+            >
+              {geo}
+            </button>
+          ))}
 
-          {/* Geometry Shape */}
-          <button
-            onClick={() => {
-              if (geometryType === 'octagon') setGeometryType('hexagon');
-              else if (geometryType === 'hexagon') setGeometryType('circle');
-              else setGeometryType('octagon');
-            }}
-            type="button"
-            className="px-2 py-1 bg-white/10 hover:bg-white/20 text-white text-[10px] font-mono font-bold uppercase transition-colors flex items-center gap-1 cursor-pointer rounded"
-            title="Change polygon geometry"
-          >
-            <Compass className="w-3 h-3 text-amber-300" />
-            <span className="capitalize">{geometryType}</span>
-          </button>
-
-          {/* Color Palette */}
-          <button
-            onClick={() => {
-              if (colorTheme === 'silver') setColorTheme('azure');
-              else if (colorTheme === 'azure') setColorTheme('warm');
-              else setColorTheme('silver');
-            }}
-            type="button"
-            className="px-2 py-1 bg-white/10 hover:bg-white/20 text-white text-[10px] font-mono font-bold uppercase transition-colors flex items-center gap-1 cursor-pointer rounded"
-            title="Switch color palette"
-          >
-            <Palette className="w-3 h-3 text-emerald-300" />
-            <span className="capitalize">{colorTheme}</span>
-          </button>
+          {/* Color Presets */}
+          {(['silver', 'slate', 'charcoal'] as const).map((col) => (
+            <button
+              key={col}
+              onClick={() => setColorTheme(col)}
+              type="button"
+              className={`px-2 py-1 text-[10px] font-mono font-bold uppercase transition-colors rounded cursor-pointer ${
+                colorTheme === col
+                  ? 'bg-slate-300 text-black'
+                  : 'bg-white/10 text-white/70 hover:text-white'
+              }`}
+            >
+              {col}
+            </button>
+          ))}
 
           {/* Reset */}
           <button
             onClick={handleReset}
             type="button"
             className="p-1 hover:bg-white/20 text-white/80 transition-colors cursor-pointer rounded"
-            title="Reset position"
+            title="Reset tunnel view"
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
         </div>
 
         <div className="text-[10px] font-mono text-white/50 bg-black/60 px-2 py-1 rounded border border-white/10 hidden sm:block">
-          MOVE CURSOR TO STEER PERSPECTIVE
+          MOVE MOUSE FOR CAMERA PARALLAX
         </div>
       </div>
     </div>
