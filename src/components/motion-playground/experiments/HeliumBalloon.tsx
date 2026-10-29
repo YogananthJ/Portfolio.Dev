@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Wind, RotateCcw } from 'lucide-react';
+import { Wind, RotateCcw, Palette, CheckCircle2 } from 'lucide-react';
+import { useAnimationLoop } from '../animationRegistry';
+import { NormalizedPointerController } from '../normalizedPointer';
 
 interface HeliumBalloonProps {
   onRegisterControls?: (controls: { reset: () => void; replay: () => void }) => void;
@@ -22,14 +24,17 @@ export const HeliumBalloon: React.FC<HeliumBalloonProps> = ({
   // Default to Sky Blue matching the photographic reference image
   const [balloonColor, setBalloonColor] = useState<'blue' | 'red' | 'gold'>('blue');
   const [statusMessage, setStatusMessage] = useState<string>('BUOYANT AT CEILING');
+  const [activeHandle, setActiveHandle] = useState<'tag' | 'balloon' | 'none'>('none');
+
+  const pointerControllerRef = useRef<NormalizedPointerController | null>(null);
 
   const physicsRef = useRef({
-    // Ceiling line
-    ceilingY: 24,
+    // Ceiling plane
+    ceilingY: 22,
 
-    // Balloon body
+    // Balloon Body
     balloonX: 200,
-    balloonY: 72,
+    balloonY: 70,
     balloonVx: 0,
     balloonVy: 0,
     balloonRadius: 48,
@@ -38,28 +43,32 @@ export const HeliumBalloon: React.FC<HeliumBalloonProps> = ({
     squashX: 1,
     squashY: 1,
 
-    // Buoyancy & Aerodynamics
-    buoyancy: -240,     // Archimedean upward float acceleration
-    airDamping: 0.94,
-    gravity: 120,
+    // Buoyancy & Aerodynamic Parameters
+    // In canvas coordinates: Y increases DOWNWARDS.
+    // Therefore upward buoyancy is NEGATIVE acceleration. Downward gravity is POSITIVE acceleration.
+    buoyancy: -580,     // Upward buoyant lift
+    airDamping: 0.94,   // Air resistance
+    balloonMass: 1.0,
 
-    // Brown kraft cardboard tag (Primary drag handle)
+    // Cardboard Tag (Primary Drag Handle)
     tagX: 200,
     tagY: 245,
     tagVx: 0,
     tagVy: 0,
-    tagWidth: 42,
-    tagHeight: 42,
+    tagWidth: 44,
+    tagHeight: 44,
     tagAngle: 0,
     tagAngularVel: 0,
+    tagMass: 1.4,
+    tagGravity: 340,    // Downward gravity on tag
 
-    // Multi-segment Verlet ribbon string (12 nodes)
+    // 12-Segment Flexible Verlet Ribbon String
     stringSegments: [] as VerletNode[],
     numSegments: 12,
-    segmentLength: 14,
+    segmentLength: 13.5, // Total rest length = ~162px
 
-    // Drag tracking
-    isDragging: false,
+    // Drag Interaction State
+    dragTarget: 'none' as 'tag' | 'balloon' | 'none',
     dragOffsetX: 0,
     dragOffsetY: 0,
     lastPointerX: 0,
@@ -70,10 +79,36 @@ export const HeliumBalloon: React.FC<HeliumBalloonProps> = ({
     time: 0,
   });
 
-  // Initialize physics and center positioning
-  const initPhysics = useCallback((width: number, height: number) => {
+  // Color profiles
+  const colorThemes = {
+    blue: {
+      label: 'Sky Blue',
+      balloonGrad: ['#3B82F6', '#1D4ED8', '#172554'],
+      highlight: 'rgba(255, 255, 255, 0.75)',
+      rimLight: 'rgba(191, 219, 254, 0.5)',
+      knotColor: '#1E40AF',
+    },
+    red: {
+      label: 'Crimson',
+      balloonGrad: ['#EF4444', '#B91C1C', '#450A0A'],
+      highlight: 'rgba(255, 255, 255, 0.72)',
+      rimLight: 'rgba(254, 202, 202, 0.5)',
+      knotColor: '#991B1B',
+    },
+    gold: {
+      label: 'Champagne Gold',
+      balloonGrad: ['#F59E0B', '#B45309', '#451A03'],
+      highlight: 'rgba(255, 255, 255, 0.78)',
+      rimLight: 'rgba(254, 243, 199, 0.55)',
+      knotColor: '#92400E',
+    },
+  };
+
+  // Initialize Physics Equilibrium
+  const initPhysics = useCallback((width: number, _height: number) => {
     const p = physicsRef.current;
     const centerX = width / 2;
+
     p.balloonX = centerX;
     p.balloonY = p.ceilingY + p.balloonRadius * 0.88; // Rest touching ceiling
     p.balloonVx = 0;
@@ -81,23 +116,21 @@ export const HeliumBalloon: React.FC<HeliumBalloonProps> = ({
     p.balloonTilt = 0;
     p.balloonTiltVel = 0;
     p.squashX = 1.08;
-    p.squashY = 0.92; // Slightly flattened on ceiling
+    p.squashY = 0.92;
 
+    const stringRestLen = p.numSegments * p.segmentLength;
     p.tagX = centerX;
-    p.tagY = p.balloonY + p.balloonRadius * 1.15 + p.numSegments * p.segmentLength;
+    p.tagY = p.balloonY + p.balloonRadius * 1.15 + stringRestLen;
     p.tagVx = 0;
     p.tagVy = 0;
     p.tagAngle = 0;
     p.tagAngularVel = 0;
 
-    // Build Verlet ribbon string nodes
+    // Initialize Verlet nodes in straight vertical line
     p.stringSegments = [];
     const startY = p.balloonY + p.balloonRadius * 1.15;
-    const endY = p.tagY - p.tagHeight * 0.35;
-    const dy = (endY - startY) / p.numSegments;
-
     for (let i = 0; i <= p.numSegments; i++) {
-      const y = startY + i * dy;
+      const y = startY + i * p.segmentLength;
       p.stringSegments.push({
         x: centerX,
         y,
@@ -107,24 +140,25 @@ export const HeliumBalloon: React.FC<HeliumBalloonProps> = ({
     }
   }, []);
 
-  // Reset to equilibrium
+  // Reset to default floating state
   const handleReset = useCallback(() => {
     const canvas = canvasRef.current;
     if (canvas) {
       initPhysics(canvas.clientWidth, canvas.clientHeight);
     }
+    setActiveHandle('none');
     setStatusMessage('BUOYANT AT CEILING');
   }, [initPhysics]);
 
-  // Wind breeze impulse
+  // Gentle wind breeze impulse
   const handleBreeze = useCallback(() => {
     const p = physicsRef.current;
     const dir = Math.random() > 0.5 ? 1 : -1;
-    p.balloonVx += dir * (80 + Math.random() * 40);
-    p.balloonTiltVel += dir * 0.22;
-    p.tagVx += dir * (55 + Math.random() * 30);
-    p.tagAngularVel += dir * 0.32;
-    setStatusMessage('BREEZE IMPULSE');
+    p.balloonVx += dir * 90;
+    p.balloonTiltVel += dir * 0.35;
+    p.tagVx += dir * 65;
+    p.tagAngularVel += dir * 0.45;
+    setStatusMessage('BREEZE OSCILLATION');
     setTimeout(() => setStatusMessage('BUOYANT AT CEILING'), 1600);
   }, []);
 
@@ -140,15 +174,12 @@ export const HeliumBalloon: React.FC<HeliumBalloonProps> = ({
     }
   }, [onRegisterControls, handleReset, handleBreeze]);
 
-  // Main 60fps physics simulation & rendering loop
+  // Handle Resize
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
-    let animId: number;
-    let lastTime = performance.now();
 
     const handleResize = () => {
       const dpr = window.devicePixelRatio || 1;
@@ -165,30 +196,150 @@ export const HeliumBalloon: React.FC<HeliumBalloonProps> = ({
 
     handleResize();
     window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [initPhysics]);
 
-    const step = (now: number) => {
-      const dt = Math.min((now - lastTime) / 1000, 0.045);
-      lastTime = now;
+  // Unified Pointer Setup
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-      const p = physicsRef.current;
-      p.time += dt;
+    const controller = new NormalizedPointerController({
+      onPointerDown: (state) => {
+        const p = physicsRef.current;
+        const x = state.x;
+        const y = state.y;
 
-      const width = canvas.clientWidth;
-      const height = canvas.clientHeight;
-      const segments = p.stringSegments;
+        // Check if user clicked the cardboard tag (primary handle)
+        const distToTag = Math.hypot(x - p.tagX, y - p.tagY);
+        // Check if user clicked balloon body
+        const distToBalloon = Math.hypot(x - p.balloonX, y - p.balloonY);
 
-      // --- 1. Balloon Physics ---
-      // Idle room draft / ambient thermal current
-      const ambientDraftX = Math.sin(p.time * 1.8) * 6;
+        if (distToTag < 52) {
+          p.dragTarget = 'tag';
+          p.dragOffsetX = x - p.tagX;
+          p.dragOffsetY = y - p.tagY;
+          p.lastPointerX = x;
+          p.lastPointerY = y;
+          p.pointerVx = 0;
+          p.pointerVy = 0;
+          setActiveHandle('tag');
+          setStatusMessage('PULLING CARDBOARD TAG');
+        } else if (distToBalloon < p.balloonRadius * 1.1) {
+          p.dragTarget = 'balloon';
+          p.dragOffsetX = x - p.balloonX;
+          p.dragOffsetY = y - p.balloonY;
+          p.lastPointerX = x;
+          p.lastPointerY = y;
+          p.pointerVx = 0;
+          p.pointerVy = 0;
+          setActiveHandle('balloon');
+          setStatusMessage('DRAGGING HELIUM BALLOON');
+        }
+      },
+      onPointerMove: (state) => {
+        const p = physicsRef.current;
+        if (p.dragTarget === 'none') return;
+
+        const x = state.x;
+        const y = state.y;
+
+        p.pointerVx = state.vx;
+        p.pointerVy = state.vy;
+        p.lastPointerX = x;
+        p.lastPointerY = y;
+
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
+
+        if (p.dragTarget === 'tag') {
+          // When pulling tag DOWN, pointer Y increases. Tag Y MUST increase!
+          // Maintain drag offset so there is zero jumping
+          const targetTagX = x - p.dragOffsetX;
+          const targetTagY = y - p.dragOffsetY;
+
+          // Clamped within canvas boundaries
+          p.tagX = Math.max(24, Math.min(width - 24, targetTagX));
+          p.tagY = Math.max(p.ceilingY + 65, Math.min(height - 24, targetTagY));
+
+          // Tag tilts in response to horizontal motion velocity
+          p.tagAngle = Math.max(-0.65, Math.min(0.65, p.pointerVx * 0.0035));
+        } else if (p.dragTarget === 'balloon') {
+          // Direct balloon dragging
+          const minBalloonY = p.ceilingY + p.balloonRadius * 0.88;
+          p.balloonX = Math.max(p.balloonRadius + 15, Math.min(width - p.balloonRadius - 15, x - p.dragOffsetX));
+          p.balloonY = Math.max(minBalloonY, Math.min(height - 80, y - p.dragOffsetY));
+          p.balloonVx = p.pointerVx * 0.5;
+          p.balloonVy = p.pointerVy * 0.5;
+        }
+      },
+      onPointerUp: () => {
+        const p = physicsRef.current;
+        if (p.dragTarget !== 'none') {
+          if (p.dragTarget === 'tag') {
+            p.tagVx = Math.max(-400, Math.min(400, p.pointerVx * 0.65));
+            p.tagVy = Math.max(-400, Math.min(400, p.pointerVy * 0.65));
+            p.tagAngularVel = Math.max(-12, Math.min(12, p.pointerVx * 0.025));
+          }
+          p.dragTarget = 'none';
+          setActiveHandle('none');
+          setStatusMessage('RISING VIA BUOYANCY');
+          setTimeout(() => {
+            if (physicsRef.current.dragTarget === 'none') {
+              setStatusMessage('BUOYANT AT CEILING');
+            }
+          }, 1800);
+        }
+      },
+      onPointerCancel: () => {
+        const p = physicsRef.current;
+        p.dragTarget = 'none';
+        setActiveHandle('none');
+        setStatusMessage('BUOYANT AT CEILING');
+      },
+    });
+
+    controller.attach(canvas);
+    pointerControllerRef.current = controller;
+
+    return () => {
+      controller.detach();
+    };
+  }, []);
+
+  // Main 60fps Physics & Render Loop via unified animationRegistry
+  const handleRenderFrame = useCallback((_timestamp: number, dt: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const p = physicsRef.current;
+    p.time += dt;
+
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    if (width === 0 || height === 0) return;
+
+    const segments = p.stringSegments;
+    const numSegs = p.numSegments;
+    const segLen = p.segmentLength;
+    const totalMaxStringLength = numSegs * segLen;
+
+    // --- 1. Balloon Aerodynamics & Buoyancy ---
+    if (p.dragTarget !== 'balloon') {
+      // Gentle ambient room thermal draft
+      const ambientDraftX = Math.sin(p.time * 1.5) * 8;
       p.balloonVx += ambientDraftX * dt;
 
-      // Buoyancy force upward
+      // Upward Archimedean buoyancy force (NEGATIVE acceleration in canvas coordinates)
       p.balloonVy += p.buoyancy * dt;
 
       // Air resistance damping
       p.balloonVx *= p.airDamping;
       p.balloonVy *= p.airDamping;
 
+      // Integrate balloon position
       p.balloonX += p.balloonVx * dt;
       p.balloonY += p.balloonVy * dt;
 
@@ -197,490 +348,455 @@ export const HeliumBalloon: React.FC<HeliumBalloonProps> = ({
       if (p.balloonY < minBalloonY) {
         const penetration = minBalloonY - p.balloonY;
         p.balloonY = minBalloonY;
-        p.balloonVy = 0;
+        // Soft elastic bounce against ceiling
+        if (p.balloonVy < -15) {
+          p.balloonVy = -p.balloonVy * 0.22;
+        } else {
+          p.balloonVy = 0;
+        }
 
-        // Ceiling contact flattening squash
-        p.squashY = Math.max(0.82, 1.0 - penetration * 0.02);
+        // Realistic latex ceiling contact flattening squash
+        p.squashY = Math.max(0.82, 1.0 - penetration * 0.022);
         p.squashX = Math.min(1.18, 1.0 + penetration * 0.025);
       } else {
-        // Recover from squash when pulled down
-        p.squashX += (1.0 - p.squashX) * 8 * dt;
-        p.squashY += (1.0 - p.squashY) * 8 * dt;
+        // Smooth recovery back to spherical/egg shape
+        p.squashX += (1.0 - p.squashX) * 7.0 * dt;
+        p.squashY += (1.0 - p.squashY) * 7.0 * dt;
       }
+    }
 
-      // Horizontal canvas wall boundaries
-      const minX = p.balloonRadius + 12;
-      const maxX = width - p.balloonRadius - 12;
-      if (p.balloonX < minX) {
-        p.balloonX = minX;
-        p.balloonVx *= -0.3;
-      } else if (p.balloonX > maxX) {
-        p.balloonX = maxX;
-        p.balloonVx *= -0.3;
-      }
+    // Horizontal boundary collision for balloon
+    const minX = p.balloonRadius + 14;
+    const maxX = width - p.balloonRadius - 14;
+    if (p.balloonX < minX) {
+      p.balloonX = minX;
+      p.balloonVx *= -0.3;
+    } else if (p.balloonX > maxX) {
+      p.balloonX = maxX;
+      p.balloonVx *= -0.3;
+    }
 
-      // Tilt dynamics: balloon tilts with aerodynamic drag and string pull
-      const targetTilt = Math.max(-0.4, Math.min(0.4, p.balloonVx * 0.0035 + (p.tagX - p.balloonX) * 0.002));
-      p.balloonTiltVel += (targetTilt - p.balloonTilt) * 20 * dt;
-      p.balloonTiltVel *= 0.86;
-      p.balloonTilt += p.balloonTiltVel;
+    // --- 2. String & Tag Pulling Mechanics ---
+    const tagHoleX = p.tagX;
+    const tagHoleY = p.tagY - p.tagHeight * 0.38;
 
-      // Balloon neck coordinate where string is tied
-      const neckX = p.balloonX + Math.sin(p.balloonTilt) * (p.balloonRadius * 1.15);
-      const neckY = p.balloonY + Math.cos(p.balloonTilt) * (p.balloonRadius * 1.15);
+    // Calculate balloon neck position where ribbon is tied
+    const neckYOffset = p.balloonRadius * 1.15;
+    const neckX = p.balloonX + Math.sin(p.balloonTilt) * neckYOffset;
+    const neckY = p.balloonY + Math.cos(p.balloonTilt) * neckYOffset;
 
-      // --- 2. Cardboard Tag Physics ---
-      if (!p.isDragging) {
-        // Tag pendular gravity + string pull
-        p.tagVy += p.gravity * dt;
-        p.tagVx *= 0.94;
-        p.tagVy *= 0.94;
+    // Vector from balloon neck to tag hole
+    const distNeckToTag = Math.hypot(tagHoleX - neckX, tagHoleY - neckY) || 0.001;
+    const dirX = (tagHoleX - neckX) / distNeckToTag;
+    const dirY = (tagHoleY - neckY) / distNeckToTag;
 
-        p.tagX += p.tagVx * dt;
-        p.tagY += p.tagVy * dt;
+    // CRITICAL FIX: If string is pulled taut (dist > totalMaxStringLength),
+    // tension force DIRECTLY pulls balloon neck towards the tag!
+    if (distNeckToTag > totalMaxStringLength) {
+      const stretch = distNeckToTag - totalMaxStringLength;
 
-        // Tag rotation damping towards neutral
-        p.tagAngularVel += (-p.tagAngle * 14.0 + (p.tagVx * 0.004)) * dt;
-        p.tagAngularVel *= 0.88;
-        p.tagAngle += p.tagAngularVel;
-      }
+      if (p.dragTarget === 'tag') {
+        // Tag is being pulled by user: tension acts strongly downwards and sideways on balloon
+        const tensionForce = stretch * 65.0; // Proportional string tension
+        p.balloonVx += dirX * tensionForce * dt;
+        p.balloonVy += dirY * tensionForce * dt;
 
-      const tagHoleX = p.tagX;
-      const tagHoleY = p.tagY - p.tagHeight * 0.35;
-
-      // --- 3. Multi-Segment Verlet String Chain ---
-      if (segments.length > 1) {
-        // Pin ends: node 0 at balloon neck, node last at tag hole
-        segments[0].x = neckX;
-        segments[0].y = neckY;
-        segments[0].oldX = neckX;
-        segments[0].oldY = neckY;
-
-        const lastIdx = segments.length - 1;
-        segments[lastIdx].x = tagHoleX;
-        segments[lastIdx].y = tagHoleY;
-        segments[lastIdx].oldX = tagHoleX;
-        segments[lastIdx].oldY = tagHoleY;
-
-        // Verlet integration for middle nodes
-        for (let i = 1; i < lastIdx; i++) {
-          const seg = segments[i];
-          const vx = (seg.x - seg.oldX) * 0.95;
-          const vy = (seg.y - seg.oldY) * 0.95;
-          seg.oldX = seg.x;
-          seg.oldY = seg.y;
-
-          // Light string gravity
-          seg.x += vx;
-          seg.y += vy + 4.5 * dt;
+        // Position constraint assist: ensures balloon cannot lag infinitely far behind tag
+        if (stretch > 18) {
+          const excess = stretch - 18;
+          p.balloonX += dirX * excess * 0.85;
+          p.balloonY += dirY * excess * 0.85;
         }
 
-        // Distance constraint relaxation (5 iterations for taut ribbon feel)
-        for (let iter = 0; iter < 5; iter++) {
-          for (let i = 0; i < lastIdx; i++) {
-            const n1 = segments[i];
-            const n2 = segments[i + 1];
-            const dx = n2.x - n1.x;
-            const dy = n2.y - n1.y;
-            const dist = Math.hypot(dx, dy) || 0.001;
-            const diff = (dist - p.segmentLength) / dist;
+        // Dynamic squash-and-stretch during downward pull
+        const stretchRatio = Math.min(1.22, 1.0 + stretch * 0.0035);
+        p.squashY = Math.max(p.squashY, stretchRatio);
+        p.squashX = Math.min(p.squashX, 1.0 / Math.sqrt(stretchRatio));
+      }
+    }
 
-            if (i === 0) {
-              // n1 is pinned to balloon neck
-              n2.x -= dx * diff * 0.85;
-              n2.y -= dy * diff * 0.85;
-            } else if (i === lastIdx - 1) {
-              // n2 is pinned to tag
-              n1.x += dx * diff * 0.85;
-              n1.y += dy * diff * 0.85;
-            } else {
-              n1.x += dx * diff * 0.45;
-              n1.y += dy * diff * 0.45;
-              n2.x -= dx * diff * 0.45;
-              n2.y -= dy * diff * 0.45;
-            }
+    // Balloon tilt: tilts with aerodynamic drag and string tension direction
+    const targetTilt = Math.max(-0.48, Math.min(0.48, (p.balloonVx * 0.004) + (dirX * 0.28)));
+    p.balloonTiltVel += (targetTilt - p.balloonTilt) * 22.0 * dt;
+    p.balloonTiltVel *= 0.86;
+    p.balloonTilt += p.balloonTiltVel;
+
+    // Recalculate neck after tilt update
+    const currentNeckX = p.balloonX + Math.sin(p.balloonTilt) * neckYOffset;
+    const currentNeckY = p.balloonY + Math.cos(p.balloonTilt) * neckYOffset;
+
+    // --- 3. Cardboard Tag Physics (when not dragged) ---
+    if (p.dragTarget !== 'tag') {
+      // Downward gravity on tag (positive acceleration)
+      p.tagVy += p.tagGravity * dt;
+
+      // Air resistance
+      p.tagVx *= 0.95;
+      p.tagVy *= 0.95;
+
+      p.tagX += p.tagVx * dt;
+      p.tagY += p.tagVy * dt;
+
+      // If string is taut while tag is swinging, tension pulls tag towards balloon
+      if (distNeckToTag > totalMaxStringLength) {
+        const stretch = distNeckToTag - totalMaxStringLength;
+        const tagTension = stretch * 55.0;
+        p.tagVx -= dirX * tagTension * dt;
+        p.tagVy -= dirY * tagTension * dt;
+      }
+
+      // Restoring pendular torque on tag angle
+      const stringAngle = Math.atan2(tagHoleX - currentNeckX, tagHoleY - currentNeckY);
+      p.tagAngularVel += (-(p.tagAngle - stringAngle) * 22.0 + (p.tagVx * 0.005)) * dt;
+      p.tagAngularVel *= 0.88;
+      p.tagAngle += p.tagAngularVel;
+
+      // Floor boundary for tag
+      if (p.tagY > height - 20) {
+        p.tagY = height - 20;
+        p.tagVy = -p.tagVy * 0.2;
+      }
+    }
+
+    // --- 4. Multi-Segment Verlet String Chain Integration ---
+    if (segments.length > 1) {
+      const lastIdx = segments.length - 1;
+
+      // Pin ends: node 0 at balloon neck, node last at tag hole
+      segments[0].x = currentNeckX;
+      segments[0].y = currentNeckY;
+      segments[0].oldX = currentNeckX;
+      segments[0].oldY = currentNeckY;
+
+      segments[lastIdx].x = tagHoleX;
+      segments[lastIdx].y = tagHoleY;
+      segments[lastIdx].oldX = tagHoleX;
+      segments[lastIdx].oldY = tagHoleY;
+
+      // Verlet update for intermediate string nodes
+      for (let i = 1; i < lastIdx; i++) {
+        const seg = segments[i];
+        const vx = (seg.x - seg.oldX) * 0.96;
+        const vy = (seg.y - seg.oldY) * 0.96;
+        seg.oldX = seg.x;
+        seg.oldY = seg.y;
+
+        // Subtle ribbon gravity & ambient wave
+        seg.x += vx;
+        seg.y += vy + 8.5 * dt;
+      }
+
+      // Relaxation iterations for smooth curved ribbon physics
+      const iterations = 6;
+      for (let iter = 0; iter < iterations; iter++) {
+        for (let i = 0; i < lastIdx; i++) {
+          const n1 = segments[i];
+          const n2 = segments[i + 1];
+          const dx = n2.x - n1.x;
+          const dy = n2.y - n1.y;
+          const dist = Math.hypot(dx, dy) || 0.001;
+          const diff = (dist - segLen) / dist;
+
+          if (i === 0) {
+            // n1 is pinned to balloon neck
+            n2.x -= dx * diff * 0.88;
+            n2.y -= dy * diff * 0.88;
+          } else if (i === lastIdx - 1) {
+            // n2 is pinned to tag
+            n1.x += dx * diff * 0.88;
+            n1.y += dy * diff * 0.88;
+          } else {
+            n1.x += dx * diff * 0.48;
+            n1.y += dy * diff * 0.48;
+            n2.x -= dx * diff * 0.48;
+            n2.y -= dy * diff * 0.48;
           }
         }
-
-        // String tension pulling balloon down when tag is dragged
-        const totalDist = Math.hypot(tagHoleX - neckX, tagHoleY - neckY);
-        const maxStringLen = (segments.length - 1) * p.segmentLength;
-        if (totalDist > maxStringLen) {
-          const excess = totalDist - maxStringLen;
-          const nx = (tagHoleX - neckX) / totalDist;
-          const ny = (tagHoleY - neckY) / totalDist;
-          // Pull balloon towards tag
-          p.balloonVx += nx * excess * 22 * dt;
-          p.balloonVy += ny * excess * 24 * dt;
-        }
-
-        if (!p.isDragging) {
-          // Tension pulling tag back towards balloon string
-          const bottomSeg = segments[lastIdx - 1];
-          const pullX = (bottomSeg.x - tagHoleX) * 28;
-          const pullY = (bottomSeg.y - tagHoleY + p.segmentLength) * 28;
-          p.tagVx += pullX * dt;
-          p.tagVy += pullY * dt;
-        }
       }
+    }
 
-      // --- 4. Render Scene ---
-      ctx.clearRect(0, 0, width, height);
+    // --- 5. Rendering Scene ---
+    ctx.clearRect(0, 0, width, height);
 
-      // Warm off-white room environment gradient (as in photo)
-      const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
-      bgGrad.addColorStop(0, '#F5F2EB');
-      bgGrad.addColorStop(0.14, '#ECE8DF');
-      bgGrad.addColorStop(1, '#E4DFD5');
-      ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, width, height);
+    // Warm architectural off-white room environment gradient (as in photo)
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+    bgGrad.addColorStop(0, '#F5F2EB');
+    bgGrad.addColorStop(0.18, '#ECE7DE');
+    bgGrad.addColorStop(1, '#E1DBD0');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, width, height);
 
-      // Ceiling line & soft architectural shadow
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.09)';
-      ctx.lineWidth = 1.5;
+    // Ceiling architectural line & soft contact shadow
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, p.ceilingY);
+    ctx.lineTo(width, p.ceilingY);
+    ctx.stroke();
+
+    // Soft ceiling shadow directly above the balloon
+    const shadowDist = Math.max(0, p.balloonY - (p.ceilingY + p.balloonRadius * 0.88));
+    const shadowAlpha = Math.max(0.04, 0.32 - shadowDist * 0.003);
+    const shadowRadius = Math.max(22, p.balloonRadius * 0.92 - shadowDist * 0.15);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(p.balloonX, p.ceilingY, shadowRadius, 10, 0, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(0, 0, 0, ${shadowAlpha})`;
+    ctx.filter = 'blur(6px)';
+    ctx.fill();
+    ctx.restore();
+
+    // --- DRAW RIBBON STRING ---
+    if (segments.length > 1) {
+      // String shadow
       ctx.beginPath();
-      ctx.moveTo(0, p.ceilingY);
-      ctx.lineTo(width, p.ceilingY);
+      ctx.moveTo(segments[0].x + 3, segments[0].y + 3);
+      for (let i = 1; i < segments.length - 1; i++) {
+        const xc = (segments[i].x + segments[i + 1].x) / 2 + 3;
+        const yc = (segments[i].y + segments[i + 1].y) / 2 + 3;
+        ctx.quadraticCurveTo(segments[i].x + 3, segments[i].y + 3, xc, yc);
+      }
+      ctx.lineTo(segments[segments.length - 1].x + 3, segments[segments.length - 1].y + 3);
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)';
+      ctx.lineWidth = 2.0;
       ctx.stroke();
 
-      const corniceGrad = ctx.createLinearGradient(0, p.ceilingY, 0, p.ceilingY + 16);
-      corniceGrad.addColorStop(0, 'rgba(0, 0, 0, 0.06)');
-      corniceGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = corniceGrad;
-      ctx.fillRect(0, p.ceilingY, width, 16);
-
-      // Ceiling contact shadow when balloon touches ceiling
-      if (p.balloonY - p.ceilingY < p.balloonRadius * 1.3) {
-        const shadowDist = Math.max(0, p.balloonY - p.ceilingY);
-        const shadowAlpha = Math.max(0, 0.32 - shadowDist * 0.004);
-        ctx.save();
-        ctx.beginPath();
-        ctx.ellipse(p.balloonX, p.ceilingY + 2, p.balloonRadius * 0.76, 8, 0, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(35, 25, 25, ${shadowAlpha})`;
-        ctx.filter = 'blur(5px)';
-        ctx.fill();
-        ctx.restore();
-      }
-
-      // Multi-segment Flexible String
-      if (segments.length > 1) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.moveTo(segments[0].x, segments[0].y);
-        for (let i = 1; i < segments.length - 1; i++) {
-          const xc = (segments[i].x + segments[i + 1].x) / 2;
-          const yc = (segments[i].y + segments[i + 1].y) / 2;
-          ctx.quadraticCurveTo(segments[i].x, segments[i].y, xc, yc);
-        }
-        ctx.lineTo(segments[segments.length - 1].x, segments[segments.length - 1].y);
-
-        // String shadow
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.12)';
-        ctx.lineWidth = 1.8;
-        ctx.stroke();
-
-        // White silk ribbon string (as in photo)
-        ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 1.3;
-        ctx.stroke();
-        ctx.restore();
-      }
-
-      // Draw Brown Kraft Cardboard Tag (Square with punched hole & knot)
-      ctx.save();
-      ctx.translate(p.tagX, p.tagY);
-      ctx.rotate(p.tagAngle);
-
-      // Cardboard drop shadow
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.24)';
-      ctx.shadowBlur = 12;
-      ctx.shadowOffsetX = 3;
-      ctx.shadowOffsetY = 6;
-
-      const halfW = p.tagWidth / 2;
-      const halfH = p.tagHeight / 2;
-
-      // Brown kraft tag body (#8B5A2B / #A06A38 palette as specified)
-      const tagGrad = ctx.createLinearGradient(-halfW, -halfH, halfW, halfH);
-      tagGrad.addColorStop(0, '#A06A38');
-      tagGrad.addColorStop(0.5, '#8B5A2B');
-      tagGrad.addColorStop(1, '#74481F');
-      ctx.fillStyle = tagGrad;
-      ctx.fillRect(-halfW, -halfH, p.tagWidth, p.tagHeight);
-
-      // Reset shadow for crisp border and hole
-      ctx.shadowColor = 'transparent';
-
-      // Cardboard subtle bevel border
-      ctx.strokeStyle = 'rgba(60, 35, 15, 0.4)';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(-halfW, -halfH, p.tagWidth, p.tagHeight);
-
-      // Punched circular hole near top edge
-      const holeY = -halfH + 8;
+      // Main crisp white ribbon
       ctx.beginPath();
-      ctx.arc(0, holeY, 2.8, 0, Math.PI * 2);
-      ctx.fillStyle = '#E4DFD5'; // reveal background room wall
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(50, 30, 10, 0.7)';
-      ctx.lineWidth = 0.8;
-      ctx.stroke();
-
-      // String loop through hole
-      ctx.beginPath();
-      ctx.arc(0, holeY - 1, 3.5, 0.2 * Math.PI, 0.8 * Math.PI);
+      ctx.moveTo(segments[0].x, segments[0].y);
+      for (let i = 1; i < segments.length - 1; i++) {
+        const xc = (segments[i].x + segments[i + 1].x) / 2;
+        const yc = (segments[i].y + segments[i + 1].y) / 2;
+        ctx.quadraticCurveTo(segments[i].x, segments[i].y, xc, yc);
+      }
+      ctx.lineTo(segments[segments.length - 1].x, segments[segments.length - 1].y);
       ctx.strokeStyle = '#FFFFFF';
-      ctx.lineWidth = 1.4;
+      ctx.lineWidth = 2.2;
+      ctx.lineCap = 'round';
       ctx.stroke();
 
-      // Drag affordance text on cardboard tag
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
-      ctx.font = 'bold 7px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('DRAG', 0, 6);
-      ctx.fillText('TAG', 0, 15);
-
-      ctx.restore();
-
-      // Draw Realistic Latex Balloon matching photo
-      ctx.save();
-      ctx.translate(p.balloonX, p.balloonY);
-      ctx.rotate(p.balloonTilt);
-      ctx.scale(p.squashX, p.squashY);
-
-      const r = p.balloonRadius;
-
-      // Color Palette definition: Default is rich Sky Blue matching the photo
-      let color1 = '#388BFD';
-      let color2 = '#005CE6';
-      let color3 = '#003399';
-
-      if (balloonColor === 'red') {
-        color1 = '#FF3B30';
-        color2 = '#C41C16';
-        color3 = '#7A0A06';
-      } else if (balloonColor === 'gold') {
-        color1 = '#FBBF24';
-        color2 = '#D97706';
-        color3 = '#92400E';
-      }
-
-      // Elongated egg-shaped latex silhouette
-      ctx.beginPath();
-      ctx.moveTo(0, -r * 0.96);
-      // Top hemisphere
-      ctx.bezierCurveTo(r * 0.86, -r * 0.96, r * 1.05, -r * 0.18, r * 0.94, r * 0.38);
-      // Taper down to neck
-      ctx.bezierCurveTo(r * 0.84, r * 0.82, r * 0.35, r * 1.06, 0, r * 1.09);
-      ctx.bezierCurveTo(-r * 0.35, r * 1.06, -r * 0.84, r * 0.82, -r * 0.94, r * 0.38);
-      ctx.bezierCurveTo(-r * 1.05, -r * 0.18, -r * 0.86, -r * 0.96, 0, -r * 0.96);
-      ctx.closePath();
-
-      // Volumetric sphere gradient
-      const ballGrad = ctx.createRadialGradient(-r * 0.32, -r * 0.32, r * 0.08, 0, 0, r * 1.18);
-      ballGrad.addColorStop(0, color1);
-      ballGrad.addColorStop(0.65, color2);
-      ballGrad.addColorStop(1, color3);
-      ctx.fillStyle = ballGrad;
-      ctx.fill();
-
-      // Tied neck / knot at bottom
-      ctx.beginPath();
-      ctx.moveTo(-4, r * 1.09);
-      ctx.lineTo(4, r * 1.09);
-      ctx.lineTo(6, r * 1.20);
-      ctx.lineTo(-6, r * 1.20);
-      ctx.closePath();
-      ctx.fillStyle = color3;
-      ctx.fill();
-
-      // Soft curved window specular reflection highlight on upper-left shoulder (as in photo)
-      ctx.save();
-      ctx.beginPath();
-      ctx.ellipse(-r * 0.40, -r * 0.40, r * 0.28, r * 0.42, -0.4, 0, Math.PI * 2);
-      const specGrad = ctx.createLinearGradient(-r * 0.52, -r * 0.62, -r * 0.2, -r * 0.2);
-      specGrad.addColorStop(0, 'rgba(255, 255, 255, 0.78)');
-      specGrad.addColorStop(0.38, 'rgba(255, 255, 255, 0.36)');
-      specGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      ctx.fillStyle = specGrad;
-      ctx.fill();
-
-      // Window reflection pane bar
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
-      ctx.lineWidth = 1.3;
-      ctx.beginPath();
-      ctx.moveTo(-r * 0.52, -r * 0.40);
-      ctx.lineTo(-r * 0.26, -r * 0.40);
+      // Subtle ribbon highlight edge
+      ctx.strokeStyle = 'rgba(235, 235, 235, 0.8)';
+      ctx.lineWidth = 1.0;
       ctx.stroke();
-
-      // Soft rim glow on right edge
-      ctx.beginPath();
-      ctx.arc(0, 0, r * 0.98, -0.2, 1.2);
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.24)';
-      ctx.lineWidth = 2.4;
-      ctx.stroke();
-
-      ctx.restore();
-
-      ctx.restore();
-
-      animId = requestAnimationFrame(step);
-    };
-
-    animId = requestAnimationFrame(step);
-
-    return () => {
-      cancelAnimationFrame(animId);
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [initPhysics, balloonColor]);
-
-  // Pointer interaction on draggable kraft cardboard tag
-  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const p = physicsRef.current;
-    const distToTag = Math.hypot(x - p.tagX, y - p.tagY);
-
-    // Clicked on or near tag
-    if (distToTag < 48) {
-      canvas.setPointerCapture(e.pointerId);
-      p.isDragging = true;
-      p.dragOffsetX = x - p.tagX;
-      p.dragOffsetY = y - p.tagY;
-      p.lastPointerX = x;
-      p.lastPointerY = y;
-      p.pointerVx = 0;
-      p.pointerVy = 0;
-      setStatusMessage('PULLING CARDBOARD TAG');
     }
-  };
 
-  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    const p = physicsRef.current;
-    if (!p.isDragging) return;
+    // --- DRAW CARDBOARD TAG (PRIMARY DRAG HANDLE) ---
+    ctx.save();
+    ctx.translate(p.tagX, p.tagY);
+    ctx.rotate(p.tagAngle);
 
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    // Drop shadow under tag
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.16)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetX = 3;
+    ctx.shadowOffsetY = 4;
 
-    p.pointerVx = (x - p.lastPointerX) * 20;
-    p.pointerVy = (y - p.lastPointerY) * 20;
-    p.lastPointerX = x;
-    p.lastPointerY = y;
+    const tw = p.tagWidth;
+    const th = p.tagHeight;
 
-    // Move tag with cursor
-    p.tagX = Math.max(20, Math.min(canvas.clientWidth - 20, x - p.dragOffsetX));
-    p.tagY = Math.max(p.ceilingY + 60, Math.min(canvas.clientHeight - 20, y - p.dragOffsetY));
+    // Kraft paper cardboard fill
+    const tagGrad = ctx.createLinearGradient(-tw / 2, -th / 2, tw / 2, th / 2);
+    tagGrad.addColorStop(0, '#D4B892');
+    tagGrad.addColorStop(0.5, '#C6A77D');
+    tagGrad.addColorStop(1, '#B8966B');
+    ctx.fillStyle = tagGrad;
+    ctx.fillRect(-tw / 2, -th / 2, tw, th);
 
-    // Dynamic tilt based on horizontal drag velocity
-    p.tagAngle = Math.max(-0.6, Math.min(0.6, p.pointerVx * 0.005));
-  };
+    // Subtle cardboard fiber texture border
+    ctx.shadowColor = 'transparent';
+    ctx.strokeStyle = '#9E7E56';
+    ctx.lineWidth = 1.2;
+    ctx.strokeRect(-tw / 2, -th / 2, tw, th);
 
-  const handlePointerUp = () => {
-    const p = physicsRef.current;
-    if (p.isDragging) {
-      p.isDragging = false;
-      p.tagVx = p.pointerVx * 0.6;
-      p.tagVy = p.pointerVy * 0.6;
-      p.tagAngularVel = p.pointerVx * 0.02;
-      setStatusMessage('RISING & OSCILLATING');
-      setTimeout(() => setStatusMessage('BUOYANT AT CEILING'), 1600);
-    }
-  };
+    // Punched hole at top
+    const holeY = -th * 0.35;
+    ctx.beginPath();
+    ctx.arc(0, holeY, 3.2, 0, Math.PI * 2);
+    ctx.fillStyle = '#6E553A';
+    ctx.fill();
+    ctx.strokeStyle = '#E7D5C0';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
 
-  // Add global window pointerup listeners so tag release is never stuck if cursor leaves canvas
-  useEffect(() => {
-    const onWindowPointerUp = () => {
-      const p = physicsRef.current;
-      if (p.isDragging) {
-        p.isDragging = false;
-        p.tagVx = p.pointerVx * 0.6;
-        p.tagVy = p.pointerVy * 0.6;
-        p.tagAngularVel = p.pointerVx * 0.02;
-        setStatusMessage('RISING & OSCILLATING');
-        setTimeout(() => setStatusMessage('BUOYANT AT CEILING'), 1600);
-      }
-    };
-    window.addEventListener('pointerup', onWindowPointerUp);
-    return () => window.removeEventListener('pointerup', onWindowPointerUp);
-  }, []);
+    // Clean embossed label on tag
+    ctx.fillStyle = 'rgba(80, 55, 30, 0.65)';
+    ctx.font = '600 7.5px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('PULL ME', 0, 8);
+
+    ctx.restore();
+
+    // --- DRAW HELIUM BALLOON ---
+    const theme = colorThemes[balloonColor];
+    ctx.save();
+    ctx.translate(p.balloonX, p.balloonY);
+    ctx.rotate(p.balloonTilt);
+    ctx.scale(p.squashX, p.squashY);
+
+    const r = p.balloonRadius;
+
+    // Tied neck nozzle & knot at bottom of balloon
+    ctx.save();
+    ctx.translate(0, r * 1.08);
+
+    // Tied latex nozzle
+    ctx.beginPath();
+    ctx.moveTo(-5, 0);
+    ctx.lineTo(5, 0);
+    ctx.lineTo(8, 8);
+    ctx.lineTo(-8, 8);
+    ctx.closePath();
+    ctx.fillStyle = theme.knotColor;
+    ctx.fill();
+
+    // Small white ribbon knot band
+    ctx.beginPath();
+    ctx.rect(-4, 5, 8, 3.5);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fill();
+    ctx.restore();
+
+    // Balloon Body Shape (egg-like aerodynamic teardrop curve)
+    ctx.beginPath();
+    // Top dome
+    ctx.arc(0, -r * 0.12, r * 0.98, Math.PI, 0, false);
+    // Right lower curve to neck
+    ctx.bezierCurveTo(r * 0.98, r * 0.45, r * 0.45, r * 1.06, 0, r * 1.12);
+    // Left lower curve to neck
+    ctx.bezierCurveTo(-r * 0.45, r * 1.06, -r * 0.98, r * 0.45, -r * 0.98, -r * 0.12);
+    ctx.closePath();
+
+    // Volumetric 3D spherical gradient
+    const balloonGrad = ctx.createRadialGradient(
+      -r * 0.32, -r * 0.36, r * 0.15,
+      0, 0, r * 1.15
+    );
+    balloonGrad.addColorStop(0, theme.balloonGrad[0]);
+    balloonGrad.addColorStop(0.68, theme.balloonGrad[1]);
+    balloonGrad.addColorStop(1, theme.balloonGrad[2]);
+    ctx.fillStyle = balloonGrad;
+    ctx.fill();
+
+    // Specular Window Reflection Highlight (matching reference photo)
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.38, -r * 0.38, r * 0.28, r * 0.42, -0.4, 0, Math.PI * 2);
+    const specGrad = ctx.createLinearGradient(-r * 0.52, -r * 0.62, -r * 0.2, -r * 0.2);
+    specGrad.addColorStop(0, theme.highlight);
+    specGrad.addColorStop(0.38, 'rgba(255, 255, 255, 0.36)');
+    specGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = specGrad;
+    ctx.fill();
+
+    // Window pane line detail
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.52, -r * 0.38);
+    ctx.lineTo(-r * 0.26, -r * 0.38);
+    ctx.stroke();
+
+    // Rim light on opposite edge
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.96, -0.2, 1.2);
+    ctx.strokeStyle = theme.rimLight;
+    ctx.lineWidth = 2.4;
+    ctx.stroke();
+
+    ctx.restore();
+    ctx.restore();
+  }, [balloonColor, colorThemes]);
+
+  // Register in unified animation loop
+  useAnimationLoop('helium-balloon', handleRenderFrame, true, 10);
 
   return (
     <div
-      className={`relative w-full h-[320px] bg-[#ECE8DF] border border-[var(--border-color)] overflow-hidden select-none flex flex-col justify-between ${className}`}
+      className={`relative w-full h-[320px] bg-[#ECE7DE] border border-[var(--border-color)] overflow-hidden select-none flex flex-col justify-between ${className}`}
     >
-      {/* Top Status */}
+      {/* Top Status & Controls */}
       <div className="absolute top-2 left-3 right-3 flex items-center justify-between z-10 pointer-events-none">
-        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-black/60 backdrop-blur-xs text-white rounded text-[10px] font-mono">
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
-          <span>ARCHIMEDEAN_HELIUM // VERLET TAG SUSPENSION</span>
+        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-black/75 backdrop-blur-xs text-white rounded text-[10px] font-mono border border-black/10">
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${
+              activeHandle !== 'none'
+                ? 'bg-rose-400'
+                : 'bg-emerald-400 animate-pulse'
+            }`}
+          ></span>
+          <span>HELIUM_BUOYANCY // ARCHIMEDES</span>
         </div>
 
-        <div className="text-[10px] font-mono font-bold text-slate-800 bg-white/80 border border-black/10 px-2 py-0.5 rounded shadow-xs">
-          {statusMessage}
+        <div className="flex items-center gap-2 pointer-events-auto">
+          {/* Color Switcher */}
+          <div className="flex items-center gap-1 bg-white/70 backdrop-blur-xs border border-black/15 p-0.5 rounded shadow-xs">
+            {(['blue', 'red', 'gold'] as const).map((colorKey) => (
+              <button
+                key={colorKey}
+                onClick={() => setBalloonColor(colorKey)}
+                className={`w-4 h-4 rounded-full border transition-transform ${
+                  balloonColor === colorKey
+                    ? 'scale-110 border-black ring-1 ring-black/40'
+                    : 'border-transparent opacity-75 hover:opacity-100'
+                }`}
+                style={{
+                  backgroundColor:
+                    colorKey === 'blue'
+                      ? '#2563EB'
+                      : colorKey === 'red'
+                      ? '#DC2626'
+                      : '#D97706',
+                }}
+                title={colorThemes[colorKey].label}
+              />
+            ))}
+          </div>
+
+          <div
+            className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border shadow-xs transition-colors ${
+              activeHandle !== 'none'
+                ? 'text-rose-900 bg-rose-100/90 border-rose-300'
+                : 'text-zinc-800 bg-white/80 border-black/15'
+            }`}
+          >
+            {statusMessage}
+          </div>
         </div>
       </div>
 
-      {/* Canvas */}
+      {/* Main Interactive Canvas */}
       <canvas
         ref={canvasRef}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-        className="w-full h-full block touch-none cursor-pointer"
+        className="w-full h-full block touch-none cursor-grab active:cursor-grabbing"
       />
 
-      {/* Bottom Controls */}
-      <div className="absolute bottom-2 left-3 right-3 flex flex-wrap items-center justify-between gap-2 z-10">
-        <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur-xs p-1 border border-black/15 rounded shadow-xs">
-          {/* Color Presets */}
-          {(['blue', 'red', 'gold'] as const).map((c) => (
-            <button
-              key={c}
-              onClick={() => setBalloonColor(c)}
-              type="button"
-              className={`px-2 py-1 text-[10px] font-mono font-bold uppercase transition-colors rounded cursor-pointer ${
-                balloonColor === c
-                  ? 'bg-black text-white shadow-xs'
-                  : 'bg-black/5 text-slate-700 hover:text-black'
-              }`}
-            >
-              {c}
-            </button>
-          ))}
+      {/* Bottom Hint and Controls */}
+      <div className="absolute bottom-2 left-3 right-3 flex items-center justify-between z-10">
+        <div className="flex items-center gap-1.5">
+          <div className="px-2 py-1 bg-white/80 backdrop-blur-xs text-zinc-700 border border-black/15 rounded text-[10px] font-mono shadow-xs">
+            HANDLE: <span className="font-bold text-amber-900">KRAFT TAG</span>
+          </div>
 
-          {/* Breeze Impulse */}
           <button
             onClick={handleBreeze}
-            type="button"
-            className="px-2 py-1 bg-black/5 hover:bg-black/10 text-slate-800 text-[10px] font-mono font-bold uppercase transition-colors flex items-center gap-1 cursor-pointer rounded"
+            className="flex items-center gap-1 px-2.5 py-1 bg-white/85 hover:bg-white text-zinc-800 border border-black/15 rounded text-[10px] font-mono shadow-xs transition-colors"
+            title="Trigger gentle room wind impulse"
           >
             <Wind className="w-3 h-3 text-blue-600" />
-            <span>Breeze</span>
-          </button>
-
-          {/* Reset */}
-          <button
-            onClick={handleReset}
-            type="button"
-            className="p-1 hover:bg-black/10 text-slate-700 transition-colors cursor-pointer rounded"
-            title="Reset balloon position"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <span>BREEZE</span>
           </button>
         </div>
 
-        <div className="text-[10px] font-mono text-slate-700 bg-white/80 px-2 py-1 rounded border border-black/10 hidden sm:block">
-          PULL CARDBOARD TAG DOWN OR SHAKE
-        </div>
+        <button
+          onClick={handleReset}
+          className="flex items-center gap-1 px-2.5 py-1 bg-white/85 hover:bg-white text-zinc-800 border border-black/15 rounded text-[10px] font-mono shadow-xs transition-colors"
+          title="Reset to ceiling resting position"
+        >
+          <RotateCcw className="w-3 h-3" />
+          <span>RESET</span>
+        </button>
       </div>
     </div>
   );
