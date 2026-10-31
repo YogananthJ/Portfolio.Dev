@@ -380,80 +380,83 @@ export const HeliumBalloon: React.FC<HeliumBalloonProps> = ({
     const tagHoleX = p.tagX;
     const tagHoleY = p.tagY - p.tagHeight * 0.38;
 
-    // Calculate balloon neck position where ribbon is tied
+    // In canvas coordinates: balloon rotated by theta clockwise maps (0, H) to (-H*sin(theta), +H*cos(theta))
     const neckYOffset = p.balloonRadius * 1.15;
-    const neckX = p.balloonX + Math.sin(p.balloonTilt) * neckYOffset;
+    const neckX = p.balloonX - Math.sin(p.balloonTilt) * neckYOffset;
     const neckY = p.balloonY + Math.cos(p.balloonTilt) * neckYOffset;
 
-    // Vector from balloon neck to tag hole
+    // Direction vector from balloon neck towards tag hole
     const distNeckToTag = Math.hypot(tagHoleX - neckX, tagHoleY - neckY) || 0.001;
     const dirX = (tagHoleX - neckX) / distNeckToTag;
     const dirY = (tagHoleY - neckY) / distNeckToTag;
 
-    // CRITICAL FIX: If string is pulled taut (dist > totalMaxStringLength),
-    // tension force DIRECTLY pulls balloon neck towards the tag!
+    // Dynamic Balloon Tilt:
+    // When tag is pulled to the right (dirX > 0), the neck is pulled right, so balloon rotates counter-clockwise (negative tilt).
+    // This correctly swings the bottom right towards the string while the top leans slightly left.
+    const targetTilt = Math.max(-0.52, Math.min(0.52, -dirX * 0.42 - (p.balloonVx * 0.003)));
+    p.balloonTiltVel += (targetTilt - p.balloonTilt) * 24.0 * dt;
+    p.balloonTiltVel *= 0.84;
+    p.balloonTilt += p.balloonTiltVel;
+
+    // Recalculate neck accurately after tilt update
+    const currentNeckX = p.balloonX - Math.sin(p.balloonTilt) * neckYOffset;
+    const currentNeckY = p.balloonY + Math.cos(p.balloonTilt) * neckYOffset;
+
+    // Dynamic tension and constraint handling
     if (distNeckToTag > totalMaxStringLength) {
       const stretch = distNeckToTag - totalMaxStringLength;
 
       if (p.dragTarget === 'tag') {
-        // Tag is being pulled by user: tension acts strongly downwards and sideways on balloon
-        const tensionForce = stretch * 65.0; // Proportional string tension
-        p.balloonVx += dirX * tensionForce * dt;
-        p.balloonVy += dirY * tensionForce * dt;
+        // Tag dragged by user: directly pulls balloon towards tag
+        p.balloonX += dirX * stretch;
+        p.balloonY += dirY * stretch;
+        p.balloonVx += dirX * stretch * 16.0;
+        p.balloonVy += dirY * stretch * 16.0;
 
-        // Position constraint assist: ensures balloon cannot lag infinitely far behind tag
-        if (stretch > 18) {
-          const excess = stretch - 18;
-          p.balloonX += dirX * excess * 0.85;
-          p.balloonY += dirY * excess * 0.85;
-        }
-
-        // Dynamic squash-and-stretch during downward pull
-        const stretchRatio = Math.min(1.22, 1.0 + stretch * 0.0035);
+        // Dynamic latex elongation when pulled
+        const stretchRatio = Math.min(1.24, 1.0 + stretch * 0.004);
         p.squashY = Math.max(p.squashY, stretchRatio);
         p.squashX = Math.min(p.squashX, 1.0 / Math.sqrt(stretchRatio));
+      } else if (p.dragTarget === 'balloon') {
+        // Balloon dragged by user: pulls tag towards balloon
+        p.tagX -= dirX * stretch;
+        p.tagY -= dirY * stretch;
+        p.tagVx = p.balloonVx;
+        p.tagVy = p.balloonVy;
       }
     }
 
-    // Balloon tilt: tilts with aerodynamic drag and string tension direction
-    const targetTilt = Math.max(-0.48, Math.min(0.48, (p.balloonVx * 0.004) + (dirX * 0.28)));
-    p.balloonTiltVel += (targetTilt - p.balloonTilt) * 22.0 * dt;
-    p.balloonTiltVel *= 0.86;
-    p.balloonTilt += p.balloonTiltVel;
-
-    // Recalculate neck after tilt update
-    const currentNeckX = p.balloonX + Math.sin(p.balloonTilt) * neckYOffset;
-    const currentNeckY = p.balloonY + Math.cos(p.balloonTilt) * neckYOffset;
-
     // --- 3. Cardboard Tag Physics (when not dragged) ---
     if (p.dragTarget !== 'tag') {
-      // Downward gravity on tag (positive acceleration)
+      // Downward gravity on tag (positive acceleration in canvas)
       p.tagVy += p.tagGravity * dt;
 
-      // Air resistance
-      p.tagVx *= 0.95;
-      p.tagVy *= 0.95;
+      // Air resistance damping
+      p.tagVx *= 0.94;
+      p.tagVy *= 0.94;
 
       p.tagX += p.tagVx * dt;
       p.tagY += p.tagVy * dt;
 
-      // If string is taut while tag is swinging, tension pulls tag towards balloon
+      // If string is taut while rising/swinging, tension pulls tag towards balloon
       if (distNeckToTag > totalMaxStringLength) {
         const stretch = distNeckToTag - totalMaxStringLength;
-        const tagTension = stretch * 55.0;
-        p.tagVx -= dirX * tagTension * dt;
-        p.tagVy -= dirY * tagTension * dt;
+        p.tagX -= dirX * stretch * 0.88;
+        p.tagY -= dirY * stretch * 0.88;
+        p.tagVx -= dirX * stretch * 18.0;
+        p.tagVy -= dirY * stretch * 18.0;
       }
 
-      // Restoring pendular torque on tag angle
+      // Restoring pendular alignment: tag hangs along the angle of the string
       const stringAngle = Math.atan2(tagHoleX - currentNeckX, tagHoleY - currentNeckY);
-      p.tagAngularVel += (-(p.tagAngle - stringAngle) * 22.0 + (p.tagVx * 0.005)) * dt;
-      p.tagAngularVel *= 0.88;
+      const targetTagAngle = Math.max(-0.75, Math.min(0.75, stringAngle * 0.78 + (p.tagVx * 0.003)));
+      p.tagAngularVel += (targetTagAngle - p.tagAngle) * 24.0 * dt;
+      p.tagAngularVel *= 0.85;
       p.tagAngle += p.tagAngularVel;
 
       // Floor boundary for tag
-      if (p.tagY > height - 20) {
-        p.tagY = height - 20;
+      if (p.tagY > height - 22) {
+        p.tagY = height - 22;
         p.tagVy = -p.tagVy * 0.2;
       }
     }

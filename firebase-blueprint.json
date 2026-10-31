@@ -1,0 +1,26 @@
+{
+  "entities": {
+    "Analytics": {
+      "title": "Analytics",
+      "description": "Portfolio website analytics and visitor counters",
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "number",
+          "description": "Total unique visitors count"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "description": "ISO timestamp of last update"
+        }
+      },
+      "required": ["count"]
+    }
+  },
+  "firestore": {
+    "/analytics/{docId}": {
+      "schema": "Analytics",
+      "description": "Analytics documents including visitor counter metrics"
+    }
+  }
+}

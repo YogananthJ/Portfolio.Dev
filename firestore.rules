@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidAnalytics(data) {
+      return data.keys().hasAll(['count']) &&
+             data.keys().hasOnly(['count', 'lastUpdated']) &&
+             data.count is number &&
+             data.count >= 0 &&
+             (!('lastUpdated' in data) || (data.lastUpdated is string && data.lastUpdated.size() <= 64));
+    }
+
+    match /analytics/{docId} {
+      allow read: if true;
+      allow create: if isValidAnalytics(request.resource.data);
+      allow update: if isValidAnalytics(request.resource.data) &&
+                       request.resource.data.count >= resource.data.count;
+      allow delete: if false;
+    }
+  }
+}

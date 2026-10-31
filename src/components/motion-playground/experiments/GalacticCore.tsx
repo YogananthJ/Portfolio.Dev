@@ -519,7 +519,7 @@ export const GalacticCore: React.FC<GalacticCoreProps> = ({
       const curX = homeX + p.dispX;
       const curY = homeY + p.dispY;
 
-      // --- MOUSE REPULSION PHYSICS (Strong, decisive clearing void) ---
+      // --- MOUSE REPULSION PHYSICS (Decisive clearing void with non-linear distance falloff) ---
       if (g.pointerActive && g.pointerX > -1000) {
         const dx = curX - g.pointerX;
         const dy = curY - g.pointerY;
@@ -528,22 +528,21 @@ export const GalacticCore: React.FC<GalacticCoreProps> = ({
 
         if (distSq < rRadiusSq && distSq > 0.0001) {
           const dist = Math.sqrt(distSq);
-          // Safe vector normalization
           const nx = dx / dist;
           const ny = dy / dist;
 
-          // Non-linear power falloff: strong push in center, smooth outward decay
-          const factor = 1 - dist / rRadius;
-          const falloff = Math.pow(factor, 1.6);
-          const force = falloff * rStrength;
+          // Strong non-linear quadratic-like falloff: maximum punch at center, clean dropoff at edge
+          const proximity = 1 - dist / rRadius;
+          const force = Math.pow(proximity, 1.8) * (rStrength * 3.6);
 
           // Apply velocity impulse
           p.vx += nx * force * dt;
           p.vy += ny * force * dt;
 
-          // Immediate displacement assist creates crisp clearing opening
-          p.dispX += nx * falloff * 28 * dt;
-          p.dispY += ny * falloff * 28 * dt;
+          // Immediate displacement kick to create an instantaneous crisp void
+          const kick = proximity * 28.0 * Math.min(1.0, dt * 60);
+          p.dispX += nx * kick;
+          p.dispY += ny * kick;
         }
       }
 
@@ -564,23 +563,27 @@ export const GalacticCore: React.FC<GalacticCoreProps> = ({
         }
       }
 
-      // --- HOOKE'S SPRING-DAMPER RECOVERY TO BASELINE ORBIT ---
-      // Spring force pulls particle back to its exact baseline home position
-      const springFx = -springK * p.dispX;
-      const springFy = -springK * p.dispY;
+      // --- ANALYTICAL SPRING-DAMPER RECOVERY TO BASELINE ORBIT ---
+      // F = -k*x - c*v (Hooke's restoring spring force + viscous velocity damping)
+      const springK = 22.0;               // Restoring spring stiffness to exact orbital coordinate
+      const dampingC = g.damping * 5.4;   // Viscous damping coefficient
 
-      p.vx += springFx * dt;
-      p.vy += springFy * dt;
+      const accelX = -springK * p.dispX - dampingC * p.vx;
+      const accelY = -springK * p.dispY - dampingC * p.vy;
 
-      // Velocity damping
-      p.vx *= damping;
-      p.vy *= damping;
+      p.vx += accelX * dt;
+      p.vy += accelY * dt;
+
+      // Exponential time-step normalized drag to avoid numerical divergence
+      const decay = Math.exp(-dampingC * dt);
+      p.vx *= decay;
+      p.vy *= decay;
 
       // Velocity clamping to prevent any runaway explosions
       const speed = Math.hypot(p.vx, p.vy);
-      if (speed > 680) {
-        p.vx = (p.vx / speed) * 680;
-        p.vy = (p.vy / speed) * 680;
+      if (speed > 750) {
+        p.vx = (p.vx / speed) * 750;
+        p.vy = (p.vy / speed) * 750;
       }
 
       p.dispX += p.vx * dt;
@@ -588,9 +591,17 @@ export const GalacticCore: React.FC<GalacticCoreProps> = ({
 
       // Clamping displacement to prevent flying off canvas
       const currentDisp = Math.hypot(p.dispX, p.dispY);
-      if (currentDisp > 240) {
-        p.dispX = (p.dispX / currentDisp) * 240;
-        p.dispY = (p.dispY / currentDisp) * 240;
+      if (currentDisp > 260) {
+        p.dispX = (p.dispX / currentDisp) * 260;
+        p.dispY = (p.dispY / currentDisp) * 260;
+      }
+
+      // Snap micro-displacement to 0 when near rest to eliminate jitter
+      if (currentDisp < 0.08 && speed < 0.12) {
+        p.dispX = 0;
+        p.dispY = 0;
+        p.vx = 0;
+        p.vy = 0;
       }
 
       if (currentDisp > maxDisplacement) {

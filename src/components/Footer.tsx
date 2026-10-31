@@ -1,6 +1,7 @@
 import React from 'react';
 import { PERSONAL_INFO } from '../data/portfolioData';
 import { ArrowUp, Github, Linkedin, Heart } from 'lucide-react';
+import { VisitorCounter } from './VisitorCounter';
 
 export const Footer: React.FC = () => {
   const scrollToTop = () => {
@@ -48,6 +49,18 @@ export const Footer: React.FC = () => {
               <span>Back to Top</span>
               <ArrowUp className="w-3.5 h-3.5" />
             </button>
+          </div>
+        </div>
+
+        {/* Dedicated Total Visitors Counter Section */}
+        <div className="py-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-white/10">
+          <div className="text-xs text-white/70 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#E11D48]"></span>
+            <span className="font-semibold text-white">PORTFOLIO TRAFFIC MONITOR</span>
+            <span className="text-white/40 hidden md:inline">— Tracking verified unique visits</span>
+          </div>
+          <div>
+            <VisitorCounter />
           </div>
         </div>
 
