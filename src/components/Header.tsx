@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Terminal, Send, Menu, X, Columns2, PanelLeft } from 'lucide-react';
+import { Terminal, Send, Menu, X, Columns2, PanelLeft, Volume2, VolumeX } from 'lucide-react';
 import { useLayout } from '../context/LayoutContext';
+import { soundFX } from '../utils/soundEffects';
 
 interface HeaderProps {
   onOpenTerminal: () => void;
@@ -11,6 +12,13 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, activeSection })
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { layoutMode, setLayoutMode, toggleSidebar, sidebarOpen } = useLayout();
 
+  const [soundActive, setSoundActive] = useState<boolean>(() => soundFX.getStatus());
+
+  const handleToggleSound = () => {
+    const next = soundFX.toggle();
+    setSoundActive(next);
+  };
+
   const navLinks = [
     { href: '#overview', label: 'Overview', id: 'overview' },
     { href: '#projects', label: 'Projects', id: 'projects' },
@@ -18,6 +26,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, activeSection })
     { href: '#simulators', label: 'AI Labs', id: 'simulators' },
     { href: '#motion-playground', label: 'Motion Lab', id: 'motion-playground' },
     { href: '#skills', label: 'Skills', id: 'skills' },
+    { href: '#github-activity', label: 'GitHub', id: 'github-activity' },
     { href: '#experience', label: 'Milestones', id: 'experience' },
     { href: '#contact', label: 'Contact', id: 'contact' },
   ];
@@ -91,9 +100,27 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, activeSection })
             <span>{layoutMode === 'split' ? 'Exit Split' : 'Split View'}</span>
           </button>
 
+          {/* Audio Synthesis Feedback Toggle */}
+          <button
+            onClick={handleToggleSound}
+            type="button"
+            className={`p-1.5 border transition-colors ${
+              soundActive
+                ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
+                : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-main)]'
+            }`}
+            title={soundActive ? 'Procedural Sound: ACTIVE (Click to mute)' : 'Procedural Sound: MUTED (Click to activate tactile audio)'}
+            aria-label="Toggle procedural sound synthesis"
+          >
+            {soundActive ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+          </button>
+
           {/* Terminal Launcher */}
           <button
-            onClick={onOpenTerminal}
+            onClick={() => {
+              soundFX.playClick();
+              onOpenTerminal();
+            }}
             type="button"
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-medium text-[var(--text-main)] bg-[var(--bg-surface)] hover:bg-[var(--bg-card)] border border-[var(--border-color)] transition-colors whitespace-nowrap"
             title="Open Developer Console (Cmd+K)"

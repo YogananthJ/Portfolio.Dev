@@ -7,6 +7,7 @@ import { SimulatorsSection } from './components/SimulatorsSection';
 import { MotionPlayground } from './components/motion-playground/MotionPlayground';
 import { MotionExperimentPage } from './components/motion-playground/detail/MotionExperimentPage';
 import { SkillsSection } from './components/SkillsSection';
+import { GitHubActivitySection } from './components/GitHubActivitySection';
 import { ExperienceSection } from './components/ExperienceSection';
 import { ContactSection } from './components/ContactSection';
 import { Footer } from './components/Footer';
@@ -18,6 +19,9 @@ import { SplitScreenWorkspace } from './components/SplitScreenWorkspace';
 import { LayoutProvider, useLayout } from './context/LayoutContext';
 import { ProjectItem } from './types/portfolio';
 import { PROJECTS } from './data/portfolioData';
+import { ScrollProgressBar } from './components/common/ScrollProgressBar';
+import { BackToTop } from './components/common/BackToTop';
+import { FuturisticSpotlight } from './components/common/FuturisticSpotlight';
 
 function PortfolioMainContent() {
   const { layoutMode, setLayoutMode, setActiveSimulatorId } = useLayout();
@@ -87,7 +91,7 @@ function PortfolioMainContent() {
   // Active section scroll spy (standard layout)
   useEffect(() => {
     if (layoutMode !== 'standard') return;
-    const sectionIds = ['overview', 'projects', 'architecture', 'simulators', 'motion-playground', 'skills', 'experience', 'contact'];
+    const sectionIds = ['overview', 'projects', 'architecture', 'simulators', 'motion-playground', 'skills', 'github-activity', 'experience', 'contact'];
     const handleScroll = () => {
       const scrollPosition = window.scrollY + 200;
       for (let i = sectionIds.length - 1; i >= 0; i--) {
@@ -121,6 +125,12 @@ function PortfolioMainContent() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-main)] flex flex-col font-sans selection:bg-[var(--accent)] selection:text-white relative">
+      {/* Viewport Scroll Progress Bar */}
+      <ScrollProgressBar />
+
+      {/* Subtle Hardware-Accelerated Ambient Cursor Spotlight (Non-touch devices only) */}
+      <FuturisticSpotlight />
+
       {/* 3-Zone Sticky Navigation */}
       <Header
         activeSection={activeSection}
@@ -174,6 +184,9 @@ function PortfolioMainContent() {
           {/* Core Toolkit & Competencies */}
           <SkillsSection />
 
+          {/* GitHub Activity & Open-Source Metrics */}
+          <GitHubActivitySection />
+
           {/* Verified Milestones & Certifications */}
           <ExperienceSection />
 
@@ -215,6 +228,9 @@ function PortfolioMainContent() {
 
       {/* Global Floating Layout & Workspace Controller */}
       <LayoutController />
+
+      {/* Floating Back To Top Button */}
+      <BackToTop />
     </div>
   );
 }

@@ -223,9 +223,83 @@ npm run clean    # Cleans build artifacts (dist/)
 
 ---
 
-## 7. License & Credits
+## 7. Real-Time Portfolio Visitor Counter (Firebase Firestore + Framer Motion)
+
+The portfolio incorporates an integrated live visitor analytics monitor in the footer (`src/components/VisitorCounter.tsx`) backed by **Google Cloud Firebase Firestore**.
+
+### Architecture & Data Flow
+1. **Cloud Firestore Collection:**
+   - Collection: `analytics`
+   - Document ID: `visitors`
+   - Schema: `{ count: number, lastUpdated: string }`
+2. **Persistent De-Duplication Protocol (`localStorage`):**
+   - **Persistent Visitor UUID:** Each browser is assigned a cryptographically generated UUID (`portfolio_unique_visitor_id`).
+   - **Pre-Flight Recording Guard:** When a user arrives, `localStorage.getItem('portfolio_visitor_recorded_v1')` is checked.
+     - **Recorded Browser:** If already flagged as `'true'`, the component only performs a read/listen operation via `onSnapshot` and **never increments the database**. Closing and reopening the browser, hard-refreshing (`F5`), or navigating between portfolio tabs/sections does not increment the count.
+     - **New Browser:** The flag is synchronously set to `'true'` immediately before the asynchronous Firestore transaction to guarantee that React double-invocations (StrictMode), rapid refreshes, or simultaneous multi-tab opens cannot trigger duplicate increments.
+3. **Smooth Count-Up Motion:**
+   - Numbers transition using Framer Motion’s `animate` utility with an exponential ease-out curve (`[0.16, 1, 0.3, 1]`), creating an authentic tally roll without layout jumps.
+4. **Security Hardening (`firestore.rules`):**
+   - **Monotonic Increment Guard:** `request.resource.data.count >= resource.data.count` strictly forbids decreasing or resetting the count.
+   - **Rate Abuse & Inflation Prevention:** `request.resource.data.count <= resource.data.count + 5` prevents malicious actors from injecting massive arbitrary counts.
+   - **Zero Deletes Allowed:** `allow delete: if false;` blocks destructive attempts.
+   - **Schema Blueprint:** Validates allowed keys (`count`, `lastUpdated`), type constraints (`number`), and positive boundaries.
+
+### Limitations of Browser-Based Unique Visitor Tracking
+- **Private / Incognito Browsing:** Browser privacy modes isolate `localStorage` to the private session and flush it entirely upon closing the window, meaning subsequent private sessions will be treated as new browsers.
+- **Cache & Storage Purging:** If a visitor manually clears site data, cookies, or browser storage, the persistent token is removed and a fresh ID will be generated on their next visit.
+- **Cross-Device & Cross-Browser Disconnection:** A single individual accessing the portfolio from Chrome on desktop and Safari on mobile will register as two distinct unique browsers, as client-side tokens cannot bridge disparate browser sandboxes without authenticated universal accounts.
+- **Strict Privacy Blockers:** Extreme script blockers blocking Firestore WebSocket/REST domains fall back to client-cached baseline estimates to prevent UI degradation.
+
+---
+
+## 8. Creative, Futuristic & Interactive Experience Enhancements
+
+The portfolio has been elevated into a distinctive, futuristic digital experience designed specifically for an AI Engineer, Full-Stack Developer, and Automation Specialist.
+
+### 1. Immersive Hero, Latent Vector Field & Neural Pipeline
+- **Interactive Latent Vector Space & Synapse Projection Field:** High-performance HTML5 Canvas modeling 4 anchored semantic engineering clusters (`Agentic Orchestration`, `Dense Vector RAG`, `Full-Stack Reactive`, and `Deep Learning Vision`). Features organic Brownian motion, real-time cosine proximity calculations (`cos_θ: 0.942`), vector projection rays, and click-triggered shockwaves.
+- **Dual Console Mode Switcher:** Instant toggling between the live SVG **Neural Pipeline Visualizer** (streaming user token tensors into FAISS cosine search and CrewAI sequential handoffs) and the interactive **Code Runtime** Python simulator.
+- **Framer Motion Text Reveals:** Staggered entrance animations for typography, mission statements, and engineering radar metrics.
+- **Scroll Explorer Indicator:** Visual downward guidance encouraging visitors to dive into the 10 verified systems.
+
+### 2. Interactive Projects Showcase, 3D Tilt & X-Ray Blueprint Lens
+- **Hardware-Accelerated 3D Card Tilt:** Interactive `rotateX` and `rotateY` physics responding dynamically to cursor position, accompanied by radial hover light reflections.
+- **Interactive Architecture X-Ray Blueprint Lens:** Every project card features a tactile `[X-RAY]` toggle that transforms the card banner into a topological system schematic with animated multi-stage data pipelines (e.g. *Trigger -> Neural Model -> Vector Sink*), live latency telemetry, and subsystem responsibilities.
+- **Deterministic Lifecycle Execution Trace (`ProjectModal.tsx`):** Every project detail window provides a 4-phase interactive state trace (`Ingestion`, `Middleware & RBAC`, `Core Model Inference`, `Dispatch & Sink`) with latency budgets and verification proofs.
+- **Category Filter Tabs:** Fluid switching between Hackathon prototypes, Generative AI & Agents, Academic Deep Learning models, and Full-Stack platforms.
+- **Direct Interactive Sandboxes:** Instant launcher buttons connecting directly to client-side heuristic simulators and verified live deployments (Streamlit Community Cloud & Telegram Bot).
+
+### 3. Technology Constellation & Skill Synergies
+- **Inter-Disciplinary Bridge Cards:** Visualizes cross-cutting relationships between AI, Full-Stack development, and Intelligent Automation.
+- **Interactive Filterable Technology Grid:** 7 specialized domains with real-time text search, depth classification (`Core Specialization`, `Proficient / Production`, `Exploring`), and verified project associations.
+
+### 4. Real-Time GitHub Activity & Open-Source Telemetry (`GitHubActivitySection.tsx`)
+- **Direct GitHub REST API v3 Integration:** Connects to public endpoints (`/users/YogananthJ`, `/repos`, `/events/public`) without exposing personal access tokens.
+- **Live Metrics Dashboard:**
+  - **Total Public Repositories:** Real-time count (28) with Framer Motion ease-out tally animation.
+  - **Stars Earned:** Summed dynamically across all public repositories.
+  - **Top 5 Programming Languages:** Computed language distribution breakdown with GitHub language palette badges (TypeScript 38%, HTML 15%, Python 12%, CSS 8%, Jupyter Notebook 8%).
+  - **Public Event Stream:** Live stream of recent push events, commit SHAs, and active repositories (`Portfolio.Dev`, `Leetcode-Prob`).
+- **Resilient Caching Protocol:** Caches API payloads in `localStorage` with a 30-minute expiration window to respect GitHub's 60 req/hr unauthenticated rate limit, accompanied by a manual `[REFRESH]` button.
+
+### 5. Visual Storytelling Timeline & Certifications
+- **Collapsible Chronological Journey:** Interactive milestone cards detailing academic milestones, hackathons, and personal builds with verified proof links.
+- **Official Industry Credentials:** Direct verification badges for **Anthropic Claude 101**, **Claude Code 101**, and **MongoDB Associate Developer**.
+
+### 6. Ambient Microinteractions, Tactile Sound & Navigation
+- **Kinetic Precision Reticle Cursor HUD (`FuturisticSpotlight.tsx`):** Lerp-interpolated dynamic targeting reticle with magnetic snapping to buttons, links, canvases, and cards, complete with contextual micro-labels (`[SYSTEM // SCHEMATIC]`, `[PHYSICS // DRAG]`).
+- **Tactile Procedural Audio Synthesizer (`src/utils/soundEffects.ts`):** High-fidelity Web Audio API engine synthesizing physical micro-clicks, cybernetic frequency sweeps, and harmonic chimes with 0kb external audio file overhead. Muted by default with an instant audio toggle in the header navigation.
+- **Scroll Progress Indicator (`ScrollProgressBar.tsx`):** Fixed electric-accent progress bar showing exact viewport scroll depth.
+- **Floating Back-to-Top Navigation (`BackToTop.tsx`):** Spring-animated quick navigation button appearing when scrolled past 450px.
+
+---
+
+## 9. License & Credits
 
 - **Author:** Yogananth J
 - **License:** MIT License
 - **Live Demo:** [https://cognitive-core-ai.streamlit.app/](https://cognitive-core-ai.streamlit.app/)
 - **Telegram Bot:** [@CareerPilotAgent2026_bot](https://t.me/CareerPilotAgent2026_bot)
+
+

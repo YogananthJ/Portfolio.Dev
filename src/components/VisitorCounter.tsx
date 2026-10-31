@@ -15,9 +15,14 @@ interface VisitorCounterProps {
   className?: string;
 }
 
-const SESSION_STORAGE_KEY = 'has_visited_session';
+// Persistent keys stored in localStorage so visits are counted strictly once per browser
+const VISITOR_ID_KEY = 'portfolio_unique_visitor_id';
+const VISITOR_RECORDED_KEY = 'portfolio_visitor_recorded_v1';
 const ANALYTICS_DOC_ID = 'visitors';
 const BASELINE_COUNT = 1428;
+
+// Module-level lock ensuring strict single-flight execution across concurrent renders
+let isSyncingGlobally = false;
 
 export const VisitorCounter: React.FC<VisitorCounterProps> = ({ className = '' }) => {
   const [visitorCount, setVisitorCount] = useState<number | null>(null);
@@ -25,17 +30,75 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({ className = '' }
   const [isNewVisitor, setIsNewVisitor] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const prevCountRef = useRef<number>(BASELINE_COUNT - 30);
+  const hasInitializedRef = useRef<boolean>(false);
 
-  // 1. Fetch & Increment count in Firebase Firestore 'analytics' collection
+  // 1. Fetch & Increment count strictly once per browser using localStorage
   useEffect(() => {
     let isMounted = true;
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
+
     const docRef = doc(db, 'analytics', ANALYTICS_DOC_ID);
 
     async function syncVisitorCount() {
-      try {
-        const hasVisited = sessionStorage.getItem(SESSION_STORAGE_KEY) === 'true';
+      let hasBeenCounted = false;
+      let visitorId = '';
 
-        // Check if doc exists
+      // Check persistent browser storage
+      try {
+        hasBeenCounted = localStorage.getItem(VISITOR_RECORDED_KEY) === 'true';
+        visitorId = localStorage.getItem(VISITOR_ID_KEY) || '';
+
+        if (!visitorId) {
+          visitorId =
+            typeof crypto !== 'undefined' && crypto.randomUUID
+              ? crypto.randomUUID()
+              : `v_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+          localStorage.setItem(VISITOR_ID_KEY, visitorId);
+        }
+      } catch (storageErr) {
+        console.warn('localStorage access failed (privacy mode or cookies disabled):', storageErr);
+      }
+
+      // Case A: This browser has ALREADY been counted previously.
+      // Simply fetch the current count and DO NOT increment.
+      if (hasBeenCounted) {
+        try {
+          const docSnap = await getDoc(docRef);
+          if (isMounted) {
+            if (docSnap.exists()) {
+              const data = docSnap.data();
+              const count = typeof data?.count === 'number' ? data.count : BASELINE_COUNT;
+              setVisitorCount(count);
+            } else {
+              setVisitorCount(BASELINE_COUNT);
+            }
+            setIsLoading(false);
+          }
+        } catch (err) {
+          console.warn('Firestore read error in visitor counter:', err);
+          if (isMounted) {
+            const cached = localStorage.getItem('portfolio_cached_visitors');
+            setVisitorCount(cached ? parseInt(cached, 10) : BASELINE_COUNT);
+            setIsLoading(false);
+          }
+        }
+        return;
+      }
+
+      // Case B: Brand new browser visit.
+      // Guard against race conditions (e.g. React StrictMode double-mounting or multiple tabs)
+      if (isSyncingGlobally) return;
+      isSyncingGlobally = true;
+
+      // Mark as counted IMMEDIATELY so any subsequent refresh or concurrent tab never increments again
+      try {
+        localStorage.setItem(VISITOR_RECORDED_KEY, 'true');
+      } catch {
+        // Storage write may fail in strict incognito; proceed gracefully
+      }
+
+      try {
         let docSnap;
         try {
           docSnap = await getDoc(docRef);
@@ -45,8 +108,8 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({ className = '' }
         }
 
         if (!docSnap.exists()) {
-          // Initialize baseline counter
-          const initialCount = hasVisited ? BASELINE_COUNT : BASELINE_COUNT + 1;
+          // Initialize baseline document
+          const initialCount = BASELINE_COUNT + 1;
           try {
             await setDoc(docRef, {
               count: initialCount,
@@ -58,64 +121,47 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({ className = '' }
 
           if (isMounted) {
             setVisitorCount(initialCount);
-            if (!hasVisited) {
-              sessionStorage.setItem(SESSION_STORAGE_KEY, 'true');
-              setIsNewVisitor(true);
-            }
+            setIsNewVisitor(true);
             setIsLoading(false);
           }
         } else {
+          // Document exists: atomically increment visitor count in Firestore
           const data = docSnap.data();
           const existingCount = typeof data?.count === 'number' ? data.count : BASELINE_COUNT;
+          const nextCount = existingCount + 1;
 
-          if (!hasVisited) {
-            // Unique visit in this session: increment Firestore counter
-            try {
-              await updateDoc(docRef, {
-                count: increment(1),
-                lastUpdated: new Date().toISOString(),
-              });
-            } catch (err) {
-              handleFirestoreError(err, OperationType.UPDATE, `analytics/${ANALYTICS_DOC_ID}`);
-            }
+          try {
+            await updateDoc(docRef, {
+              count: increment(1),
+              lastUpdated: new Date().toISOString(),
+            });
+          } catch (err) {
+            handleFirestoreError(err, OperationType.UPDATE, `analytics/${ANALYTICS_DOC_ID}`);
+          }
 
-            sessionStorage.setItem(SESSION_STORAGE_KEY, 'true');
-            if (isMounted) {
-              setVisitorCount(existingCount + 1);
-              setIsNewVisitor(true);
-              setIsLoading(false);
-            }
-          } else {
-            // Already visited in this session: just display current count
-            if (isMounted) {
-              setVisitorCount(existingCount);
-              setIsLoading(false);
-            }
+          if (isMounted) {
+            setVisitorCount(nextCount);
+            setIsNewVisitor(true);
+            setIsLoading(false);
           }
         }
       } catch (err) {
-        console.warn('Visitor counter offline or fallback mode:', err);
+        console.warn('Firestore write error, falling back to cached baseline:', err);
         if (isMounted) {
-          const hasVisited = sessionStorage.getItem(SESSION_STORAGE_KEY) === 'true';
           const cached = localStorage.getItem('portfolio_cached_visitors');
           const fallback = cached ? parseInt(cached, 10) : BASELINE_COUNT;
-          const nextVal = hasVisited ? fallback : fallback + 1;
-
-          if (!hasVisited) {
-            sessionStorage.setItem(SESSION_STORAGE_KEY, 'true');
-            localStorage.setItem('portfolio_cached_visitors', nextVal.toString());
-            setIsNewVisitor(true);
-          }
-
-          setVisitorCount(nextVal);
+          setVisitorCount(fallback + 1);
+          setIsNewVisitor(true);
           setIsLoading(false);
         }
+      } finally {
+        isSyncingGlobally = false;
       }
     }
 
     syncVisitorCount();
 
-    // Attach real-time Firestore onSnapshot listener for live synchronization
+    // Attach real-time Firestore onSnapshot listener for live synchronization across all visitors
     const unsubscribe = onSnapshot(
       docRef,
       (snapshot) => {
@@ -124,13 +170,16 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({ className = '' }
           const data = snapshot.data();
           if (typeof data?.count === 'number') {
             setVisitorCount(data.count);
-            localStorage.setItem('portfolio_cached_visitors', data.count.toString());
+            try {
+              localStorage.setItem('portfolio_cached_visitors', data.count.toString());
+            } catch {
+              // Ignore
+            }
             setIsLoading(false);
           }
         }
       },
       (error) => {
-        // Silently catch listener error and fallback
         console.warn('Firestore snapshot listener info:', error.message);
       }
     );

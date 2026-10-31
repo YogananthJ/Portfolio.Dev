@@ -16,9 +16,12 @@ service cloud.firestore {
 
     match /analytics/{docId} {
       allow read: if true;
-      allow create: if isValidAnalytics(request.resource.data);
+      allow create: if isValidAnalytics(request.resource.data) &&
+                       request.resource.data.count <= 2000;
+      // Prevent count reduction or mass inflation: count must strictly increment by at most 5 per write
       allow update: if isValidAnalytics(request.resource.data) &&
-                       request.resource.data.count >= resource.data.count;
+                       request.resource.data.count >= resource.data.count &&
+                       request.resource.data.count <= resource.data.count + 5;
       allow delete: if false;
     }
   }

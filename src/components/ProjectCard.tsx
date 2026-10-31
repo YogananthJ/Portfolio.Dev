@@ -1,6 +1,22 @@
-import React from 'react';
-import { Github, Play, ArrowUpRight, Cpu, Layers, Activity, ExternalLink, Bot, Trophy, Sparkles } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { motion } from 'framer-motion';
+import {
+  Github,
+  ArrowUpRight,
+  ExternalLink,
+  Bot,
+  Trophy,
+  Sparkles,
+  Layers,
+  Activity,
+  Cpu,
+  Binary,
+  GitBranch,
+  Eye,
+} from 'lucide-react';
 import { ProjectItem } from '../types/portfolio';
+import { ARCHITECTURE_DATA } from '../data/architectureData';
+import { soundFX } from '../utils/soundEffects';
 
 interface ProjectCardProps {
   project: ProjectItem;
@@ -9,6 +25,36 @@ interface ProjectCardProps {
 }
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onOpenModal, index }) => {
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const [tilt, setTilt] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState<boolean>(false);
+  const [isSchematicMode, setIsSchematicMode] = useState<boolean>(false);
+
+  // 3D Tilt interaction on pointer movement
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    const rotateX = ((y - centerY) / centerY) * -6; // max -6 to +6 deg
+    const rotateY = ((x - centerX) / centerX) * 6;  // max -6 to +6 deg
+
+    setTilt({ x: rotateX, y: rotateY });
+  };
+
+  const handleMouseLeave = () => {
+    setTilt({ x: 0, y: 0 });
+    setIsHovered(false);
+  };
+
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+  };
+
   // Visual banner illustration based on project ID
   const renderVisualIllustration = () => {
     switch (project.id) {
@@ -235,6 +281,69 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onOpenModal, 
     }
   };
 
+  // Topological Architecture Schematic Blueprint
+  const renderSchematicBlueprint = () => {
+    const arch = ARCHITECTURE_DATA[project.id];
+    const nodes = arch?.nodes ? arch.nodes.slice(0, 3) : [
+      { id: 'in', label: 'Trigger / Ingestion', subtitle: 'Event Stream', technologies: ['REST / Webhook'] },
+      { id: 'core', label: 'Model Pipeline', subtitle: 'Neural Compute', technologies: project.tags.slice(0, 2) },
+      { id: 'out', label: 'Store & Client', subtitle: 'Target Sink', technologies: ['Client UI'] },
+    ];
+
+    return (
+      <div className="w-full h-full bg-[#06080F] text-zinc-200 p-3.5 flex flex-col justify-between font-mono select-none relative overflow-hidden">
+        {/* Subtle schematic background blueprint grid */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-20"
+          style={{
+            backgroundImage: `radial-gradient(rgba(225, 29, 72, 0.4) 1px, transparent 1px), radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px)`,
+            backgroundSize: '20px 20px',
+            backgroundPosition: '0 0, 10px 10px',
+          }}
+        />
+
+        {/* Blueprint Header */}
+        <div className="flex items-center justify-between text-[10px] text-zinc-400 border-b border-white/10 pb-1.5 relative z-10">
+          <span className="flex items-center gap-1.5 text-[var(--accent)] font-bold">
+            <Binary className="w-3.5 h-3.5" />
+            <span>TOPOLOGY BLUEPRINT // X-RAY</span>
+          </span>
+          <span className="text-emerald-400 font-bold">3 STAGES</span>
+        </div>
+
+        {/* Sequential 3-Stage Pipeline with Animated Signal Flow */}
+        <div className="my-auto grid grid-cols-3 gap-2 relative z-10 items-center">
+          {nodes.map((node, i) => (
+            <div
+              key={node.id || i}
+              className="bg-black/70 border border-white/15 p-2 rounded-xs flex flex-col justify-between h-20 text-[9px] relative group-hover:border-[var(--accent)]/50 transition-colors"
+            >
+              <div className="flex items-center justify-between text-zinc-400 text-[8px]">
+                <span className="text-[var(--accent)] font-bold">S_{i + 1}</span>
+                <span className="truncate max-w-[50px]">{node.technologies?.[0] || 'Module'}</span>
+              </div>
+              <div className="font-bold text-white leading-tight truncate mt-1">
+                {node.label}
+              </div>
+              <div className="text-[8px] text-zinc-400 truncate mt-0.5">
+                {node.subtitle || 'Subsystem'}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Dynamic Telemetry Status */}
+        <div className="flex items-center justify-between text-[9px] pt-1.5 border-t border-white/10 text-zinc-400 relative z-10">
+          <span className="flex items-center gap-1 text-emerald-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>DATAFLOW ACTIVE</span>
+          </span>
+          <span className="text-zinc-500">LATENCY &lt;140MS</span>
+        </div>
+      </div>
+    );
+  };
+
   const getKindBadgeClass = () => {
     switch (project.projectKind) {
       case 'hackathon':
@@ -258,23 +367,69 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onOpenModal, 
   };
 
   return (
-    <article
-      className="project-card-item flex flex-col bg-[var(--bg-card)] border-2 border-[var(--border-color)] shadow-sm hover:border-[var(--accent)] transition-all duration-200 group"
+    <motion.article
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.45, delay: index * 0.05 }}
+      style={{
+        transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+        transition: isHovered ? 'transform 0.08s ease-out' : 'transform 0.35s ease-out',
+      }}
+      className="project-card-item flex flex-col bg-[var(--bg-card)] border-2 border-[var(--border-color)] shadow-sm hover:border-[var(--accent)] hover:shadow-xl transition-all duration-300 group rounded-xs relative overflow-hidden"
     >
+      {/* Subtle interactive hover light reflection */}
+      {isHovered && (
+        <div
+          className="absolute inset-0 pointer-events-none z-10 opacity-30"
+          style={{
+            background: `radial-gradient(400px circle at 50% 30%, rgba(225, 29, 72, 0.15), transparent 70%)`,
+          }}
+        />
+      )}
+
       {/* Visual illustration top frame */}
-      <div className="h-44 w-full border-b border-[var(--border-color)] overflow-hidden relative">
-        {renderVisualIllustration()}
+      <div className="h-44 w-full border-b border-[var(--border-color)] overflow-hidden relative group/frame">
+        {isSchematicMode ? renderSchematicBlueprint() : renderVisualIllustration()}
+
+        {/* Interactive X-Ray Schematic Lens Switcher */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            soundFX.playPulse();
+            setIsSchematicMode((prev) => !prev);
+          }}
+          type="button"
+          className="absolute top-2.5 right-2.5 z-20 px-2 py-0.5 bg-black/80 hover:bg-black text-[10px] font-mono text-zinc-200 border border-white/20 hover:border-[var(--accent)] flex items-center gap-1 transition-all cursor-pointer shadow-md rounded-xs"
+          title="Toggle between Runtime Simulation and X-Ray Architecture Schematic"
+        >
+          {isSchematicMode ? (
+            <>
+              <Eye className="w-3 h-3 text-[var(--accent)]" />
+              <span>RUNTIME</span>
+            </>
+          ) : (
+            <>
+              <GitBranch className="w-3 h-3 text-emerald-400" />
+              <span>X-RAY</span>
+            </>
+          )}
+        </button>
       </div>
 
       {/* Card Content */}
-      <div className="p-5 flex-1 flex flex-col justify-between">
+      <div className="p-5 flex-1 flex flex-col justify-between relative z-10">
         <div>
           {/* Taxonomy & Category Badges */}
           <div className="flex items-center justify-between gap-2 mb-2 font-mono text-[10px]">
             <span className={`px-2 py-0.5 border font-bold uppercase ${getKindBadgeClass()}`}>
               {getKindBadgeLabel()}
             </span>
-            <span className="text-[var(--text-muted)]">{project.year}</span>
+            <span className="text-[var(--text-muted)] font-mono">{project.year}</span>
           </div>
 
           {/* Project Title */}
@@ -300,12 +455,12 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onOpenModal, 
             ))}
           </div>
 
-          {/* Tags */}
+          {/* Technology Badges */}
           <div className="flex flex-wrap gap-1 mb-4">
             {project.tags.slice(0, 4).map((tag) => (
               <span
                 key={tag}
-                className="px-2 py-0.5 bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-muted)] text-[10px] font-mono"
+                className="px-2 py-0.5 bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-muted)] text-[10px] font-mono group-hover:border-[var(--accent)]/30 transition-colors"
               >
                 {tag}
               </span>
@@ -320,7 +475,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onOpenModal, 
               href={project.githubUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-1.5 hover:bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-main)] transition-colors"
+              className="p-1.5 hover:bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-main)] hover:text-[var(--accent)] transition-colors"
               title="View GitHub Repository"
             >
               <Github className="w-3.5 h-3.5" />
@@ -340,13 +495,13 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onOpenModal, 
 
           <button
             onClick={() => onOpenModal(project)}
-            className="flex items-center gap-1 px-3 py-1 bg-[var(--bg-surface)] hover:bg-[var(--accent)] hover:text-white border border-[var(--border-color)] font-bold transition-colors text-[11px]"
+            className="flex items-center gap-1 px-3 py-1 bg-[var(--bg-surface)] hover:bg-[var(--accent)] hover:text-white border border-[var(--border-color)] font-bold transition-colors text-[11px] cursor-pointer active:scale-95"
           >
             <span>Details</span>
-            <ArrowUpRight className="w-3 h-3" />
+            <ArrowUpRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
-    </article>
+    </motion.article>
   );
 };
