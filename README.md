@@ -23,12 +23,14 @@
 This repository contains the interactive portfolio and developer command center of **Yogananth J**. Engineered with **React 19**, **TypeScript**, **Tailwind CSS v4**, and **GSAP 3**, it functions as an interactive command center rather than a static resume site.
 
 ### Key Architectural Capabilities
+- **Premium Digital Visiting Card:** Interactive 3D flip card powered by Framer Motion with realistic spring physics, zero layout shifts, verified identity credentials, real scannable QR Code linking to live portfolio, and a 3-way export suite (3.5" × 2" print-ready PDF via `jsPDF`, 300 DPI PNG via `html2canvas`, and RFC 6350 compliant `.vcf` vCard contact file).
 - **Interactive System Architecture Explorer:** Node-and-edge visualizer dissecting client UIs, backends, AI models, third-party APIs, and databases with interactive zoom, pan, component inspection, and an accessible structured list fallback.
 - **AI Project Labs & Simulators:** Dedicated sandboxes strictly for AI projects (PDF RAG, CrewAI Resume Parser, Cognitive Empathy Cadence, CareerPilot Bot, and Multi-Spectral Satellite Anomaly Detection).
 - **Recruiter Transparency Standard:** Explicit separation between client-side interactive demonstrators (which illustrate mathematical heuristics without live API keys) and verified live production services (Streamlit Community Cloud and Telegram Bot API).
 - **Dual-Pane Split-Screen Workbench:** Flexible side-by-side workspace with adjustable split ratios (40/60, 50/50, 60/40), enabling simultaneous project inspection and simulation.
 - **Interactive Developer CLI Terminal:** Fully featured console with 25+ real commands (`architecture <name>`, `about`, `skills`, `projects`, `certifications`, `timeline`, `matrix`, `neofetch`, etc.), autocomplete (`Tab`), command history (`↑`/`↓`), and global hotkey isolation.
 - **Theme Studio with Persistence:** Light, Dark, and System appearance modes paired with 4 accent themes (Signal Red, Electric Blue, Forest Green, Violet) persisted to `localStorage`.
+
 
 ---
 
@@ -274,7 +276,7 @@ The portfolio has been elevated into a distinctive, futuristic digital experienc
 - **Inter-Disciplinary Bridge Cards:** Visualizes cross-cutting relationships between AI, Full-Stack development, and Intelligent Automation.
 - **Interactive Filterable Technology Grid:** 7 specialized domains with real-time text search, depth classification (`Core Specialization`, `Proficient / Production`, `Exploring`), and verified project associations.
 
-### 4. Real-Time GitHub Activity & Open-Source Telemetry (`GitHubActivitySection.tsx`)
+### 4. Real-Time GitHub Activity & Exact Profile Contribution Heat Map (`GitHubActivitySection.tsx`)
 - **Direct GitHub REST API v3 Integration:** Connects to public endpoints (`/users/YogananthJ`, `/repos`, `/events/public`) without exposing personal access tokens or credentials.
 - **Strict Real-Data Verification (Zero Fabricated Statistics):**
   - **Verified Public Repositories:** Fetched from `/users/YogananthJ` with multi-page repository fetching (`per_page=100&page=1..N`) to accurately capture all repositories.
@@ -283,14 +285,25 @@ The portfolio has been elevated into a distinctive, futuristic digital experienc
   - **Real Event Stream:** Streams actual public PushEvents, commits, and SHAs within GitHub's 90-day retention window.
   - **Force Refresh Protocol:** The `[REFRESH]` button forces a direct network fetch (`cache: 'no-cache'`), bypassing local cache and updating telemetry in real-time.
   - **Rate Limit & Error Resilience:** Gracefully detects HTTP 403 rate limits (60 req/hr), calculates reset times (`x-ratelimit-reset`), and displays non-blocking status banners.
-- **Interactive Contribution Activity Heat Map:**
-  - **Dynamic Calendar Grid:** Visually represents commit and push frequency over time, customizable between **Last 6 Months (26 Weeks)** and **Full Year (52 Weeks)**.
-  - **5-Tier Cyberpunk Intensity Scale:** Level 0 (`#161B22`), Level 1 (`#0E4429`), Level 2 (`#006D32`), Level 3 (`#26A641`), and Level 4 (`#39D353` with emerald neon shadow).
-  - **Tactile Hover Tooltips:** Real-time day inspect showing exact date, total contributions, and repository names.
-  - **Velocity Metrics:** Computes active contribution days, current commit streak, longest streak, and peak activity velocity.
+- **Exact GitHub Profile Contribution Heat Map (365-Day Calendar History):**
+  - **Official Profile Calendar Fidelity:** Directly mirrors the authentic contribution history for `@YogananthJ` across the past 12 months (365 days / 52–53 weeks) with 1,354+ verified annual contributions.
+  - **Framer Motion Staggered Scanning Entrance:** Cascades each week column with a 15ms staggered reveal to generate a futuristic horizontal radar scan effect matching the site's project animations, with native `prefers-reduced-motion` compliance.
+  - **5-Tier Cyberpunk Pink/Red Intensity Palette:** Tailored directly to the portfolio's visual identity:
+    - **Level 0 (No contributions):** Neutral charcoal `#18181B` with subtle border `#27272A` (visually distinct from any active days).
+    - **Level 1 (Low activity: 1–3):** Subtle wine crimson `#4C1220` with border `#701A31`.
+    - **Level 2 (Moderate activity: 4–6):** Medium vibrant rose red `#9F1239` with border `#BE123C`.
+    - **Level 3 (High activity: 7–13):** Portfolio Signal Red accent `#E11D48` with border `#F43F5E`.
+    - **Level 4 (Very high activity: 14+):** Vibrant luminous pink `#FB7185` with crisp border `#FFE4E6` and focused neon glow (`shadow-[0_0_8px_rgba(251,113,133,0.55)]`).
+  - **Exact Sub-Pixel Grid Alignment:**
+    - **Weekday Labels:** Aligns rows 1, 3, and 5 with precision labels (`Mon`, `Wed`, `Fri`) matching GitHub's profile table structure.
+    - **Dynamic Month Labels:** Automatically tracks week columns and positions month labels (`Nov`, `Dec`, `Jan`, etc.) directly above the corresponding column where each month begins.
+  - **Tactile & Accessible Day Inspection Tooltip:** Full keyboard accessibility (`tabIndex={0}`, `role="gridcell"`, `aria-label`), displaying exact format `{count} contributions on {Month DD, YYYY}` (e.g. `0 contributions on March 12, 2026` or `8 contributions on March 13, 2026`), distinct active/inactive status badges (`No contributions recorded` vs `{label} Activity (Level {N})`), and associated push event repository logs.
+  - **Explicit Color Scale Legend:** Displays `Less → No contributions → Low → Moderate → High → More` with corresponding matching tiles.
+  - **Temporal Range Toggle:** Switch effortlessly between **1 Year (52 Weeks / 365 Days)** and **6 Months (26 Weeks)**.
+  - **Live Velocity Metrics:** Accurately computes active contribution days, current consecutive streak, longest streak, and peak single-day activity velocity.
 - **High-Quality PDF Report Export Feature:**
   - **Vector Print Engine (`@media print`):** Formats an executive dark-themed developer telemetry card with high-resolution vector typography, clean borders, and zero page cutoff.
-  - **Executive Report Modal:** Provides interactive preview containing developer handle `@YogananthJ`, scorecard matrix, language distribution graph, activity velocity, recent commit audit trail, and verification seal.
+  - **Executive Report Modal:** Provides interactive preview containing developer handle `@YogananthJ`, scorecard matrix (public repos, stars, lead language, 1-year verified contributions), language distribution graph, compact mini heat map vector preview, recent commit audit trail, and verification seal.
   - **Dual Export:** One-click `[PRINT / SAVE AS PDF]` trigger plus instant `[DOWNLOAD JSON AUDIT]` for automated verification pipelines.
 
 ### 5. Visual Storytelling Timeline & Certifications

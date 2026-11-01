@@ -55,6 +55,46 @@ async function startServer() {
     });
   });
 
+  // Cached GitHub contributions storage
+  let contributionsCache: { data: any; timestamp: number } | null = null;
+  const CONTRIBUTIONS_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+
+  // GET /api/github-contributions - Retrieve exact GitHub contribution graph for user
+  app.get('/api/github-contributions', async (req, res) => {
+    const username = (req.query.username as string) || 'YogananthJ';
+    const force = req.query.force === 'true';
+
+    if (!force && contributionsCache && Date.now() - contributionsCache.timestamp < CONTRIBUTIONS_CACHE_DURATION) {
+      return res.json(contributionsCache.data);
+    }
+
+    try {
+      const upstreamRes = await fetch(`https://github-contributions-api.jogruber.de/v4/${username}?y=last`, {
+        headers: { Accept: 'application/json' },
+      });
+      if (upstreamRes.ok) {
+        const upstreamData = await upstreamRes.json();
+        const payload = {
+          success: true,
+          totalContributions: upstreamData.total?.lastYear ?? 0,
+          contributions: upstreamData.contributions ?? [],
+          source: 'github-contributions-api',
+          fetchedAt: new Date().toISOString(),
+        };
+        contributionsCache = { data: payload, timestamp: Date.now() };
+        return res.json(payload);
+      }
+    } catch (err) {
+      console.error('Upstream contributions API fetch failed:', err);
+    }
+
+    if (contributionsCache) {
+      return res.json({ ...contributionsCache.data, stale: true });
+    }
+
+    return res.status(502).json({ success: false, message: 'Unable to fetch GitHub contribution history' });
+  });
+
   // POST /api/visitors - Record visit if unique visitor
   app.post('/api/visitors', (req, res) => {
     const { visitorId } = req.body;
