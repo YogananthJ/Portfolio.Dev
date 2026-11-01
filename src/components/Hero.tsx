@@ -16,6 +16,7 @@ import {
   Bot,
   Activity,
   Code2,
+  FileText,
 } from 'lucide-react';
 import { PERSONAL_INFO } from '../data/portfolioData';
 import { useLayout } from '../context/LayoutContext';
@@ -27,12 +28,14 @@ interface HeroProps {
   onOpenTerminal: () => void;
   onExploreWork: () => void;
   onLaunchSimulator: (projectId: string) => void;
+  onOpenResume?: () => void;
 }
 
 export const Hero: React.FC<HeroProps> = ({
   onOpenTerminal,
   onExploreWork,
   onLaunchSimulator,
+  onOpenResume,
 }) => {
   const { setLayoutMode } = useLayout();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -486,6 +489,21 @@ def adapt_system_prompt(user_text: str, cadence_pause_ms: int):
                   <span>Explore 10 Projects</span>
                   <ArrowDown className="w-3.5 h-3.5 animate-bounce" />
                 </button>
+
+                {onOpenResume && (
+                  <button
+                    onClick={() => {
+                      soundFX.playClick();
+                      onOpenResume();
+                    }}
+                    type="button"
+                    className="flex items-center gap-1.5 px-4 py-3 text-xs font-mono font-bold uppercase tracking-wider text-[var(--text-main)] bg-[var(--bg-surface)] hover:border-amber-400 border border-[var(--border-color)] transition-all active:scale-95 cursor-pointer"
+                    title="View & Download Official Engineering Resume"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Resume / CV</span>
+                  </button>
+                )}
 
                 <a
                   href="#architecture"

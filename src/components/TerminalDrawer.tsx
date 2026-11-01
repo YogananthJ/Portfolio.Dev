@@ -42,13 +42,15 @@ interface TerminalDrawerProps {
   onClose: () => void;
   onSelectProject?: (projectId: string) => void;
   onNavigateSection?: (sectionId: string) => void;
+  onOpenResume?: () => void;
 }
 
 export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({ 
   isOpen, 
   onClose, 
   onSelectProject,
-  onNavigateSection 
+  onNavigateSection,
+  onOpenResume 
 }) => {
   const [inputVal, setInputVal] = useState<string>('');
   const [currentTheme, setCurrentTheme] = useState<TerminalTheme>('default');
@@ -1160,17 +1162,31 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
       case 'resume': {
         outputNode = (
           <div className="p-3 bg-white/5 border border-white/15 space-y-2 text-xs">
-            <div className="text-cyan-400 font-bold uppercase">CURRICULUM VITAE &amp; RESUME:</div>
-            <p className="text-white/80">
-              Comprehensive resume covering model benchmarks, published projects, education, and technical competencies.
+            <div className="text-cyan-400 font-bold uppercase flex items-center justify-between">
+              <span>CURRICULUM VITAE &amp; RESUME:</span>
+              <span className="text-emerald-400 font-mono text-[10px]">VERIFIED 2026</span>
+            </div>
+            <p className="text-white/80 leading-relaxed">
+              Official engineering dossier covering model benchmarks, published projects, education, verified certifications, and ATS-friendly export.
             </p>
-            <div className="flex gap-2 pt-1">
+            <div className="flex flex-wrap gap-2 pt-1">
+              {onOpenResume && (
+                <button
+                  onClick={() => {
+                    onClose();
+                    onOpenResume();
+                  }}
+                  className="px-3 py-1.5 bg-[var(--accent)] hover:opacity-90 text-white font-bold uppercase text-[11px] flex items-center gap-1.5 cursor-pointer shadow-sm"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Launch Official Resume Dossier</span>
+                </button>
+              )}
               <a
                 href={`mailto:${PERSONAL_INFO.email}?subject=Requesting%20Resume%20for%20Yogananth`}
-                className="px-3 py-1.5 bg-[#E11D48] hover:bg-rose-600 text-white font-bold uppercase text-[11px] flex items-center gap-1.5"
+                className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white font-bold uppercase text-[11px] flex items-center gap-1.5"
               >
-                <FileText className="w-3.5 h-3.5" />
-                <span>Request Formal PDF Copy</span>
+                <span>Email Direct Request</span>
               </a>
             </div>
           </div>

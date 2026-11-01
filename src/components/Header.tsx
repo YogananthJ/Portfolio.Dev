@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { Terminal, Send, Menu, X, Columns2, PanelLeft, Volume2, VolumeX } from 'lucide-react';
+import { Terminal, Send, Menu, X, Columns2, PanelLeft, Volume2, VolumeX, FileText } from 'lucide-react';
 import { useLayout } from '../context/LayoutContext';
 import { soundFX } from '../utils/soundEffects';
 
 interface HeaderProps {
   onOpenTerminal: () => void;
+  onOpenResume?: () => void;
   activeSection: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, activeSection }) => {
+export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, activeSection }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { layoutMode, setLayoutMode, toggleSidebar, sidebarOpen } = useLayout();
 
@@ -83,13 +84,13 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, activeSection })
           })}
         </nav>
 
-        {/* Zone 3: Primary Action + Split Screen + Terminal Button */}
-        <div className="hidden sm:flex items-center gap-2.5 shrink-0">
+        {/* Zone 3: Primary Action + Split Screen + Terminal Button + Resume */}
+        <div className="hidden sm:flex items-center gap-2 shrink-0">
           {/* Split Screen Workbench Toggle */}
           <button
             onClick={() => setLayoutMode(layoutMode === 'split' ? 'standard' : 'split')}
             type="button"
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold uppercase border transition-colors whitespace-nowrap ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-mono font-bold uppercase border transition-colors whitespace-nowrap ${
               layoutMode === 'split'
                 ? 'bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm'
                 : 'bg-[var(--bg-surface)] text-[var(--text-main)] border-[var(--border-color)] hover:border-[var(--accent)]'
@@ -122,7 +123,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, activeSection })
               onOpenTerminal();
             }}
             type="button"
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-medium text-[var(--text-main)] bg-[var(--bg-surface)] hover:bg-[var(--bg-card)] border border-[var(--border-color)] transition-colors whitespace-nowrap"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-mono font-medium text-[var(--text-main)] bg-[var(--bg-surface)] hover:bg-[var(--bg-card)] border border-[var(--border-color)] transition-colors whitespace-nowrap"
             title="Open Developer Console (Cmd+K)"
           >
             <Terminal className="w-3.5 h-3.5 text-[var(--accent)]" />
@@ -130,9 +131,25 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, activeSection })
             <kbd className="hidden lg:inline-block px-1 py-0.5 text-[10px] bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)]">⌘K</kbd>
           </button>
 
+          {/* Resume Dossier Launcher */}
+          {onOpenResume && (
+            <button
+              onClick={() => {
+                soundFX.playClick();
+                onOpenResume();
+              }}
+              type="button"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-mono font-bold uppercase text-[var(--text-main)] bg-[var(--bg-surface)] hover:bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-amber-400 transition-colors whitespace-nowrap"
+              title="View & Download Official Engineering Resume"
+            >
+              <FileText className="w-3.5 h-3.5 text-amber-400" />
+              <span>Resume</span>
+            </button>
+          )}
+
           <a
             href="#contact"
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-white bg-[var(--accent)] hover:opacity-90 transition-all whitespace-nowrap shadow-sm font-mono"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white bg-[var(--accent)] hover:opacity-90 transition-all whitespace-nowrap shadow-sm font-mono"
           >
             <span>Contact</span>
             <Send className="w-3.5 h-3.5" />
@@ -187,6 +204,19 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, activeSection })
             </a>
           ))}
           <div className="pt-2 border-t border-[var(--border-color)] flex flex-col gap-2">
+            {onOpenResume && (
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onOpenResume();
+                }}
+                type="button"
+                className="py-2.5 px-3 text-xs font-bold uppercase bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] text-center flex items-center justify-center gap-2"
+              >
+                <FileText className="w-4 h-4 text-amber-400" />
+                <span>Download Resume / CV</span>
+              </button>
+            )}
             <button
               onClick={() => {
                 setLayoutMode(layoutMode === 'split' ? 'standard' : 'split');

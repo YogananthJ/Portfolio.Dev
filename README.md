@@ -275,13 +275,23 @@ The portfolio has been elevated into a distinctive, futuristic digital experienc
 - **Interactive Filterable Technology Grid:** 7 specialized domains with real-time text search, depth classification (`Core Specialization`, `Proficient / Production`, `Exploring`), and verified project associations.
 
 ### 4. Real-Time GitHub Activity & Open-Source Telemetry (`GitHubActivitySection.tsx`)
-- **Direct GitHub REST API v3 Integration:** Connects to public endpoints (`/users/YogananthJ`, `/repos`, `/events/public`) without exposing personal access tokens.
-- **Live Metrics Dashboard:**
-  - **Total Public Repositories:** Real-time count (28) with Framer Motion ease-out tally animation.
-  - **Stars Earned:** Summed dynamically across all public repositories.
-  - **Top 5 Programming Languages:** Computed language distribution breakdown with GitHub language palette badges (TypeScript 38%, HTML 15%, Python 12%, CSS 8%, Jupyter Notebook 8%).
-  - **Public Event Stream:** Live stream of recent push events, commit SHAs, and active repositories (`Portfolio.Dev`, `Leetcode-Prob`).
-- **Resilient Caching Protocol:** Caches API payloads in `localStorage` with a 30-minute expiration window to respect GitHub's 60 req/hr unauthenticated rate limit, accompanied by a manual `[REFRESH]` button.
+- **Direct GitHub REST API v3 Integration:** Connects to public endpoints (`/users/YogananthJ`, `/repos`, `/events/public`) without exposing personal access tokens or credentials.
+- **Strict Real-Data Verification (Zero Fabricated Statistics):**
+  - **Verified Public Repositories:** Fetched from `/users/YogananthJ` with multi-page repository fetching (`per_page=100&page=1..N`) to accurately capture all repositories.
+  - **Dynamic Star Aggregation:** Summed across every public repository's `stargazers_count` with complete pagination support.
+  - **Live Language Breakdown:** Dynamically calculated from actual repository language indicators with color badges (TypeScript, HTML, Python, CSS, Jupyter Notebook, etc.) without arbitrary fallbacks.
+  - **Real Event Stream:** Streams actual public PushEvents, commits, and SHAs within GitHub's 90-day retention window.
+  - **Force Refresh Protocol:** The `[REFRESH]` button forces a direct network fetch (`cache: 'no-cache'`), bypassing local cache and updating telemetry in real-time.
+  - **Rate Limit & Error Resilience:** Gracefully detects HTTP 403 rate limits (60 req/hr), calculates reset times (`x-ratelimit-reset`), and displays non-blocking status banners.
+- **Interactive Contribution Activity Heat Map:**
+  - **Dynamic Calendar Grid:** Visually represents commit and push frequency over time, customizable between **Last 6 Months (26 Weeks)** and **Full Year (52 Weeks)**.
+  - **5-Tier Cyberpunk Intensity Scale:** Level 0 (`#161B22`), Level 1 (`#0E4429`), Level 2 (`#006D32`), Level 3 (`#26A641`), and Level 4 (`#39D353` with emerald neon shadow).
+  - **Tactile Hover Tooltips:** Real-time day inspect showing exact date, total contributions, and repository names.
+  - **Velocity Metrics:** Computes active contribution days, current commit streak, longest streak, and peak activity velocity.
+- **High-Quality PDF Report Export Feature:**
+  - **Vector Print Engine (`@media print`):** Formats an executive dark-themed developer telemetry card with high-resolution vector typography, clean borders, and zero page cutoff.
+  - **Executive Report Modal:** Provides interactive preview containing developer handle `@YogananthJ`, scorecard matrix, language distribution graph, activity velocity, recent commit audit trail, and verification seal.
+  - **Dual Export:** One-click `[PRINT / SAVE AS PDF]` trigger plus instant `[DOWNLOAD JSON AUDIT]` for automated verification pipelines.
 
 ### 5. Visual Storytelling Timeline & Certifications
 - **Collapsible Chronological Journey:** Interactive milestone cards detailing academic milestones, hackathons, and personal builds with verified proof links.
@@ -292,6 +302,20 @@ The portfolio has been elevated into a distinctive, futuristic digital experienc
 - **Tactile Procedural Audio Synthesizer (`src/utils/soundEffects.ts`):** High-fidelity Web Audio API engine synthesizing physical micro-clicks, cybernetic frequency sweeps, and harmonic chimes with 0kb external audio file overhead. Muted by default with an instant audio toggle in the header navigation.
 - **Scroll Progress Indicator (`ScrollProgressBar.tsx`):** Fixed electric-accent progress bar showing exact viewport scroll depth.
 - **Floating Back-to-Top Navigation (`BackToTop.tsx`):** Spring-animated quick navigation button appearing when scrolled past 450px.
+
+### 7. Official Portfolio Standards, Resume Dossier & Enterprise SEO
+- **Official Engineering Resume & Dossier Engine (`ResumeModal.tsx`):**
+  - **Single-Source Engineering Dossier:** Complete executive summary, verified certifications (Anthropic & MongoDB), categorized skills matrix, 10 verified project builds, academic degree, and direct recruiter contact coordinates.
+  - **Multi-Format Export Pipelines:**
+    - **One-Click Native Vector PDF Print:** Dedicated `@media print` rules isolate `#resume-dossier-printable` for zero-distortion, vector-sharp PDF export via the browser print dialog.
+    - **ATS-Optimized Plaintext Generator:** Instant `.txt` download structured specifically for applicant tracking systems and recruiter resume parsers.
+    - **Instant Clipboard Copy:** One-click copy of the full plaintext dossier.
+  - **Omnipresent Access:** Accessible directly from the navigation bar, hero CTA cluster, contact section, and the developer terminal CLI (`resume` command).
+- **Enterprise SEO & Social Card Engine (`index.html`):**
+  - **Branded Metadata:** `<title>Yogananth J — AI Engineer & Full-Stack Developer</title>` and targeted description with keywords reflecting core specializations.
+  - **Rich OpenGraph & Twitter Cards:** Configured for seamless visual previews on LinkedIn, X/Twitter, Discord, Slack, and iMessage.
+  - **Schema.org JSON-LD Structured Data:** Embeds linked data graphs for `Person` and `ProfilePage` declaring verified competencies (`knowsAbout`), social links (`sameAs`), and contact details for enhanced search engine knowledge panel indexing.
+  - **Accessibility & Contrast:** Fully semantic HTML structure, keyboard navigation (`Tab`, `Esc`, `⌘K`), visible focus rings, and `prefers-reduced-motion` compliance.
 
 ---
 

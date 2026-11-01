@@ -12,6 +12,7 @@ import { ExperienceSection } from './components/ExperienceSection';
 import { ContactSection } from './components/ContactSection';
 import { Footer } from './components/Footer';
 import { ProjectModal } from './components/ProjectModal';
+import { ResumeModal } from './components/ResumeModal';
 import { TerminalDrawer } from './components/TerminalDrawer';
 import { LayoutController } from './components/LayoutController';
 import { WorkspaceSidebar } from './components/WorkspaceSidebar';
@@ -27,6 +28,7 @@ function PortfolioMainContent() {
   const { layoutMode, setLayoutMode, setActiveSimulatorId } = useLayout();
   const [activeProject, setActiveProject] = useState<ProjectItem | null>(null);
   const [isTerminalOpen, setIsTerminalOpen] = useState<boolean>(false);
+  const [isResumeModalOpen, setIsResumeModalOpen] = useState<boolean>(false);
   const [activeSection, setActiveSection] = useState<string>('overview');
 
   // Client-side route detection for Motion Lab experiment detail pages (/motion-lab/:id)
@@ -135,6 +137,7 @@ function PortfolioMainContent() {
       <Header
         activeSection={activeSection}
         onOpenTerminal={() => setIsTerminalOpen(true)}
+        onOpenResume={() => setIsResumeModalOpen(true)}
       />
 
       {/* Customizable Workspace Sidebar Drawer */}
@@ -167,6 +170,7 @@ function PortfolioMainContent() {
             onOpenTerminal={() => setIsTerminalOpen(true)}
             onExploreWork={handleExploreWork}
             onLaunchSimulator={handleLaunchSimulator}
+            onOpenResume={() => setIsResumeModalOpen(true)}
           />
 
           {/* Selected Works & Engineered Systems (Grid / List / Bento View) */}
@@ -191,7 +195,7 @@ function PortfolioMainContent() {
           <ExperienceSection />
 
           {/* Contact & Inquiries */}
-          <ContactSection />
+          <ContactSection onOpenResume={() => setIsResumeModalOpen(true)} />
         </main>
       )}
 
@@ -204,10 +208,17 @@ function PortfolioMainContent() {
         onClose={() => setActiveProject(null)}
       />
 
+      {/* Official Technical Resume & Engineering Dossier Modal */}
+      <ResumeModal
+        isOpen={isResumeModalOpen}
+        onClose={() => setIsResumeModalOpen(false)}
+      />
+
       {/* Developer Terminal Console Drawer (Cmd+K) */}
       <TerminalDrawer
         isOpen={isTerminalOpen}
         onClose={() => setIsTerminalOpen(false)}
+        onOpenResume={() => setIsResumeModalOpen(true)}
         onNavigateSection={(sectionId) => {
           if (layoutMode === 'split') {
             setLayoutMode('standard');

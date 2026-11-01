@@ -108,3 +108,81 @@
 ::-webkit-scrollbar-thumb:hover {
   background: var(--accent);
 }
+
+/* ==========================================================================
+   HIGH-QUALITY PDF EXPORT & PRINT STYLESHEET
+   Isolates executive report card and formats for vector print & PDF export
+   ========================================================================== */
+@media print {
+  html, body {
+    background: #0D0D10 !important;
+    color: #F4F4F5 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* Support both GitHub Report and Resume Dossier printing */
+  #github-pdf-report-container,
+  #github-pdf-report-container *,
+  #resume-dossier-printable,
+  #resume-dossier-printable * {
+    visibility: visible !important;
+  }
+
+  #github-pdf-report-container {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 28px !important;
+    background-color: #0A0D14 !important;
+    color: #F4F4F5 !important;
+    font-family: var(--font-mono), monospace !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-shadow: none !important;
+    border: none !important;
+    display: block !important;
+    opacity: 1 !important;
+  }
+
+  #resume-dossier-printable {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 24px !important;
+    background-color: #0D0D10 !important;
+    color: #F4F4F5 !important;
+    font-family: var(--font-sans), system-ui, sans-serif !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-shadow: none !important;
+    border: none !important;
+    display: block !important;
+    opacity: 1 !important;
+  }
+
+  /* Prevent page breaks inside cards */
+  .pdf-report-card,
+  .pdf-table-row,
+  #resume-dossier-printable section {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+}

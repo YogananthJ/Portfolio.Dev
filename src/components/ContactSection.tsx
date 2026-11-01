@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { PERSONAL_INFO } from '../data/portfolioData';
-import { Send, Mail, Github, Linkedin, Copy, CheckCircle2, MessageSquare, ArrowUpRight } from 'lucide-react';
+import { Send, Mail, Github, Linkedin, Copy, CheckCircle2, MessageSquare, ArrowUpRight, FileText } from 'lucide-react';
 
-export const ContactSection: React.FC = () => {
+interface ContactSectionProps {
+  onOpenResume?: () => void;
+}
+
+export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [subject, setSubject] = useState('Full-Time Software / ML Engineer Inquiry');
@@ -120,6 +124,20 @@ export const ContactSection: React.FC = () => {
                   </div>
                   <ArrowUpRight className="w-4 h-4 text-white/60" />
                 </a>
+
+                {onOpenResume && (
+                  <button
+                    onClick={onOpenResume}
+                    type="button"
+                    className="w-full flex items-center justify-between p-3 bg-[var(--accent)]/15 hover:bg-[var(--accent)]/25 border border-[var(--accent)]/40 text-white transition-colors cursor-pointer text-left"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <FileText className="w-4 h-4 text-amber-400" />
+                      <span className="font-mono text-xs font-bold">Official Engineering Resume / CV</span>
+                    </div>
+                    <ArrowUpRight className="w-4 h-4 text-amber-400" />
+                  </button>
+                )}
               </div>
             </div>
 
