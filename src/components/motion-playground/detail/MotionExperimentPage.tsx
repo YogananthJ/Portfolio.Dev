@@ -67,7 +67,7 @@ export const MotionExperimentPage: React.FC<MotionExperimentPageProps> = ({
 
   return (
     <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-main)] font-sans paper-grid py-8 sm:py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+      <div className="max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 space-y-8">
         {/* Navigation Breadcrumb Bar */}
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--border-color)] pb-4 font-mono text-xs">
           <button

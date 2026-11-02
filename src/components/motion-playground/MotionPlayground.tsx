@@ -130,7 +130,7 @@ export const MotionPlayground: React.FC<MotionPlaygroundProps> = ({ onOpenDetail
       ref={sectionRef}
       className="py-16 sm:py-24 border-b border-[var(--border-color)] bg-[var(--bg-canvas)] relative paper-grid"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+      <div className="max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 space-y-10">
         {/* Section Header */}
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">

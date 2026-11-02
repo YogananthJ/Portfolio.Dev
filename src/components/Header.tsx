@@ -34,7 +34,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
 
   return (
     <header className="sticky top-0 z-40 bg-[var(--bg-canvas)]/90 backdrop-blur-md border-b border-[var(--border-color)] transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-6">
+      <div className="max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 h-16 flex items-center justify-between gap-6">
         
         {/* Zone 1: Brand wordmark & Sidebar Toggle */}
         <div className="flex items-center gap-3 shrink-0">
