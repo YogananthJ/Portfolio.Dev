@@ -41,6 +41,61 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
 
+  // 3D Tilt & Moving White Glow Hover State
+  const cardContainerRef = useRef<HTMLDivElement | null>(null);
+  const [tilt, setTilt] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [normalizedPos, setNormalizedPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState<boolean>(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(false);
+
+  // Respect user's reduced-motion preference
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mediaQuery.matches);
+    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, []);
+
+  const handlePointerMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (prefersReducedMotion) return;
+    const rect = cardContainerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    // Normalized position (-1 to 1) from the center of the card
+    const pointerX = (e.clientX - rect.left) / rect.width;
+    const pointerY = (e.clientY - rect.top) / rect.height;
+
+    const normX = Math.max(-1, Math.min(1, (pointerX - 0.5) * 2));
+    const normY = Math.max(-1, Math.min(1, (pointerY - 0.5) * 2));
+
+    // Subtle 3D Tilt: rotateY max ±2.5deg, rotateX max ±2.0deg
+    const tiltY = normX * 2.5;
+    const tiltX = -normY * 2.0;
+
+    setTilt({ x: tiltX, y: tiltY });
+    setNormalizedPos({ x: normX, y: normY });
+  };
+
+  const handlePointerEnter = () => {
+    setIsHovered(true);
+  };
+
+  const handlePointerLeave = () => {
+    setIsHovered(false);
+    setTilt({ x: 0, y: 0 });
+    setNormalizedPos({ x: 0, y: 0 });
+  };
+
+  // Moving white glow coordinates (opposite direction of mouse pointer)
+  const glowXFront = 50 - normalizedPos.x * 32;
+  const glowYFront = 50 - normalizedPos.y * 32;
+
+  // On back face rotated 180deg around Y, local X is mirrored, so local X moves with + to be opposite in screen space
+  const glowXBack = 50 + normalizedPos.x * 32;
+  const glowYBack = 50 - normalizedPos.y * 32;
+
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const printCardRef = useRef<HTMLDivElement | null>(null);
 
@@ -272,12 +327,25 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
   return (
     <div className={`flex flex-col items-center select-none w-full max-w-full sm:max-w-[540px] mx-auto lg:mr-0 ${className}`}>
       {/* ========================================================================= */}
-      {/* UNIFIED PERSPECTIVE FLIP CARD CONTAINER                                   */}
-      {/* Both sides are fully clickable to flip back and forth seamlessly           */}
+      {/* UNIFIED PERSPECTIVE FLIP CARD CONTAINER WITH SUBTLE 3D TILT               */}
+      {/* Smooth mouse-driven 3D tilt (max ±2.5° Y, ±2.0° X) with ease-out return   */}
       {/* ========================================================================= */}
       <div 
+        ref={cardContainerRef}
+        onMouseMove={handlePointerMove}
+        onMouseEnter={handlePointerEnter}
+        onMouseLeave={handlePointerLeave}
         className="relative w-full max-w-full sm:max-w-[540px] h-[310px] sm:h-[325px] md:h-[335px]"
-        style={{ perspective: 1200 }}
+        style={{ 
+          perspective: 1200,
+          transform: isHovered && !prefersReducedMotion
+            ? `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`
+            : 'rotateX(0deg) rotateY(0deg)',
+          transition: isHovered
+            ? 'transform 260ms cubic-bezier(0.16, 1, 0.3, 1)'
+            : 'transform 450ms cubic-bezier(0.16, 1, 0.3, 1)',
+          willChange: 'transform',
+        }}
       >
         <div
           className="w-full h-full relative transition-transform duration-700 ease-out"
@@ -326,6 +394,16 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                   backgroundSize: '20px 20px',
                 }}
               >
+                {/* Soft Moving White Glow Reflection on Front Cover (Moves opposite to cursor) */}
+                <div
+                  className="absolute inset-0 pointer-events-none z-[15] overflow-hidden rounded-[4px]"
+                  style={{
+                    opacity: isHovered && !prefersReducedMotion ? 1 : 0,
+                    background: `radial-gradient(circle 240px at ${glowXFront}% ${glowYFront}%, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.06) 45%, transparent 75%)`,
+                    transition: 'opacity 350ms ease-out, background 250ms ease-out',
+                  }}
+                />
+
                 {/* TOP LEFT: "CLICK TO FLIP" Badge */}
                 <div className="absolute top-3 left-3 z-20 pointer-events-none">
                   <span className="inline-flex items-center gap-1.5 bg-[#2B2B2B] text-white font-mono font-bold text-[9px] sm:text-[10px] px-2.5 py-1 border border-black/40 tracking-wider uppercase rounded-xs shadow-md">
@@ -382,6 +460,17 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
               <div className="absolute inset-0 bg-[radial-gradient(#ffffff12_1px,transparent_1px)] [background-size:12px_12px]" />
               <div className="absolute -top-12 -right-12 w-36 h-36 bg-rose-600/20 rounded-full blur-2xl" />
               <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-pink-600/15 rounded-full blur-2xl" />
+
+              {/* Soft Moving White Glow Reflection (Moves opposite to cursor, clipped inside card) */}
+              <div
+                className="absolute inset-0 pointer-events-none z-[2]"
+                style={{
+                  opacity: isHovered && !prefersReducedMotion ? 1 : 0,
+                  background: `radial-gradient(circle 280px at ${glowXBack}% ${glowYBack}%, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03) 45%, transparent 75%)`,
+                  mixBlendMode: 'screen',
+                  transition: 'opacity 350ms ease-out, background 250ms ease-out',
+                }}
+              />
             </div>
 
             {/* ------------------------------------------------------------------- */}
