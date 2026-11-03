@@ -270,13 +270,13 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
   };
 
   return (
-    <div className={`flex flex-col items-center select-none w-full max-w-[560px] mx-auto lg:mr-0 ${className}`}>
+    <div className={`flex flex-col items-center select-none w-full max-w-full sm:max-w-[540px] mx-auto lg:mr-0 ${className}`}>
       {/* ========================================================================= */}
       {/* UNIFIED PERSPECTIVE FLIP CARD CONTAINER                                   */}
       {/* Both sides are fully clickable to flip back and forth seamlessly           */}
       {/* ========================================================================= */}
       <div 
-        className="relative w-full max-w-[540px] sm:max-w-[560px] h-[310px] sm:h-[325px] md:h-[335px]"
+        className="relative w-full max-w-full sm:max-w-[540px] h-[310px] sm:h-[325px] md:h-[335px]"
         style={{ perspective: 1200 }}
       >
         <div

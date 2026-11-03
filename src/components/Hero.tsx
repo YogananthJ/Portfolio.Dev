@@ -391,7 +391,7 @@ def adapt_system_prompt(user_text: str, cadence_pause_ms: int):
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="max-w-[1560px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 z-10"
+        className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 z-10"
       >
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-mono border-b border-[var(--border-color)] pb-3">
           <div className="flex items-center gap-3">
@@ -414,23 +414,23 @@ def adapt_system_prompt(user_text: str, cadence_pause_ms: int):
       </motion.div>
 
       {/* Center Hero Stage */}
-      <div className="max-w-[1560px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 py-8 sm:py-12 z-10 flex-1 flex flex-col justify-center">
+      <div className="max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 py-6 sm:py-10 lg:py-12 z-10 flex-1 flex flex-col justify-center">
         {/* Giant Monolithic Display Headline + Avatar Lockup */}
-        <div className="relative mb-8 sm:mb-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-12 items-center">
-            {/* Left Column: ~58-60% width on wide desktop */}
+        <div className="relative mb-6 sm:mb-8 lg:mb-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 xl:gap-10 2xl:gap-12 items-center">
+            {/* Left Column: Headline and Key Specializations */}
             <motion.div
               initial={{ opacity: 0, x: -25 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.65, ease: 'easeOut' }}
-              className="lg:col-span-7 xl:col-span-7"
+              className="lg:col-span-7 xl:col-span-7 2xl:col-span-7"
             >
               <div className="text-[11px] sm:text-xs font-mono tracking-widest text-[var(--accent)] uppercase font-bold mb-2 flex items-center gap-2">
                 <span className="inline-block w-4 h-px bg-[var(--accent)]"></span>
                 <span>AI Engineer · Full-Stack Developer · Automation Specialist</span>
               </div>
 
-              <h1 className="font-display text-5xl sm:text-7xl md:text-8xl lg:text-[92px] xl:text-[108px] leading-[0.88] tracking-tight uppercase text-[var(--text-main)] drop-shadow-sm">
+              <h1 className="font-display text-4xl sm:text-6xl md:text-7xl lg:text-[76px] xl:text-[90px] 2xl:text-[104px] leading-[0.9] tracking-tight uppercase text-[var(--text-main)] drop-shadow-sm">
                 YOGANANTH
               </h1>
 
@@ -446,12 +446,12 @@ def adapt_system_prompt(user_text: str, cadence_pause_ms: int):
               </div>
             </motion.div>
 
-            {/* Right Column: ~40-42% width on wide desktop for Visiting Card */}
+            {/* Right Column: Digital Visiting Card */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="lg:col-span-5 xl:col-span-5 relative flex items-center justify-center lg:justify-end z-20 w-full"
+              className="lg:col-span-5 xl:col-span-5 2xl:col-span-5 relative flex items-center justify-center lg:justify-end z-20 w-full"
             >
               <DigitalVisitingCard />
             </motion.div>
@@ -459,7 +459,7 @@ def adapt_system_prompt(user_text: str, cadence_pause_ms: int):
         </div>
 
         {/* Hero Split: Bio + Interactive Code Console */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-12 items-stretch mt-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 xl:gap-10 2xl:gap-12 items-stretch mt-4 sm:mt-6">
           {/* Left Column: Biography & Action Cluster */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}

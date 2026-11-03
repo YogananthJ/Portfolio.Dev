@@ -126,7 +126,7 @@ function PortfolioMainContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-main)] flex flex-col font-sans selection:bg-[var(--accent)] selection:text-white relative">
+    <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-main)] flex flex-col font-sans selection:bg-[var(--accent)] selection:text-white relative w-full max-w-full overflow-x-clip">
       {/* Viewport Scroll Progress Bar */}
       <ScrollProgressBar />
 
@@ -153,18 +153,18 @@ function PortfolioMainContent() {
 
       {/* Main Body: Detail Page vs Dual-Pane Split Workbench vs Standard Editorial Flow */}
       {route.page === 'motion-detail' && route.experimentId ? (
-        <main className="flex-1">
+        <main className="flex-1 w-full max-w-full overflow-x-clip">
           <MotionExperimentPage
             experimentId={route.experimentId}
             onBack={handleBackToMotionLab}
           />
         </main>
       ) : layoutMode === 'split' ? (
-        <main className="flex-1">
+        <main className="flex-1 w-full max-w-full overflow-x-clip">
           <SplitScreenWorkspace onOpenModal={handleOpenProjectModal} />
         </main>
       ) : (
-        <main className="flex-1">
+        <main className="flex-1 w-full max-w-full overflow-x-clip">
           {/* Monolithic Hero Collage Section with Profile Portrait */}
           <Hero
             onOpenTerminal={() => setIsTerminalOpen(true)}
