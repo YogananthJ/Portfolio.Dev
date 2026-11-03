@@ -419,22 +419,6 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                     : 'box-shadow 450ms cubic-bezier(0.16, 1, 0.3, 1)',
                 }}
               >
-                {/* Soft Moving White Glow Reflection on Front Cover (Moves opposite to cursor, GPU accelerated) */}
-                <div className="absolute inset-0 pointer-events-none z-[15] overflow-hidden rounded-[4px]">
-                  <div
-                    className="absolute top-1/2 left-1/2 w-[280px] h-[280px] -mt-[140px] -ml-[140px] rounded-full blur-[40px] pointer-events-none"
-                    style={{
-                      background: 'radial-gradient(circle, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.08) 45%, transparent 72%)',
-                      transform: `translate3d(${glowShiftXFront}px, ${glowShiftYFront}px, 0)`,
-                      opacity: isHovered && !prefersReducedMotion ? 1 : 0,
-                      transition: isHovered
-                        ? 'transform 100ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms ease-out'
-                        : 'transform 450ms cubic-bezier(0.16, 1, 0.3, 1), opacity 350ms ease-out',
-                      willChange: 'transform, opacity',
-                    }}
-                  />
-                </div>
-
                 {/* TOP LEFT: "CLICK TO FLIP" Badge */}
                 <div className="absolute top-3 left-3 z-20 pointer-events-none">
                   <span className="inline-flex items-center gap-1.5 bg-[#2B2B2B] text-white font-mono font-bold text-[9px] sm:text-[10px] px-2.5 py-1 border border-black/40 tracking-wider uppercase rounded-xs shadow-md">
@@ -458,6 +442,29 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                   <div className="w-full bg-white text-black font-mono font-black text-[10px] sm:text-[11.5px] py-1.5 px-3 border-2 border-black tracking-widest text-center uppercase shadow-[2.5px_2.5px_0px_#000000]">
                     OPEN TO OPPORTUNITIES
                   </div>
+                </div>
+
+                {/* ================================================================= */}
+                {/* SOFT BLURRED WHITE GLOW OVERLAY ABOVE CARD CONTENT (FRONT COVER)  */}
+                {/* Moves opposite to cursor, strictly clipped within card boundaries */}
+                {/* ================================================================= */}
+                <div 
+                  className="absolute inset-0 rounded-[4px] overflow-hidden pointer-events-none z-30"
+                  aria-hidden="true"
+                >
+                  <div
+                    className="absolute top-1/2 left-1/2 w-[280px] h-[280px] -mt-[140px] -ml-[140px] rounded-full blur-[40px] pointer-events-none"
+                    style={{
+                      background: 'radial-gradient(circle, rgba(255, 255, 255, 0.30) 0%, rgba(255, 255, 255, 0.10) 40%, rgba(255, 255, 255, 0.02) 65%, transparent 75%)',
+                      mixBlendMode: 'screen',
+                      transform: `translate3d(${glowShiftXFront}px, ${glowShiftYFront}px, 0)`,
+                      opacity: isHovered && !prefersReducedMotion ? 1 : 0,
+                      transition: isHovered
+                        ? 'transform 80ms ease-out, opacity 250ms ease-out'
+                        : 'transform 450ms cubic-bezier(0.16, 1, 0.3, 1), opacity 350ms ease-out',
+                      willChange: 'transform, opacity',
+                    }}
+                  />
                 </div>
               </div>
             </div>
@@ -498,23 +505,6 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
               <div className="absolute inset-0 bg-[radial-gradient(#ffffff12_1px,transparent_1px)] [background-size:12px_12px]" />
               <div className="absolute -top-12 -right-12 w-36 h-36 bg-rose-600/20 rounded-full blur-2xl" />
               <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-pink-600/15 rounded-full blur-2xl" />
-
-              {/* Soft Moving White Glow Reflection (Moves opposite to cursor, clipped inside card, GPU accelerated) */}
-              <div className="absolute inset-0 pointer-events-none z-[2] overflow-hidden rounded-xl">
-                <div
-                  className="absolute top-1/2 left-1/2 w-[340px] h-[340px] -mt-[170px] -ml-[170px] rounded-full blur-[50px] pointer-events-none"
-                  style={{
-                    background: 'radial-gradient(circle, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.04) 50%, transparent 75%)',
-                    mixBlendMode: 'screen',
-                    transform: `translate3d(${glowShiftXBack}px, ${glowShiftYBack}px, 0)`,
-                    opacity: isHovered && !prefersReducedMotion ? 1 : 0,
-                    transition: isHovered
-                      ? 'transform 100ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms ease-out'
-                      : 'transform 450ms cubic-bezier(0.16, 1, 0.3, 1), opacity 350ms ease-out',
-                    willChange: 'transform, opacity',
-                  }}
-                />
-              </div>
             </div>
 
             {/* ------------------------------------------------------------------- */}
@@ -868,6 +858,29 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
               >
                 iam-mjyogananth.pages.dev
               </a>
+            </div>
+
+            {/* ================================================================= */}
+            {/* SOFT BLURRED WHITE GLOW OVERLAY ABOVE CARD CONTENT (V-CARD)       */}
+            {/* Moves opposite to cursor, strictly clipped within card boundaries */}
+            {/* ================================================================= */}
+            <div 
+              className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none z-30"
+              aria-hidden="true"
+            >
+              <div
+                className="absolute top-1/2 left-1/2 w-[340px] h-[340px] -mt-[170px] -ml-[170px] rounded-full blur-[45px] pointer-events-none"
+                style={{
+                  background: 'radial-gradient(circle, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.08) 35%, rgba(255, 255, 255, 0.02) 60%, transparent 75%)',
+                  mixBlendMode: 'screen',
+                  transform: `translate3d(${glowShiftXBack}px, ${glowShiftYBack}px, 0)`,
+                  opacity: isHovered && !prefersReducedMotion ? 1 : 0,
+                  transition: isHovered
+                    ? 'transform 80ms ease-out, opacity 250ms ease-out'
+                    : 'transform 450ms cubic-bezier(0.16, 1, 0.3, 1), opacity 350ms ease-out',
+                  willChange: 'transform, opacity',
+                }}
+              />
             </div>
           </div>
         </div>
