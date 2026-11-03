@@ -68,18 +68,24 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
     };
   }, []);
 
+  // Shared Flip Toggle Handler: Toggles state in both directions
+  const handleToggleFlip = () => {
+    setIsFlipped((prev) => !prev);
+    setDownloadMenuOpen(false);
+    try {
+      soundFX?.playClick?.(650, 0.04);
+    } catch {
+      // ignore
+    }
+  };
+
   // Keyboard shortcut: Press 'f' or 'F' to toggle card flip
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.key === 'f' || e.key === 'F') && !e.ctrlKey && !e.metaKey && !e.altKey) {
         const activeTag = document.activeElement?.tagName.toLowerCase();
         if (activeTag === 'input' || activeTag === 'textarea') return;
-        setIsFlipped((prev) => !prev);
-        try {
-          soundFX?.playClick?.(620, 0.04);
-        } catch {
-          // ignore
-        }
+        handleToggleFlip();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -106,30 +112,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
     }, 2800);
   };
 
-  // Flip from Photo to V-Card
-  const handlePhotoClick = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setIsFlipped(true);
-    try {
-      soundFX?.playClick?.(680, 0.05);
-    } catch {
-      // ignore
-    }
-  };
-
-  // Flip back to Photo Cover
-  const handleShowPhoto = (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setIsFlipped(false);
-    setDownloadMenuOpen(false);
-    try {
-      soundFX?.playClick?.(580, 0.05);
-    } catch {
-      // ignore
-    }
-  };
-
-  // Copy Email to Clipboard
+  // Copy Email to Clipboard (stops card flip propagation)
   const handleCopyEmail = (e: React.MouseEvent) => {
     e.stopPropagation();
     navigator.clipboard.writeText('mjyogananth@gmail.com');
@@ -138,7 +121,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
     setTimeout(() => setCopiedEmail(false), 2200);
   };
 
-  // Copy Portfolio Link to Clipboard
+  // Copy Portfolio Link to Clipboard (stops card flip propagation)
   const handleCopyPortfolioLink = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     navigator.clipboard.writeText('https://iam-mjyogananth.pages.dev');
@@ -147,7 +130,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
     setTimeout(() => setCopiedLink(false), 2200);
   };
 
-  // Share Link via Web Share API with clipboard fallback
+  // Share Link via Web Share API with clipboard fallback (stops card flip propagation)
   const handleShareLink = async (e: React.MouseEvent) => {
     e.stopPropagation();
     const shareData = {
@@ -171,7 +154,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
     handleCopyPortfolioLink(e);
   };
 
-  // Export as RFC 6350 vCard (.vcf)
+  // Export as RFC 6350 vCard (.vcf) (stops card flip propagation)
   const handleDownloadVCard = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     try {
@@ -289,9 +272,8 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
   return (
     <div className={`flex flex-col items-center select-none w-full max-w-[560px] mx-auto lg:mr-0 ${className}`}>
       {/* ========================================================================= */}
-      {/* ONE UNIFIED FLIP CARD CONTAINER                                           */}
-      {/* Front: Square White-Background Character Photo                            */}
-      {/* Back: Horizontal Rectangular Landscape Digital V-Card (~1.65:1 ratio)     */}
+      {/* UNIFIED PERSPECTIVE FLIP CARD CONTAINER                                   */}
+      {/* Both sides are fully clickable to flip back and forth seamlessly           */}
       {/* ========================================================================= */}
       <div 
         className="relative w-full max-w-[540px] sm:max-w-[560px] h-[310px] sm:h-[325px] md:h-[335px]"
@@ -305,98 +287,108 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
           }}
         >
           {/* ===================================================================== */}
-          {/* FRONT FACE: SQUARE PHOTO COVER (Centered 1:1 Clean White Photo Card)  */}
-          {/* Clicking anywhere on the photo flips to the rectangular V-Card        */}
+          {/* FRONT FACE: SQUARE PHOTO COVER (1:1 Clean White Photo Card)           */}
+          {/* Entire surface is clickable -> Flips smoothly to the rectangular card */}
           {/* ===================================================================== */}
           <div
-            className="absolute inset-0 w-full h-full flex items-center justify-center"
+            onClick={handleToggleFlip}
+            className="absolute inset-0 w-full h-full flex items-center justify-center cursor-pointer group/front"
             style={{
               backfaceVisibility: 'hidden',
               WebkitBackfaceVisibility: 'hidden',
               transform: 'rotateY(0deg)',
             }}
+            title="Click photo to flip and reveal the digital visiting card"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleToggleFlip();
+              }
+            }}
           >
-            {/* Square 1:1 Photo Cover */}
-            <div
-              onClick={handlePhotoClick}
-              className="relative w-[285px] h-[285px] sm:w-[305px] sm:h-[305px] md:w-[320px] md:h-[320px] aspect-square rounded-xl bg-white border-[3.5px] border-black shadow-[8px_8px_0px_#000000] ring-2 ring-rose-500/80 hover:shadow-[12px_12px_0px_#000000] hover:scale-[1.015] transition-all duration-300 overflow-hidden flex flex-col justify-between cursor-pointer group"
-              title="Click photo to flip and reveal the rectangular visiting card"
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handlePhotoClick();
-                }
-              }}
-            >
-              {/* Subtle collectible grid background pattern */}
-              <div 
-                className="absolute inset-0 opacity-40 pointer-events-none"
-                style={{
-                  backgroundImage: 'radial-gradient(#94a3b8 1.2px, transparent 1.2px)',
-                  backgroundSize: '16px 16px',
-                }}
-              />
-
-              {/* TOP RIGHT: Pink "AI & WEB DEV" Badge */}
-              <div className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-30 pointer-events-none">
-                <span className="inline-block bg-[#E11D48] text-white font-mono font-black text-[9px] sm:text-[10px] px-2.5 sm:px-3 py-1 border-2 border-black tracking-widest uppercase shadow-[2px_2px_0px_#000000]">
+            {/* Square 1:1 Photo Cover Card Frame */}
+            <div className="relative w-[285px] h-[285px] sm:w-[305px] sm:h-[305px] md:w-[320px] md:h-[320px] aspect-square">
+              {/* Overlapping Top-Right Badge: "AI & WEB DEV" (pops outside top/right border) */}
+              <div className="absolute -top-3.5 -right-2.5 z-30 pointer-events-none">
+                <span className="inline-block bg-[#E11D48] text-white font-mono font-black text-[10px] sm:text-[11px] px-3 py-1 border-2 border-black tracking-widest uppercase shadow-[2.5px_2.5px_0px_#000000]">
                   AI &amp; WEB DEV
                 </span>
               </div>
 
-              {/* TOP LEFT: "CLICK PHOTO TO FLIP" Badge */}
-              <div className="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 z-30 pointer-events-none">
-                <span className="inline-flex items-center gap-1.5 bg-[#1F2128] text-white font-mono font-bold text-[8px] sm:text-[9px] px-2.5 py-1 border border-white/20 tracking-wider uppercase rounded-xs shadow-md group-hover:bg-black transition-colors">
-                  <Sparkles className="w-3 h-3 text-amber-300 animate-pulse" />
-                  <span>CLICK PHOTO TO FLIP</span>
-                </span>
-              </div>
+              {/* The Main Collectible Card Box */}
+              <div 
+                className="w-full h-full rounded-[4px] border-[3.5px] border-black shadow-[8px_8px_0px_#000000] group-hover/front:shadow-[12px_12px_0px_#000000] group-hover/front:scale-[1.015] transition-all duration-300 relative flex flex-col justify-between overflow-hidden"
+                style={{
+                  backgroundColor: '#F3EFE6',
+                  backgroundImage: 'linear-gradient(to right, rgba(0, 0, 0, 0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(0, 0, 0, 0.06) 1px, transparent 1px)',
+                  backgroundSize: '20px 20px',
+                }}
+              >
+                {/* TOP LEFT: "CLICK TO FLIP" Badge */}
+                <div className="absolute top-3 left-3 z-20 pointer-events-none">
+                  <span className="inline-flex items-center gap-1.5 bg-[#2B2B2B] text-white font-mono font-bold text-[9px] sm:text-[10px] px-2.5 py-1 border border-black/40 tracking-wider uppercase rounded-xs shadow-md">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                    <span>CLICK TO FLIP</span>
+                  </span>
+                </div>
 
-              {/* CENTER: Exact Character Illustration (/assets/aistudio/favicon_507da8ac.png) */}
-              <div className="relative z-10 w-full flex-1 flex items-end justify-center px-4 pt-10 pb-8 overflow-hidden">
-                <img
-                  src="/assets/aistudio/favicon_507da8ac.png"
-                  alt="Yogananth J Character Illustration"
-                  className="w-full h-full object-contain object-bottom pointer-events-none drop-shadow-md select-none group-hover:scale-104 transition-transform duration-300"
-                  loading="eager"
-                />
-              </div>
+                {/* CENTER: Exact Character Illustration (/assets/aistudio/favicon_507da8ac.png) */}
+                <div className="relative z-10 w-full flex-1 flex items-end justify-center px-4 pt-8 pb-5 overflow-hidden pointer-events-none">
+                  <img
+                    src="/assets/aistudio/favicon_507da8ac.png"
+                    alt="Yogananth J Character Illustration"
+                    className="w-full h-full object-contain object-bottom select-none group-hover/front:scale-104 transition-transform duration-300"
+                    loading="eager"
+                  />
+                </div>
 
-              {/* BOTTOM: "OPEN TO OPPORTUNITIES" White Banner */}
-              <div className="absolute bottom-2.5 left-3.5 right-3.5 sm:bottom-3 sm:left-5 sm:right-5 z-30 pointer-events-none">
-                <div className="w-full bg-white text-black font-mono font-black text-[9px] sm:text-[10.5px] py-1.5 px-3 border-2 border-black tracking-widest text-center uppercase shadow-[2.5px_2.5px_0px_#000000] flex items-center justify-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>OPEN TO OPPORTUNITIES</span>
+                {/* BOTTOM: "OPEN TO OPPORTUNITIES" White Banner */}
+                <div className="absolute bottom-3 left-3.5 right-3.5 sm:left-5 sm:right-5 z-20 pointer-events-none">
+                  <div className="w-full bg-white text-black font-mono font-black text-[10px] sm:text-[11.5px] py-1.5 px-3 border-2 border-black tracking-widest text-center uppercase shadow-[2.5px_2.5px_0px_#000000]">
+                    OPEN TO OPPORTUNITIES
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* ===================================================================== */}
-          {/* BACK FACE: HORIZONTAL RECTANGULAR V-CARD (Landscape 1.6:1 or 3:2)     */}
-          {/* Complete with dark background, neon border, all controls in header    */}
+          {/* BACK FACE: HORIZONTAL RECTANGULAR V-CARD (Landscape ~1.65:1 ratio)    */}
+          {/* Entire V-card is clickable -> Flips smoothly back to the photo cover  */}
+          {/* All interactive controls use e.stopPropagation() to remain clickable  */}
           {/* ===================================================================== */}
           <div
-            className="absolute inset-0 w-full h-full rounded-xl border-2 border-rose-500/85 bg-[#0B0E17]/98 text-white p-3.5 sm:p-4 md:p-4.5 flex flex-col justify-between shadow-[8px_8px_0px_0px_var(--border-color)] overflow-hidden"
+            onClick={handleToggleFlip}
+            className="absolute inset-0 w-full h-full rounded-xl border-2 border-rose-500/85 bg-[#0B0E17] text-white p-3.5 sm:p-4 md:p-4.5 flex flex-col justify-between shadow-[8px_8px_0px_0px_var(--border-color)] hover:shadow-[11px_11px_0px_0px_var(--border-color)] cursor-pointer transition-shadow group/back"
             style={{
               backfaceVisibility: 'hidden',
               WebkitBackfaceVisibility: 'hidden',
               transform: 'rotateY(180deg)',
             }}
+            title="Click anywhere on card to flip back to photo cover [Shortcut: F]"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleToggleFlip();
+              }
+            }}
           >
-            {/* Subtle Tech Grid Texture */}
-            <div className="absolute inset-0 bg-[radial-gradient(#ffffff12_1px,transparent_1px)] [background-size:12px_12px] pointer-events-none rounded-xl" />
-            
-            {/* Ambient Neon Rose Glow */}
-            <div className="absolute -top-12 -right-12 w-36 h-36 bg-rose-600/20 rounded-full blur-2xl pointer-events-none" />
-            <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-pink-600/15 rounded-full blur-2xl pointer-events-none" />
+            {/* Ambient Background & Grid Texture (clipped inside inner container) */}
+            <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
+              <div className="absolute inset-0 bg-[radial-gradient(#ffffff12_1px,transparent_1px)] [background-size:12px_12px]" />
+              <div className="absolute -top-12 -right-12 w-36 h-36 bg-rose-600/20 rounded-full blur-2xl" />
+              <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-pink-600/15 rounded-full blur-2xl" />
+            </div>
 
             {/* ------------------------------------------------------------------- */}
-            {/* 1. COMPACT HEADER: Status Ping + ID + ALL IN-CARD CONTROLS          */}
+            {/* 1. COMPACT HEADER: Status Ping + ID + IN-CARD CONTROLS              */}
+            {/* Elevated z-50 stacking context ensures dropdown overlays body       */}
             {/* ------------------------------------------------------------------- */}
-            <div className="relative z-10 flex items-center justify-between border-b border-white/10 pb-2 mb-2">
+            <div className="relative z-50 flex items-center justify-between border-b border-white/10 pb-2 mb-2">
               <div className="flex items-center gap-2">
                 <span className="flex h-2 w-2 relative">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
@@ -411,26 +403,36 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                 </span>
               </div>
 
-              {/* ALL CONTROLS INTEGRATED INSIDE THE V-CARD HEADER */}
+              {/* Header Action Controls */}
               <div className="flex items-center gap-1.5">
-                {/* Control 1: SHOW PHOTO (Flips back to front photo cover) */}
+                {/* Visual Flip Indicator (also triggers flip on click) */}
                 <button
                   type="button"
-                  onClick={handleShowPhoto}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleFlip();
+                  }}
                   className="flex items-center gap-1 px-2 py-1 bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white border border-rose-500/40 rounded-xs font-mono text-[8.5px] sm:text-[9.5px] font-bold uppercase transition-colors cursor-pointer"
-                  title="Flip back to photo cover [Shortcut: F]"
+                  title="Click to flip back to photo cover [Shortcut: F]"
                 >
                   <RotateCw className="w-3 h-3" />
                   <span>SHOW PHOTO</span>
                 </button>
 
-                {/* Control 2: DOWNLOAD Icon with Dropdown Menu */}
-                <div className="relative" ref={dropdownRef}>
+                {/* Download Button + 100% OPAQUE SOLID FLOATING MENU (#111318) */}
+                <div 
+                  className="relative z-50" 
+                  ref={dropdownRef}
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <button
                     type="button"
-                    onClick={() => setDownloadMenuOpen((prev) => !prev)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDownloadMenuOpen((prev) => !prev);
+                    }}
                     disabled={exportingType !== null}
-                    className="flex items-center gap-1 px-2 py-1 bg-white/5 hover:bg-white/15 text-white/80 hover:text-white border border-white/15 rounded-xs font-mono text-[8.5px] sm:text-[9.5px] font-bold uppercase transition-all cursor-pointer"
+                    className="flex items-center gap-1 px-2 py-1 bg-[#181B24] hover:bg-rose-500/25 text-white/90 hover:text-white border border-white/20 hover:border-rose-500/60 rounded-xs font-mono text-[8.5px] sm:text-[9.5px] font-bold uppercase transition-all cursor-pointer"
                     title="Download Visiting Card (PDF, PNG, vCard)"
                     aria-label="Download options"
                   >
@@ -439,80 +441,106 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                     ) : (
                       <Download className="w-3 h-3 text-rose-400" />
                     )}
-                    <ChevronDown className={`w-2.5 h-2.5 transition-transform duration-200 ${downloadMenuOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-2.5 h-2.5 text-white/70 transition-transform duration-200 ${downloadMenuOpen ? 'rotate-180' : ''}`} />
                   </button>
 
-                  {/* Dropdown Menu */}
+                  {/* Fully Opaque Solid Floating Menu (#111318) with Pink Border & Maximum Layering */}
                   <AnimatePresence>
                     {downloadMenuOpen && (
                       <motion.div
-                        initial={{ opacity: 0, y: -4, scale: 0.96 }}
+                        initial={{ opacity: 0, y: -4, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -4, scale: 0.96 }}
+                        exit={{ opacity: 0, y: -4, scale: 0.98 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute right-0 mt-1.5 w-64 bg-[#0B0E17] border-2 border-[var(--border-color)] text-white shadow-2xl rounded-xs p-1.5 z-50 flex flex-col gap-1 font-mono text-left"
+                        style={{ 
+                          backgroundColor: '#111318', 
+                          background: '#111318',
+                          opacity: 1,
+                          boxShadow: '0 22px 60px rgba(0, 0, 0, 0.98), 0 0 0 1px rgba(225, 29, 72, 0.35)',
+                        }}
+                        className="absolute right-0 top-full mt-2 w-76 sm:w-80 bg-[#111318] border-2 border-rose-500 text-white rounded-lg p-2.5 z-[100] flex flex-col gap-2 font-mono text-left"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="px-2 py-1 text-[8.5px] uppercase font-bold tracking-wider text-white/50 border-b border-white/10 flex items-center justify-between">
-                          <span>EXPORT FORMAT</span>
-                          <span className="text-rose-400">SELECT</span>
+                        {/* Header bar */}
+                        <div 
+                          style={{ backgroundColor: '#15171F' }}
+                          className="px-2.5 py-1.5 text-[9px] uppercase font-bold tracking-wider text-gray-200 border-b border-white/15 flex items-center justify-between bg-[#15171F] rounded-t-xs"
+                        >
+                          <span className="flex items-center gap-1.5 text-white font-mono">
+                            <Download className="w-3.5 h-3.5 text-rose-400" />
+                            <span>CHOOSE EXPORT FORMAT</span>
+                          </span>
+                          <span className="text-[7.5px] px-1.5 py-0.5 rounded-xs bg-rose-500/25 text-rose-300 font-bold border border-rose-500/40">READY</span>
                         </div>
 
-                        {/* PDF */}
+                        {/* 1. PDF Export (Uniform 56px height, high-contrast text, solid opaque row) */}
                         <button
                           type="button"
-                          onClick={handleDownloadPDF}
-                          className="flex items-start gap-2 px-2 py-1.5 hover:bg-white/10 rounded-xs text-left transition-colors cursor-pointer group"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownloadPDF();
+                          }}
+                          style={{ backgroundColor: '#181B24' }}
+                          className="h-[56px] min-h-[56px] w-full flex items-center gap-3 px-3 py-2 bg-[#181B24] hover:bg-[#1F2433] border border-white/15 hover:border-rose-500 rounded-md text-left transition-all cursor-pointer group"
                         >
-                          <div className="p-1 rounded bg-rose-500/20 text-rose-400 mt-0.5 group-hover:bg-rose-500 group-hover:text-white transition-colors">
-                            <FileText className="w-3.5 h-3.5" />
+                          <div className="p-2 rounded-md bg-rose-500/20 text-rose-400 group-hover:bg-rose-500 group-hover:text-white transition-colors shrink-0">
+                            <FileText className="w-4 h-4" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="text-[11px] font-bold text-white group-hover:text-rose-300 flex items-center justify-between">
+                            <div className="text-[12px] font-bold text-white group-hover:text-rose-300 flex items-center justify-between">
                               <span>Download PDF</span>
-                              <span className="text-[8.5px] px-1 bg-white/10 rounded-xs text-white/70">3.5" × 2"</span>
+                              <span className="text-[8.5px] px-1.5 py-0.5 bg-rose-500/25 text-rose-300 border border-rose-500/40 rounded-xs font-mono font-bold">3.5" × 2"</span>
                             </div>
-                            <div className="text-[9.5px] text-white/60 leading-tight">
-                              Print card with active hyperlinks
+                            <div className="text-[10px] text-gray-200 group-hover:text-white leading-tight mt-0.5">
+                              Print-ready card with clickable links
                             </div>
                           </div>
                         </button>
 
-                        {/* PNG */}
+                        {/* 2. PNG Export (Uniform 56px height, high-contrast text, solid opaque row) */}
                         <button
                           type="button"
-                          onClick={handleDownloadPNG}
-                          className="flex items-start gap-2 px-2 py-1.5 hover:bg-white/10 rounded-xs text-left transition-colors cursor-pointer group"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownloadPNG();
+                          }}
+                          style={{ backgroundColor: '#181B24' }}
+                          className="h-[56px] min-h-[56px] w-full flex items-center gap-3 px-3 py-2 bg-[#181B24] hover:bg-[#1F2433] border border-white/15 hover:border-sky-500 rounded-md text-left transition-all cursor-pointer group"
                         >
-                          <div className="p-1 rounded bg-sky-500/20 text-sky-400 mt-0.5 group-hover:bg-sky-500 group-hover:text-white transition-colors">
-                            <ImageIcon className="w-3.5 h-3.5" />
+                          <div className="p-2 rounded-md bg-sky-500/20 text-sky-400 group-hover:bg-sky-500 group-hover:text-white transition-colors shrink-0">
+                            <ImageIcon className="w-4 h-4" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="text-[11px] font-bold text-white group-hover:text-sky-300 flex items-center justify-between">
+                            <div className="text-[12px] font-bold text-white group-hover:text-sky-300 flex items-center justify-between">
                               <span>Download PNG</span>
-                              <span className="text-[8.5px] px-1 bg-white/10 rounded-xs text-white/70">300 DPI</span>
+                              <span className="text-[8.5px] px-1.5 py-0.5 bg-sky-500/25 text-sky-300 border border-sky-500/40 rounded-xs font-mono font-bold">300 DPI</span>
                             </div>
-                            <div className="text-[9.5px] text-white/60 leading-tight">
-                              High-resolution digital image
+                            <div className="text-[10px] text-gray-200 group-hover:text-white leading-tight mt-0.5">
+                              Ultra clear high-resolution image
                             </div>
                           </div>
                         </button>
 
-                        {/* vCard */}
+                        {/* 3. vCard Export (Uniform 56px height, high-contrast text, solid opaque row) */}
                         <button
                           type="button"
-                          onClick={(e) => handleDownloadVCard(e)}
-                          className="flex items-start gap-2 px-2 py-1.5 hover:bg-white/10 rounded-xs text-left transition-colors cursor-pointer group"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownloadVCard(e);
+                          }}
+                          style={{ backgroundColor: '#181B24' }}
+                          className="h-[56px] min-h-[56px] w-full flex items-center gap-3 px-3 py-2 bg-[#181B24] hover:bg-[#1F2433] border border-white/15 hover:border-emerald-500 rounded-md text-left transition-all cursor-pointer group"
                         >
-                          <div className="p-1 rounded bg-emerald-500/20 text-emerald-400 mt-0.5 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
-                            <Contact className="w-3.5 h-3.5" />
+                          <div className="p-2 rounded-md bg-emerald-500/20 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-colors shrink-0">
+                            <Contact className="w-4 h-4" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="text-[11px] font-bold text-white group-hover:text-emerald-300 flex items-center justify-between">
+                            <div className="text-[12px] font-bold text-white group-hover:text-emerald-300 flex items-center justify-between">
                               <span>Save vCard (.vcf)</span>
-                              <span className="text-[8.5px] px-1 bg-white/10 rounded-xs text-white/70">RFC 6350</span>
+                              <span className="text-[8.5px] px-1.5 py-0.5 bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 rounded-xs font-mono font-bold">RFC 6350</span>
                             </div>
-                            <div className="text-[9.5px] text-white/60 leading-tight">
-                              Direct import to smartphone contacts
+                            <div className="text-[10px] text-gray-200 group-hover:text-white leading-tight mt-0.5">
+                              Import directly to phone contacts
                             </div>
                           </div>
                         </button>
@@ -521,11 +549,14 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                   </AnimatePresence>
                 </div>
 
-                {/* Control 3: SHARE Icon Button */}
+                {/* Share Icon Button */}
                 <button
                   type="button"
-                  onClick={handleShareLink}
-                  className="flex items-center gap-1 p-1.5 bg-white/5 hover:bg-white/15 text-white/80 hover:text-white border border-white/15 rounded-xs transition-colors cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleShareLink(e);
+                  }}
+                  className="flex items-center gap-1 p-1.5 bg-[#181B24] hover:bg-white/20 text-white/90 hover:text-white border border-white/20 rounded-xs transition-colors cursor-pointer"
                   title="Share portfolio link via native share or clipboard"
                   aria-label="Share card"
                 >
@@ -550,7 +581,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                     <img
                       src="/assets/aistudio/favicon_507da8ac.png"
                       alt="Yogananth J Avatar"
-                      className="w-full h-full object-contain object-bottom"
+                      className="w-full h-full object-contain object-bottom pointer-events-none"
                     />
                   </div>
 
@@ -589,7 +620,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
 
               {/* Right Column (Col 5): Direct Channels + QR Code */}
               <div className="col-span-5 flex flex-col justify-between gap-1.5 border-l border-white/10 pl-3">
-                {/* Contact Links */}
+                {/* Contact Links (each stops flip propagation) */}
                 <div className="flex flex-col gap-1 font-mono text-[8px] sm:text-[8.5px]">
                   {/* Email with 1-click copy */}
                   <div 
@@ -613,6 +644,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                     href="https://www.linkedin.com/in/yogananth-j-653400307/"
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
                     className="flex items-center justify-between px-2 py-0.5 bg-white/5 hover:bg-sky-500/15 border border-white/10 hover:border-sky-500/40 rounded-xs transition-colors cursor-pointer group/link"
                     title="Visit LinkedIn Profile"
                   >
@@ -628,6 +660,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                     href="https://github.com/YogananthJ"
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
                     className="flex items-center justify-between px-2 py-0.5 bg-white/5 hover:bg-white/15 border border-white/10 hover:border-white/30 rounded-xs transition-colors cursor-pointer group/link"
                     title="Visit GitHub Repositories"
                   >
@@ -674,7 +707,10 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                   {/* Quick Save vCard button */}
                   <button
                     type="button"
-                    onClick={(e) => handleDownloadVCard(e)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownloadVCard(e);
+                    }}
                     className="flex items-center gap-0.5 px-1.5 py-1 bg-rose-500/20 hover:bg-rose-500 border border-rose-500/40 text-rose-300 hover:text-white font-mono text-[6.5px] sm:text-[7px] uppercase font-bold rounded-xs transition-colors cursor-pointer shrink-0"
                     title="Save RFC 6350 contact file (.vcf)"
                   >
@@ -689,11 +725,12 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
             {/* 3. FOOTER BAR INSIDE BACK CARD                                      */}
             {/* ------------------------------------------------------------------- */}
             <div className="relative z-10 flex items-center justify-between border-t border-white/10 pt-1.5 font-mono text-[7px] sm:text-[7.5px] text-white/50">
-              <span className="truncate">RFC 6350 COMPLIANT · AI &amp; AUTOMATION</span>
+              <span className="truncate">RFC 6350 COMPLIANT · CLICK ANYWHERE TO FLIP</span>
               <a
                 href="https://iam-mjyogananth.pages.dev"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
                 className="text-rose-400 hover:text-rose-300 font-bold tracking-wider uppercase transition-colors"
               >
                 iam-mjyogananth.pages.dev
