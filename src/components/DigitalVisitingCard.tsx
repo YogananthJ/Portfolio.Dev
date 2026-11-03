@@ -70,12 +70,13 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
     const normX = Math.max(-1, Math.min(1, (pointerX - 0.5) * 2));
     const normY = Math.max(-1, Math.min(1, (pointerY - 0.5) * 2));
 
-    // Subtle 3D Tilt: rotateY max ±2.5deg, rotateX max ±2.0deg
-    const tiltY = normX * 2.5;
-    const tiltX = -normY * 2.0;
+    // Dynamic, clearly visible 3D Tilt: rotateY max ±4.0deg, rotateX max ±3.2deg
+    const tiltY = Number((normX * 4.0).toFixed(2));
+    const tiltX = Number((-normY * 3.2).toFixed(2));
 
     setTilt({ x: tiltX, y: tiltY });
     setNormalizedPos({ x: normX, y: normY });
+    if (!isHovered) setIsHovered(true);
   };
 
   const handlePointerEnter = () => {
@@ -89,12 +90,12 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
   };
 
   // Moving white glow pixel translations (opposite direction of mouse pointer, GPU accelerated)
-  const glowShiftXFront = -normalizedPos.x * 65;
-  const glowShiftYFront = -normalizedPos.y * 65;
+  const glowShiftXFront = -normalizedPos.x * 70;
+  const glowShiftYFront = -normalizedPos.y * 70;
 
   // On back face rotated 180deg around Y, local X is mirrored, so local X moves with + to be opposite in screen space
-  const glowShiftXBack = normalizedPos.x * 90;
-  const glowShiftYBack = -normalizedPos.y * 60;
+  const glowShiftXBack = normalizedPos.x * 110;
+  const glowShiftYBack = -normalizedPos.y * 75;
 
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const printCardRef = useRef<HTMLDivElement | null>(null);
@@ -330,6 +331,10 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
       {/* UNIFIED PERSPECTIVE FLIP CARD CONTAINER WITH SUBTLE 3D TILT               */}
       {/* Smooth mouse-driven 3D tilt (max ±2.5° Y, ±2.0° X) with ease-out return   */}
       {/* ========================================================================= */}
+      {/* ========================================================================= */}
+      {/* 1. PERSPECTIVE VIEWPORT (Establishes 3D perspective context for tilt)     */}
+      {/* Captures all mouse movement across the full card envelope                  */}
+      {/* ========================================================================= */}
       <div 
         ref={cardContainerRef}
         onMouseMove={handlePointerMove}
@@ -337,23 +342,36 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
         onMouseLeave={handlePointerLeave}
         className="relative w-full max-w-full sm:max-w-[540px] h-[310px] sm:h-[325px] md:h-[335px]"
         style={{ 
-          perspective: 1200,
-          transform: isHovered && !prefersReducedMotion
-            ? `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`
-            : 'rotateX(0deg) rotateY(0deg)',
-          transition: isHovered
-            ? 'transform 260ms cubic-bezier(0.16, 1, 0.3, 1)'
-            : 'transform 450ms cubic-bezier(0.16, 1, 0.3, 1)',
-          willChange: 'transform',
+          perspective: '1000px',
         }}
       >
+        {/* ========================================================================= */}
+        {/* 2. 3D TILT STAGE (Tilts smoothly in 3D perspective based on mouse cursor) */}
+        {/* Uses transformStyle: preserve-3d so both front & back faces tilt in 3D    */}
+        {/* ========================================================================= */}
         <div
-          className="w-full h-full relative transition-transform duration-700 ease-out"
+          className="w-full h-full relative"
           style={{
             transformStyle: 'preserve-3d',
-            transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+            transform: isHovered && !prefersReducedMotion
+              ? `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale3d(1.018, 1.018, 1.018)`
+              : 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
+            transition: isHovered
+              ? 'transform 80ms ease-out'
+              : 'transform 450ms cubic-bezier(0.16, 1, 0.3, 1)',
+            willChange: 'transform',
           }}
         >
+          {/* ========================================================================= */}
+          {/* 3. FLIP STAGE (Flips 180° between Photo Cover and Rectangular V-Card)     */}
+          {/* ========================================================================= */}
+          <div
+            className="w-full h-full relative transition-transform duration-700 ease-out"
+            style={{
+              transformStyle: 'preserve-3d',
+              transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+            }}
+          >
           {/* ===================================================================== */}
           {/* FRONT FACE: SQUARE PHOTO COVER (1:1 Clean White Photo Card)           */}
           {/* Entire surface is clickable -> Flips smoothly to the rectangular card */}
@@ -387,11 +405,18 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
 
               {/* The Main Collectible Card Box */}
               <div 
-                className="w-full h-full rounded-[4px] border-[3.5px] border-black shadow-[8px_8px_0px_#000000] group-hover/front:shadow-[12px_12px_0px_#000000] group-hover/front:scale-[1.015] transition-all duration-300 relative flex flex-col justify-between overflow-hidden"
+                className="w-full h-full rounded-[4px] border-[3.5px] border-black relative flex flex-col justify-between overflow-hidden"
                 style={{
                   backgroundColor: '#F3EFE6',
                   backgroundImage: 'linear-gradient(to right, rgba(0, 0, 0, 0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(0, 0, 0, 0.06) 1px, transparent 1px)',
                   backgroundSize: '20px 20px',
+                  transformStyle: 'preserve-3d',
+                  boxShadow: isHovered && !prefersReducedMotion
+                    ? `${8 - normalizedPos.x * 4}px ${8 - normalizedPos.y * 4}px 0px #000000, 0 20px 38px -8px rgba(0, 0, 0, 0.5)`
+                    : '8px 8px 0px #000000, 0 10px 20px -5px rgba(0, 0, 0, 0.3)',
+                  transition: isHovered
+                    ? 'box-shadow 80ms ease-out'
+                    : 'box-shadow 450ms cubic-bezier(0.16, 1, 0.3, 1)',
                 }}
               >
                 {/* Soft Moving White Glow Reflection on Front Cover (Moves opposite to cursor, GPU accelerated) */}
@@ -445,11 +470,18 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
           {/* ===================================================================== */}
           <div
             onClick={handleToggleFlip}
-            className="absolute inset-0 w-full h-full rounded-xl border-2 border-rose-500/85 bg-[#0B0E17] text-white p-3.5 sm:p-4 md:p-4.5 flex flex-col justify-between shadow-[8px_8px_0px_0px_var(--border-color)] hover:shadow-[11px_11px_0px_0px_var(--border-color)] cursor-pointer transition-shadow group/back"
+            className="absolute inset-0 w-full h-full rounded-xl border-2 border-rose-500/85 bg-[#0B0E17] text-white p-3.5 sm:p-4 md:p-4.5 flex flex-col justify-between cursor-pointer group/back"
             style={{
               backfaceVisibility: 'hidden',
               WebkitBackfaceVisibility: 'hidden',
               transform: 'rotateY(180deg)',
+              transformStyle: 'preserve-3d',
+              boxShadow: isHovered && !prefersReducedMotion
+                ? `${8 - normalizedPos.x * 4}px ${8 - normalizedPos.y * 4}px 0px 0px var(--border-color), 0 20px 38px -8px rgba(0, 0, 0, 0.75)`
+                : '8px 8px 0px 0px var(--border-color), 0 10px 20px -5px rgba(0, 0, 0, 0.45)',
+              transition: isHovered
+                ? 'box-shadow 80ms ease-out'
+                : 'box-shadow 450ms cubic-bezier(0.16, 1, 0.3, 1)',
             }}
             title="Click anywhere on card to flip back to photo cover [Shortcut: F]"
             role="button"
@@ -840,6 +872,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
           </div>
         </div>
       </div>
+    </div>
 
       {/* Floating Action Toast Notification */}
       <AnimatePresence>
