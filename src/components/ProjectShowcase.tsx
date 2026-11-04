@@ -16,6 +16,7 @@ import {
   Layers,
   Code
 } from 'lucide-react';
+import { RevealItem } from './common/ScrollSectionReveal';
 
 interface ProjectShowcaseProps {
   onOpenModal: (project: ProjectItem) => void;
@@ -169,13 +170,13 @@ export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal })
         {viewMode === 'grid' && (
           <div ref={gridContainerRef} className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${densityGapClass}`}>
             {filteredProjects.map((project, index) => (
-              <div key={project.id} className="project-card-item">
+              <RevealItem key={project.id} className="project-card-item">
                 <ProjectCard
                   project={project}
                   onOpenModal={onOpenModal}
                   index={index}
                 />
-              </div>
+              </RevealItem>
             ))}
           </div>
         )}

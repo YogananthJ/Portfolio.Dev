@@ -246,12 +246,12 @@ export const LiquidMetalBall: React.FC<LiquidMetalBallProps> = ({
       ctx.fillRect(0, 0, width, height);
 
       // Studio floor soft shadow (warps as liquid deforms)
-      let avgBottomRadius = s.baseRadius;
+      let avgBottomRadius = Math.max(1, s.baseRadius);
       if (vertices.length > 0) {
-        avgBottomRadius = (vertices[Math.floor(len * 0.25)].r + vertices[Math.floor(len * 0.3)].r) * 0.5;
+        avgBottomRadius = Math.max(1, (vertices[Math.floor(len * 0.25)].r + vertices[Math.floor(len * 0.3)].r) * 0.5);
       }
       ctx.beginPath();
-      ctx.ellipse(s.cx, s.cy + avgBottomRadius * 1.25, avgBottomRadius * 1.05, 12, 0, 0, Math.PI * 2);
+      ctx.ellipse(s.cx, s.cy + avgBottomRadius * 1.25, Math.max(1, avgBottomRadius * 1.05), 12, 0, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
       ctx.filter = 'blur(8px)';
       ctx.fill();
@@ -298,7 +298,7 @@ export const LiquidMetalBall: React.FC<LiquidMetalBallProps> = ({
 
         // Curved chrome horizon reflection band that warps with studio light
         ctx.beginPath();
-        ctx.ellipse(s.cx, s.cy + s.baseRadius * 0.12, s.baseRadius * 1.3, s.baseRadius * 0.45, s.lightAngle, 0, Math.PI * 2);
+        ctx.ellipse(s.cx, s.cy + s.baseRadius * 0.12, Math.max(1, s.baseRadius * 1.3), Math.max(1, s.baseRadius * 0.45), s.lightAngle, 0, Math.PI * 2);
         ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
         ctx.fill();
 

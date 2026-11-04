@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SKILL_CATEGORIES } from '../data/portfolioData';
 import { Cpu, Search, Code, Sparkles, CheckCircle2, Network, ArrowRight } from 'lucide-react';
+import { RevealItem } from './common/ScrollSectionReveal';
 
 interface SkillsSectionProps {
   onSelectProjectTag?: (tag: string) => void;
@@ -65,7 +66,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ onSelectProjectTag
         {/* Synergies Banner: AI + Full-Stack + Automation Relationships */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
           {SYNERGIES.map((syn, idx) => (
-            <div
+            <RevealItem
               key={idx}
               className="p-4 bg-[var(--bg-card)] border border-[var(--border-color)] font-mono text-xs rounded-xs relative group hover:border-[var(--accent)] transition-colors"
             >
@@ -79,7 +80,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ onSelectProjectTag
               <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
                 {syn.description}
               </p>
-            </div>
+            </RevealItem>
           ))}
         </div>
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { motion, AnimatePresence, useInView, useReducedMotion, type Variants } from 'framer-motion';
 import {
   Github,
@@ -238,6 +238,8 @@ export const GitHubActivitySection: React.FC = () => {
   const [hoveredDay, setHoveredDay] = useState<HeatMapDay | null>(null);
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
+  const lastRefreshTimeRef = useRef<number>(0);
+
   const formatRelativeTime = (isoString: string): string => {
     try {
       const now = Date.now();
@@ -270,9 +272,18 @@ export const GitHubActivitySection: React.FC = () => {
     }
   };
 
-  // Robust GitHub API fetching with pagination, rate limit tracking, and zero hardcoded fallbacks
+  // Robust GitHub API fetching with CORS-compliant headers, pagination, rate limit tracking, and safe fallbacks
   const fetchGitHubData = async (forceBypassCache = false) => {
+    if (isRefreshing) return;
+
+    // Throttle manual refreshes to protect unauthenticated GitHub API quota (60 req/hr)
+    const now = Date.now();
     if (forceBypassCache) {
+      if (now - lastRefreshTimeRef.current < 4000) {
+        setErrorMsg('Please wait a few seconds before refreshing again to protect your GitHub API quota.');
+        return;
+      }
+      lastRefreshTimeRef.current = now;
       setIsRefreshing(true);
     } else {
       setIsLoading(true);
@@ -309,44 +320,53 @@ export const GitHubActivitySection: React.FC = () => {
     }
 
     try {
-      // 2. Fetch User Profile to get real total public_repos
+      // 2. Fetch User Profile
+      // CRITICAL FIX: Only use CORS-safelisted request headers ('Accept').
+      // NEVER set 'Cache-Control' in custom fetch headers because it triggers CORS preflight
+      // which GitHub API rejects with "Request header field cache-control is not allowed".
+      // To bust browser cache safely without preflight, append a timestamp query parameter.
+      const timestamp = Date.now();
+      const cacheBustQuery = forceBypassCache ? `?_t=${timestamp}` : '';
+      const cacheBustParam = forceBypassCache ? `&_t=${timestamp}` : '';
+
       const fetchHeaders: HeadersInit = {
         Accept: 'application/vnd.github.v3+json',
       };
-      if (forceBypassCache) {
-        fetchHeaders['Cache-Control'] = 'no-cache';
-      }
 
-      const userRes = await fetch(`https://api.github.com/users/${GITHUB_USERNAME}`, {
+      const userRes = await fetch(`https://api.github.com/users/${GITHUB_USERNAME}${cacheBustQuery}`, {
         headers: fetchHeaders,
-        cache: forceBypassCache ? 'no-cache' : 'default',
       });
 
       if (!userRes.ok) {
-        if (userRes.status === 403) {
-          const resetHeader = userRes.headers.get('x-ratelimit-reset');
-          const resetTimeStr = resetHeader
-            ? new Date(parseInt(resetHeader, 10) * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            : 'soon';
-          throw new Error(`GitHub API rate limit reached (60 req/hr). Limit resets at ${resetTimeStr}.`);
+        if (userRes.status === 404) {
+          throw new Error(`GitHub profile not found (@${GITHUB_USERNAME}).`);
         }
-        throw new Error(`GitHub user request returned HTTP status ${userRes.status}`);
+        if (userRes.status === 403 || userRes.status === 429) {
+          const resetHeader = userRes.headers.get('x-ratelimit-reset');
+          let resetTimeStr = '';
+          if (resetHeader) {
+            const resetDate = new Date(parseInt(resetHeader, 10) * 1000);
+            resetTimeStr = ` Limit resets at ${resetDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`;
+          }
+          throw new Error(`GitHub API rate limit reached (60 req/hr).${resetTimeStr}`);
+        }
+        if (userRes.status >= 500) {
+          throw new Error('GitHub servers are temporarily unavailable. Please try again later.');
+        }
+        throw new Error(`Unable to load activity right now (HTTP status ${userRes.status}).`);
       }
 
       const userData = await userRes.json();
       const realPublicRepos: number = typeof userData.public_repos === 'number' ? userData.public_repos : 0;
 
-      // 3. Paginate through all public repositories (100 per page)
-      const pagesToFetch = Math.min(Math.max(1, Math.ceil(realPublicRepos / 100)), 5);
+      // 3. Paginate through repositories (up to 3 pages / 300 repos to respect rate limits)
+      const pagesToFetch = Math.min(Math.max(1, Math.ceil(realPublicRepos / 100)), 3);
       const allRepos: GitHubRepo[] = [];
 
       for (let page = 1; page <= pagesToFetch; page++) {
         const pageRes = await fetch(
-          `https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100&page=${page}&sort=updated`,
-          {
-            headers: fetchHeaders,
-            cache: forceBypassCache ? 'no-cache' : 'default',
-          }
+          `https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100&page=${page}&sort=updated${cacheBustParam}`,
+          { headers: fetchHeaders }
         );
         if (!pageRes.ok) break;
         const pageData = await pageRes.json();
@@ -361,11 +381,8 @@ export const GitHubActivitySection: React.FC = () => {
 
       // 4. Fetch up to 100 public activity events
       const eventsRes = await fetch(
-        `https://api.github.com/users/${GITHUB_USERNAME}/events/public?per_page=100`,
-        {
-          headers: fetchHeaders,
-          cache: forceBypassCache ? 'no-cache' : 'default',
-        }
+        `https://api.github.com/users/${GITHUB_USERNAME}/events/public?per_page=100${cacheBustParam}`,
+        { headers: fetchHeaders }
       );
 
       const eventsData: GitHubEvent[] = eventsRes.ok && Array.isArray(await eventsRes.clone().json().catch(() => null))
@@ -376,37 +393,58 @@ export const GitHubActivitySection: React.FC = () => {
       let fetchedContributions: ExactContributionDay[] = [];
       let fetchedTotalContribs = 0;
 
+      // Safely try internal proxy route if running on fullstack node server
       try {
         const contribRes = await fetch(
           `/api/github-contributions?username=${GITHUB_USERNAME}${forceBypassCache ? '&force=true' : ''}`
         );
-        if (contribRes.ok) {
+        const contentType = contribRes.headers.get('content-type') || '';
+        // Only parse as JSON if the server actually returned JSON (prevents HTML SPA fallback syntax error)
+        if (contribRes.ok && contentType.includes('application/json')) {
           const contribJson = await contribRes.json();
-          if (contribJson.success && Array.isArray(contribJson.contributions)) {
+          if (contribJson.success && Array.isArray(contribJson.contributions) && contribJson.contributions.length > 0) {
             fetchedContributions = contribJson.contributions;
             fetchedTotalContribs = contribJson.totalContributions || 0;
           }
         }
-      } catch (proxyErr) {
-        console.warn('Internal contributions API fetch failed, trying direct:', proxyErr);
+      } catch {
+        // Expected when deployed on static host like Cloudflare Pages
       }
 
       // Fallback: direct upstream public contribution service
       if (fetchedContributions.length === 0) {
         try {
           const directRes = await fetch(
-            `https://github-contributions-api.jogruber.de/v4/${GITHUB_USERNAME}?y=last`
+            `https://github-contributions-api.jogruber.de/v4/${GITHUB_USERNAME}?y=last${cacheBustParam}`
           );
-          if (directRes.ok) {
+          const directContentType = directRes.headers.get('content-type') || '';
+          if (directRes.ok && directContentType.includes('application/json')) {
             const directJson = await directRes.json();
-            if (Array.isArray(directJson.contributions)) {
+            if (Array.isArray(directJson.contributions) && directJson.contributions.length > 0) {
               fetchedContributions = directJson.contributions;
               fetchedTotalContribs = directJson.total?.lastYear || 0;
             }
           }
-        } catch (directErr) {
-          console.warn('Direct contributions upstream fetch failed:', directErr);
+        } catch {
+          // Direct fallback failed
         }
+      }
+
+      // If third-party contributions scraping failed, synthesize timeline from real public events
+      if (fetchedContributions.length === 0 && eventsData.length > 0) {
+        const dayCounts: Record<string, number> = {};
+        eventsData.forEach((evt) => {
+          if (evt.created_at) {
+            const dayKey = evt.created_at.split('T')[0];
+            dayCounts[dayKey] = (dayCounts[dayKey] || 0) + 1;
+          }
+        });
+        fetchedContributions = Object.entries(dayCounts).map(([date, count]) => ({
+          date,
+          count,
+          level: (Math.min(4, Math.max(0, Math.ceil(count / 2))) as 0 | 1 | 2 | 3 | 4),
+        }));
+        fetchedTotalContribs = eventsData.length;
       }
 
       // Update states with verified API data
@@ -438,10 +476,23 @@ export const GitHubActivitySection: React.FC = () => {
           })
         );
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.warn('GitHub API fetch failed:', err);
-      const msg = (err as Error).message || 'Failed to fetch latest GitHub telemetry.';
-      setErrorMsg(msg);
+      let friendlyMsg = 'Unable to load GitHub activity right now.';
+      if (err instanceof Error) {
+        if (err.message.includes('rate limit')) {
+          friendlyMsg = err.message;
+        } else if (err.message.includes('not found')) {
+          friendlyMsg = err.message;
+        } else if (err.message.includes('Failed to fetch') || err.name === 'TypeError') {
+          friendlyMsg = 'Unable to connect to GitHub. Please check your internet connection or try again later.';
+        } else if (err.message.includes('HTTP status') || err.message.includes('unavailable')) {
+          friendlyMsg = err.message;
+        } else {
+          friendlyMsg = err.message;
+        }
+      }
+      setErrorMsg(friendlyMsg);
 
       // Attempt to salvage from cached data if available
       try {

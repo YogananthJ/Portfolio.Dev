@@ -23,6 +23,7 @@ import { PROJECTS } from './data/portfolioData';
 import { ScrollProgressBar } from './components/common/ScrollProgressBar';
 import { BackToTop } from './components/common/BackToTop';
 import { FuturisticSpotlight } from './components/common/FuturisticSpotlight';
+import { ScrollSectionReveal } from './components/common/ScrollSectionReveal';
 
 function PortfolioMainContent() {
   const { layoutMode, setLayoutMode, setActiveSimulatorId } = useLayout();
@@ -174,28 +175,44 @@ function PortfolioMainContent() {
           />
 
           {/* Selected Works & Engineered Systems (Grid / List / Bento View) */}
-          <ProjectShowcase onOpenModal={handleOpenProjectModal} />
+          <ScrollSectionReveal>
+            <ProjectShowcase onOpenModal={handleOpenProjectModal} />
+          </ScrollSectionReveal>
 
           {/* Interactive Architecture Explorer (Node & Edge Schematics) */}
-          <ArchitectureExplorer initialProjectId="cognitive-ai" />
+          <ScrollSectionReveal>
+            <ArchitectureExplorer initialProjectId="cognitive-ai" />
+          </ScrollSectionReveal>
 
           {/* Dedicated Live Interactive Model Lab & Simulators (AI Projects Only) */}
-          <SimulatorsSection />
+          <ScrollSectionReveal>
+            <SimulatorsSection />
+          </ScrollSectionReveal>
 
           {/* Motion Playground & Interactive Animation Code Lab */}
-          <MotionPlayground onOpenDetail={handleOpenMotionDetail} />
+          <ScrollSectionReveal>
+            <MotionPlayground onOpenDetail={handleOpenMotionDetail} />
+          </ScrollSectionReveal>
 
           {/* Core Toolkit & Competencies */}
-          <SkillsSection />
+          <ScrollSectionReveal>
+            <SkillsSection />
+          </ScrollSectionReveal>
 
           {/* GitHub Activity & Open-Source Metrics */}
-          <GitHubActivitySection />
+          <ScrollSectionReveal>
+            <GitHubActivitySection />
+          </ScrollSectionReveal>
 
           {/* Verified Milestones & Certifications */}
-          <ExperienceSection />
+          <ScrollSectionReveal>
+            <ExperienceSection />
+          </ScrollSectionReveal>
 
           {/* Contact & Inquiries */}
-          <ContactSection onOpenResume={() => setIsResumeModalOpen(true)} />
+          <ScrollSectionReveal>
+            <ContactSection onOpenResume={() => setIsResumeModalOpen(true)} />
+          </ScrollSectionReveal>
         </main>
       )}
 

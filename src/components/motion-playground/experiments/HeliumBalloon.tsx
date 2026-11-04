@@ -540,7 +540,7 @@ export const HeliumBalloon: React.FC<HeliumBalloonProps> = ({
     // Soft ceiling shadow directly above the balloon
     const shadowDist = Math.max(0, p.balloonY - (p.ceilingY + p.balloonRadius * 0.88));
     const shadowAlpha = Math.max(0.04, 0.32 - shadowDist * 0.003);
-    const shadowRadius = Math.max(22, p.balloonRadius * 0.92 - shadowDist * 0.15);
+    const shadowRadius = Math.max(1, Math.max(22, p.balloonRadius * 0.92 - shadowDist * 0.15));
 
     ctx.save();
     ctx.beginPath();
@@ -685,7 +685,10 @@ export const HeliumBalloon: React.FC<HeliumBalloonProps> = ({
     // Specular Window Reflection Highlight (matching reference photo)
     ctx.save();
     ctx.beginPath();
-    ctx.ellipse(-r * 0.38, -r * 0.38, r * 0.28, r * 0.42, -0.4, 0, Math.PI * 2);
+    const safeR = Math.max(1, r);
+    const specRx = Math.max(0.5, safeR * 0.28);
+    const specRy = Math.max(0.5, safeR * 0.42);
+    ctx.ellipse(-safeR * 0.38, -safeR * 0.38, specRx, specRy, -0.4, 0, Math.PI * 2);
     const specGrad = ctx.createLinearGradient(-r * 0.52, -r * 0.62, -r * 0.2, -r * 0.2);
     specGrad.addColorStop(0, theme.highlight);
     specGrad.addColorStop(0.38, 'rgba(255, 255, 255, 0.36)');
