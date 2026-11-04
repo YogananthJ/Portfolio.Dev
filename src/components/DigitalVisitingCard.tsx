@@ -98,7 +98,6 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
   const glowShiftYBack = -normalizedPos.y * 75;
 
   const dropdownRef = useRef<HTMLDivElement | null>(null);
-  const printCardRef = useRef<HTMLDivElement | null>(null);
 
   // Generate scannable QR Code on mount pointing to portfolio URL
   useEffect(() => {
@@ -262,49 +261,136 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
     }
   };
 
+  // Dynamically generate card canvas on-demand (zero persistent fixed elements in DOM)
+  const generateCardCanvas = async (): Promise<HTMLCanvasElement> => {
+    if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
+      await document.fonts.ready;
+    }
+
+    let qr = qrCodeUrl;
+    if (!qr) {
+      try {
+        qr = await QRCode.toDataURL('https://iam-mjyogananth.pages.dev', {
+          width: 240,
+          margin: 1,
+          color: { dark: '#FFFFFF', light: '#0D111A' },
+          errorCorrectionLevel: 'M'
+        });
+        setQrCodeUrl(qr);
+      } catch {
+        qr = '';
+      }
+    }
+
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'fixed';
+    wrapper.style.left = '-9999px';
+    wrapper.style.top = '0';
+    wrapper.style.width = '560px';
+    wrapper.style.height = '320px';
+    wrapper.style.pointerEvents = 'none';
+    wrapper.style.zIndex = '-99999';
+
+    wrapper.innerHTML = `
+      <div style="width: 560px; height: 320px; box-sizing: border-box; padding: 20px; background-color: #0B0E17; color: #ffffff; display: flex; flex-direction: column; justify-content: space-between; border: 2px solid #F43F5E; border-radius: 8px; position: relative; overflow: hidden; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;">
+        <div style="position: absolute; inset: 0; background-image: radial-gradient(#ffffff18 1px, transparent 1px); background-size: 12px 12px; pointer-events: none;"></div>
+        <div style="position: absolute; top: -48px; right: -48px; width: 144px; height: 144px; background: rgba(225, 29, 72, 0.2); border-radius: 9999px; filter: blur(32px); pointer-events: none;"></div>
+        <div style="position: absolute; bottom: -48px; left: -48px; width: 144px; height: 144px; background: rgba(236, 72, 153, 0.15); border-radius: 9999px; filter: blur(32px); pointer-events: none;"></div>
+
+        <div style="position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; color: white;">
+            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 9999px; background-color: #F43F5E;"></span>
+            DIGITAL VISITING CARD · 2026
+          </div>
+          <div style="font-size: 10px; color: #FB7185; font-weight: bold;">
+            ID: YJ-AIML-882
+          </div>
+        </div>
+
+        <div style="position: relative; z-index: 10; display: flex; gap: 14px; flex: 1; align-items: center; padding: 8px 0;">
+          <div style="flex: 7; display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 80px; height: 80px; border-radius: 6px; border: 2px solid #F43F5E; background: white; padding: 2px; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                <img src="/assets/aistudio/favicon_507da8ac.png" crossOrigin="anonymous" alt="Avatar" style="width: 100%; height: 100%; object-fit: contain; object-position: bottom;" />
+              </div>
+              <div style="min-width: 0; flex: 1;">
+                <div style="font-size: 20px; font-weight: 900; color: white; letter-spacing: -0.02em; line-height: 1.2; font-family: system-ui, sans-serif;">
+                  Yogananth J
+                </div>
+                <div style="font-size: 10px; font-weight: bold; color: #FB7185; text-transform: uppercase; margin-top: 2px;">
+                  AI Engineer · Full-Stack Developer
+                </div>
+                <div style="font-size: 9px; color: rgba(255,255,255,0.85); margin-top: 4px; border-left: 2px solid #F43F5E; padding-left: 8px;">
+                  B.Tech in Artificial Intelligence &amp; Data Science / ML
+                </div>
+              </div>
+            </div>
+            <div style="display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 2px; font-size: 8px; font-weight: bold; color: #6EE7B7; text-transform: uppercase; width: fit-content;">
+              <span style="display: inline-block; width: 6px; height: 6px; border-radius: 9999px; background-color: #34D399;"></span>
+              Open to Opportunities
+            </div>
+          </div>
+
+          <div style="flex: 5; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; border-left: 1px solid rgba(255,255,255,0.15); padding-left: 12px; font-size: 9px;">
+            <div style="color: rgba(255,255,255,0.95); display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              <span style="color: #F43F5E;">✉</span>
+              <span>mjyogananth@gmail.com</span>
+            </div>
+            <div style="color: rgba(255,255,255,0.95); display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              <span style="color: #38BDF8;">in</span>
+              <span>linkedin.com/in/yogananth-j</span>
+            </div>
+            <div style="color: rgba(255,255,255,0.95); display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              <span style="color: #FFFFFF;">⌨</span>
+              <span>github.com/YogananthJ</span>
+            </div>
+            <div style="color: rgba(255,255,255,0.65); display: flex; align-items: center; gap: 6px; font-size: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              <span style="color: #F43F5E;">📍</span>
+              <span>Gobichettipalayam, Erode, TN</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+              <div style="padding: 2px; background: white; border-radius: 2px;">
+                ${qr ? `<img src="${qr}" crossOrigin="anonymous" alt="QR" style="width: 32px; height: 32px; display: block;" />` : ''}
+              </div>
+              <span style="font-size: 7px; color: rgba(255,255,255,0.7);">SCAN PORTFOLIO</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 8px; font-size: 8px; color: rgba(255,255,255,0.6);">
+          <span>RFC 6350 COMPLIANT · AI &amp; AUTOMATION</span>
+          <span style="color: #FB7185;">iam-mjyogananth.pages.dev</span>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(wrapper);
+
+    try {
+      const canvas = await html2canvas(wrapper.firstElementChild as HTMLElement, {
+        scale: 3, // 300+ DPI razor-sharp output
+        backgroundColor: '#0B0E17',
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        width: 560,
+        height: 320,
+      });
+      return canvas;
+    } finally {
+      if (wrapper.parentNode) {
+        wrapper.parentNode.removeChild(wrapper);
+      }
+    }
+  };
+
   // Export as Standard Business Card PDF (3.5" × 2" format with embedded clickable links)
   const handleDownloadPDF = async () => {
     try {
       setExportingType('pdf');
       setDownloadMenuOpen(false);
 
-      if (!printCardRef.current) {
-        throw new Error('Export container not ready');
-      }
-
-      // Ensure fonts are fully rendered before capturing
-      if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
-        await document.fonts.ready;
-      }
-
-      // Ensure QR code URL is ready
-      if (!qrCodeUrl) {
-        try {
-          const freshQr = await QRCode.toDataURL('https://iam-mjyogananth.pages.dev', {
-            width: 240,
-            margin: 1,
-            color: { dark: '#FFFFFF', light: '#0D111A' },
-            errorCorrectionLevel: 'M'
-          });
-          setQrCodeUrl(freshQr);
-        } catch {
-          // ignore
-        }
-      }
-
-      const cardCanvas = await html2canvas(printCardRef.current, {
-        scale: 3, // 300+ DPI razor-sharp output
-        backgroundColor: '#0B0E17',
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        x: 0,
-        y: 0,
-        width: 560,
-        height: 320,
-        scrollX: 0,
-        scrollY: 0,
-      });
+      const cardCanvas = await generateCardCanvas();
 
       const PDFConstructor = typeof jsPDF === 'function' ? jsPDF : (jsPDF as any).jsPDF;
       const pdf = new PDFConstructor({
@@ -317,17 +403,11 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
       pdf.addImage(imgData, 'PNG', 0, 0, 3.5, 2.0, undefined, 'FAST');
 
       // Embedded PDF Hyperlinks (clickable in Acrobat, Chrome, macOS Preview, etc.)
-      // Left side: Name, Avatar, and Portfolio
       pdf.link(0.18, 0.35, 1.85, 0.70, { url: 'https://iam-mjyogananth.pages.dev' });
-      // Right side: Email
       pdf.link(2.15, 0.38, 1.25, 0.20, { url: 'mailto:mjyogananth@gmail.com' });
-      // LinkedIn
       pdf.link(2.15, 0.58, 1.25, 0.20, { url: 'https://www.linkedin.com/in/yogananth-j-653400307/' });
-      // GitHub
       pdf.link(2.15, 0.78, 1.25, 0.20, { url: 'https://github.com/YogananthJ' });
-      // QR Code & Scan Portfolio
       pdf.link(2.15, 1.20, 1.25, 0.45, { url: 'https://iam-mjyogananth.pages.dev' });
-      // Footer link
       pdf.link(2.20, 1.76, 1.20, 0.20, { url: 'https://iam-mjyogananth.pages.dev' });
 
       pdf.save('YogananthJ_Digital_VCard.pdf');
@@ -351,41 +431,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
       setExportingType('png');
       setDownloadMenuOpen(false);
 
-      if (!printCardRef.current) throw new Error('Target export container not ready');
-
-      // Ensure fonts are fully rendered before capturing
-      if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
-        await document.fonts.ready;
-      }
-
-      // Ensure QR code URL is ready
-      if (!qrCodeUrl) {
-        try {
-          const freshQr = await QRCode.toDataURL('https://iam-mjyogananth.pages.dev', {
-            width: 240,
-            margin: 1,
-            color: { dark: '#FFFFFF', light: '#0D111A' },
-            errorCorrectionLevel: 'M'
-          });
-          setQrCodeUrl(freshQr);
-        } catch {
-          // ignore
-        }
-      }
-
-      const canvas = await html2canvas(printCardRef.current, {
-        scale: 3, // 300+ DPI high resolution (1680 × 960 px)
-        backgroundColor: '#0B0E17',
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        x: 0,
-        y: 0,
-        width: 560,
-        height: 320,
-        scrollX: 0,
-        scrollY: 0,
-      });
+      const canvas = await generateCardCanvas();
 
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
@@ -987,105 +1033,6 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* ========================================================================= */}
-      {/* OFFSCREEN RENDER CHASSIS (Fixed at top-left 0,0 at z-index -99999)         */}
-      {/* Ensures html2canvas renders complete elements without negative coordinates */}
-      {/* ========================================================================= */}
-      <div 
-        aria-hidden="true" 
-        className="fixed top-0 left-0 pointer-events-none"
-        style={{ 
-          zIndex: -99999,
-          opacity: 1,
-          visibility: 'visible',
-          transform: 'none',
-          pointerEvents: 'none',
-        }}
-      >
-        <div
-          ref={printCardRef}
-          style={{ width: '560px', height: '320px', minWidth: '560px', minHeight: '320px', transform: 'none' }}
-          className="relative bg-[#0B0E17] text-white p-5 flex flex-col justify-between overflow-hidden border-2 border-rose-500 rounded-lg shadow-2xl"
-        >
-          <div className="absolute inset-0 bg-[radial-gradient(#ffffff18_1px,transparent_1px)] [background-size:12px_12px]" />
-
-          {/* Header */}
-          <div className="relative z-10 flex items-center justify-between border-b border-white/15 pb-2">
-            <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-wider text-white">
-              <span className="w-2 h-2 rounded-full bg-rose-500" />
-              DIGITAL VISITING CARD · 2026
-            </div>
-            <div className="font-mono text-[10px] text-rose-400 font-bold">
-              ID: YJ-AIML-882
-            </div>
-          </div>
-
-          {/* Body */}
-          <div className="relative z-10 grid grid-cols-12 gap-3.5 flex-1 items-center py-2">
-            {/* Left */}
-            <div className="col-span-7 flex flex-col gap-2">
-              <div className="flex items-center gap-3">
-                <div className="w-20 h-20 rounded-md border-2 border-rose-500 p-0.5 bg-white shrink-0 overflow-hidden flex items-center justify-center">
-                  <img
-                    src="/assets/aistudio/favicon_507da8ac.png"
-                    alt="Character Avatar"
-                    crossOrigin="anonymous"
-                    className="w-full h-full object-contain object-bottom"
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-display text-xl font-black text-white tracking-tight leading-tight">
-                    Yogananth J
-                  </h3>
-                  <div className="font-mono text-[10px] font-bold text-rose-400 uppercase mt-0.5">
-                    AI Engineer · Full-Stack Developer
-                  </div>
-                  <div className="font-mono text-[9px] text-white/80 mt-1 border-l-2 border-rose-500 pl-2">
-                    B.Tech in Artificial Intelligence &amp; Data Science / ML
-                  </div>
-                </div>
-              </div>
-              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xs text-[8px] font-mono text-emerald-300 font-bold uppercase w-fit">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                Open to Opportunities
-              </div>
-            </div>
-
-            {/* Right */}
-            <div className="col-span-5 flex flex-col justify-between gap-1.5 border-l border-white/15 pl-3 font-mono text-[9px]">
-              <div className="flex items-center gap-1.5 text-white/90">
-                <Mail className="w-3 h-3 text-rose-500 shrink-0" />
-                <span className="truncate">mjyogananth@gmail.com</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-white/90">
-                <Linkedin className="w-3 h-3 text-sky-400 shrink-0" />
-                <span className="truncate">linkedin.com/in/yogananth-j</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-white/90">
-                <Github className="w-3 h-3 text-white shrink-0" />
-                <span className="truncate">github.com/YogananthJ</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-white/60 text-[8px]">
-                <MapPin className="w-2.5 h-2.5 text-rose-500 shrink-0" />
-                <span className="truncate">Gobichettipalayam, Erode, TN</span>
-              </div>
-              <div className="flex items-center gap-2 mt-1">
-                <div className="p-0.5 bg-white rounded-xs">
-                  {qrCodeUrl && <img src={qrCodeUrl} alt="QR" crossOrigin="anonymous" className="w-8 h-8" />}
-                </div>
-                <span className="text-[7px] text-white/70">SCAN PORTFOLIO</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="relative z-10 flex items-center justify-between border-t border-white/15 pt-2 font-mono text-[8px] text-white/60">
-            <span>RFC 6350 COMPLIANT · AI &amp; AUTOMATION</span>
-            <span className="text-rose-400">iam-mjyogananth.pages.dev</span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
