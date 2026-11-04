@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import QRCode from 'qrcode';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { 
   Mail, 
@@ -210,7 +210,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
     handleCopyPortfolioLink(e);
   };
 
-  // Export as RFC 6350 vCard (.vcf) (stops card flip propagation)
+  // Export as RFC 6350 / vCard 3.0 (.vcf) (stops card flip propagation)
   const handleDownloadVCard = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     try {
@@ -224,26 +224,36 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
         'FN:Yogananth J',
         'ORG:AI & Automation Engineering',
         'TITLE:AI Engineer · Full-Stack Developer · Automation Specialist',
-        'EMAIL;TYPE=INTERNET,WORK:mjyogananth@gmail.com',
-        'URL;TYPE=WORK:https://iam-mjyogananth.pages.dev',
-        'X-SOCIALPROFILE;type=linkedin:https://www.linkedin.com/in/yogananth-j-653400307/',
-        'X-SOCIALPROFILE;type=github:https://github.com/YogananthJ',
+        'EMAIL;TYPE=INTERNET,WORK,PREF:mjyogananth@gmail.com',
+        'URL;TYPE=PORTFOLIO:https://iam-mjyogananth.pages.dev',
+        'URL;TYPE=LINKEDIN:https://www.linkedin.com/in/yogananth-j-653400307/',
+        'URL;TYPE=GITHUB:https://github.com/YogananthJ',
         'ADR;TYPE=WORK:;;Gobichettipalayam;Erode;Tamil Nadu;;India',
         'NOTE:B.Tech in Artificial Intelligence & Data Science / ML | Specializing in Multi-Agent Orchestration, Hybrid Vector RAG, and Modern Full-Stack Platforms.',
-        'REV:2026-03-30T00:00:00Z',
+        'REV:2026-11-04T05:40:00Z',
         'END:VCARD'
       ].join('\r\n');
 
       const blob = new Blob([vcardContent], { type: 'text/vcard;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'Yogananth_J_Contact.vcf';
+      link.href = url;
+      link.setAttribute('download', 'YogananthJ.vcf');
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(link.href);
 
-      showToast('Saved vCard (Yogananth_J_Contact.vcf)');
+      // Revoke asynchronously so browser download stream initiates cleanly
+      setTimeout(() => {
+        if (link.parentNode) link.parentNode.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 2500);
+
+      showToast('Saved vCard (YogananthJ.vcf)');
+      try {
+        soundFX?.playChime?.();
+      } catch {
+        // ignore
+      }
     } catch (err) {
       console.error('vCard export failed:', err);
       showToast('Failed to export contact file');
@@ -252,7 +262,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
     }
   };
 
-  // Export as Standard Business Card PDF (3.5" × 2" format with clickable link annotations)
+  // Export as Standard Business Card PDF (3.5" × 2" format with embedded clickable links)
   const handleDownloadPDF = async () => {
     try {
       setExportingType('pdf');
@@ -262,32 +272,71 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
         throw new Error('Export container not ready');
       }
 
+      // Ensure fonts are fully rendered before capturing
+      if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+
+      // Ensure QR code URL is ready
+      if (!qrCodeUrl) {
+        try {
+          const freshQr = await QRCode.toDataURL('https://iam-mjyogananth.pages.dev', {
+            width: 240,
+            margin: 1,
+            color: { dark: '#FFFFFF', light: '#0D111A' },
+            errorCorrectionLevel: 'M'
+          });
+          setQrCodeUrl(freshQr);
+        } catch {
+          // ignore
+        }
+      }
+
       const cardCanvas = await html2canvas(printCardRef.current, {
-        scale: 2.5,
-        backgroundColor: '#0A0D14',
+        scale: 3, // 300+ DPI razor-sharp output
+        backgroundColor: '#0B0E17',
         useCORS: true,
-        logging: false
+        allowTaint: true,
+        logging: false,
+        x: 0,
+        y: 0,
+        width: 560,
+        height: 320,
+        scrollX: 0,
+        scrollY: 0,
       });
 
-      const pdf = new jsPDF({
+      const PDFConstructor = typeof jsPDF === 'function' ? jsPDF : (jsPDF as any).jsPDF;
+      const pdf = new PDFConstructor({
         orientation: 'landscape',
         unit: 'in',
         format: [3.5, 2.0]
       });
 
       const imgData = cardCanvas.toDataURL('image/png');
-      pdf.addImage(imgData, 'PNG', 0, 0, 3.5, 2.0);
+      pdf.addImage(imgData, 'PNG', 0, 0, 3.5, 2.0, undefined, 'FAST');
 
-      // Embedded PDF Hyperlinks
-      pdf.link(0.2, 0.45, 1.8, 0.22, { url: 'mailto:mjyogananth@gmail.com' });
-      pdf.link(0.2, 0.72, 1.8, 0.22, { url: 'https://www.linkedin.com/in/yogananth-j-653400307/' });
-      pdf.link(0.2, 0.99, 1.8, 0.22, { url: 'https://github.com/YogananthJ' });
-      pdf.link(0.2, 1.26, 1.8, 0.22, { url: 'https://iam-mjyogananth.pages.dev' });
-      pdf.link(2.2, 0.42, 1.1, 1.1, { url: 'https://iam-mjyogananth.pages.dev' });
-      pdf.link(0.2, 1.72, 2.0, 0.22, { url: 'https://iam-mjyogananth.pages.dev' });
+      // Embedded PDF Hyperlinks (clickable in Acrobat, Chrome, macOS Preview, etc.)
+      // Left side: Name, Avatar, and Portfolio
+      pdf.link(0.18, 0.35, 1.85, 0.70, { url: 'https://iam-mjyogananth.pages.dev' });
+      // Right side: Email
+      pdf.link(2.15, 0.38, 1.25, 0.20, { url: 'mailto:mjyogananth@gmail.com' });
+      // LinkedIn
+      pdf.link(2.15, 0.58, 1.25, 0.20, { url: 'https://www.linkedin.com/in/yogananth-j-653400307/' });
+      // GitHub
+      pdf.link(2.15, 0.78, 1.25, 0.20, { url: 'https://github.com/YogananthJ' });
+      // QR Code & Scan Portfolio
+      pdf.link(2.15, 1.20, 1.25, 0.45, { url: 'https://iam-mjyogananth.pages.dev' });
+      // Footer link
+      pdf.link(2.20, 1.76, 1.20, 0.20, { url: 'https://iam-mjyogananth.pages.dev' });
 
-      pdf.save('Yogananth_J_Visiting_Card.pdf');
-      showToast('Downloaded PDF with Clickable Links (3.5" × 2")');
+      pdf.save('YogananthJ_Digital_VCard.pdf');
+      showToast('Downloaded PDF (YogananthJ_Digital_VCard.pdf)');
+      try {
+        soundFX?.playChime?.();
+      } catch {
+        // ignore
+      }
     } catch (err) {
       console.error('PDF export failed:', err);
       showToast('Failed to export PDF');
@@ -296,7 +345,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
     }
   };
 
-  // Export as High-Resolution PNG
+  // Export as High-Resolution 300 DPI PNG
   const handleDownloadPNG = async () => {
     try {
       setExportingType('png');
@@ -304,19 +353,56 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
 
       if (!printCardRef.current) throw new Error('Target export container not ready');
 
+      // Ensure fonts are fully rendered before capturing
+      if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+
+      // Ensure QR code URL is ready
+      if (!qrCodeUrl) {
+        try {
+          const freshQr = await QRCode.toDataURL('https://iam-mjyogananth.pages.dev', {
+            width: 240,
+            margin: 1,
+            color: { dark: '#FFFFFF', light: '#0D111A' },
+            errorCorrectionLevel: 'M'
+          });
+          setQrCodeUrl(freshQr);
+        } catch {
+          // ignore
+        }
+      }
+
       const canvas = await html2canvas(printCardRef.current, {
-        scale: 2.5,
-        backgroundColor: '#07090E',
+        scale: 3, // 300+ DPI high resolution (1680 × 960 px)
+        backgroundColor: '#0B0E17',
         useCORS: true,
-        logging: false
+        allowTaint: true,
+        logging: false,
+        x: 0,
+        y: 0,
+        width: 560,
+        height: 320,
+        scrollX: 0,
+        scrollY: 0,
       });
 
+      const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
-      link.download = 'Yogananth_J_Digital_Visiting_Card.png';
-      link.href = canvas.toDataURL('image/png');
+      link.download = 'YogananthJ_Digital_VCard.png';
+      link.href = dataUrl;
+      document.body.appendChild(link);
       link.click();
+      setTimeout(() => {
+        if (link.parentNode) link.parentNode.removeChild(link);
+      }, 2000);
 
-      showToast('Downloaded High-Resolution Visiting Card (PNG)');
+      showToast('Downloaded PNG (YogananthJ_Digital_VCard.png)');
+      try {
+        soundFX?.playChime?.();
+      } catch {
+        // ignore
+      }
     } catch (err) {
       console.error('PNG export failed:', err);
       showToast('Failed to export PNG');
@@ -903,17 +989,24 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
       </AnimatePresence>
 
       {/* ========================================================================= */}
-      {/* HIDDEN OFFSCREEN RENDER CHASSIS (For Clean PDF & PNG Export)              */}
+      {/* OFFSCREEN RENDER CHASSIS (Fixed at top-left 0,0 at z-index -99999)         */}
+      {/* Ensures html2canvas renders complete elements without negative coordinates */}
       {/* ========================================================================= */}
       <div 
         aria-hidden="true" 
-        className="fixed -left-[9999px] -top-[9999px] pointer-events-none opacity-100"
-        style={{ width: '960px' }}
+        className="fixed top-0 left-0 pointer-events-none"
+        style={{ 
+          zIndex: -99999,
+          opacity: 1,
+          visibility: 'visible',
+          transform: 'none',
+          pointerEvents: 'none',
+        }}
       >
         <div
           ref={printCardRef}
-          style={{ width: '560px', height: '320px' }}
-          className="relative bg-[#0B0E17] text-white p-5 flex flex-col justify-between overflow-hidden border-2 border-rose-500 rounded-lg"
+          style={{ width: '560px', height: '320px', minWidth: '560px', minHeight: '320px', transform: 'none' }}
+          className="relative bg-[#0B0E17] text-white p-5 flex flex-col justify-between overflow-hidden border-2 border-rose-500 rounded-lg shadow-2xl"
         >
           <div className="absolute inset-0 bg-[radial-gradient(#ffffff18_1px,transparent_1px)] [background-size:12px_12px]" />
 
@@ -937,6 +1030,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                   <img
                     src="/assets/aistudio/favicon_507da8ac.png"
                     alt="Character Avatar"
+                    crossOrigin="anonymous"
                     className="w-full h-full object-contain object-bottom"
                   />
                 </div>
@@ -978,7 +1072,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
               </div>
               <div className="flex items-center gap-2 mt-1">
                 <div className="p-0.5 bg-white rounded-xs">
-                  {qrCodeUrl && <img src={qrCodeUrl} alt="QR" className="w-8 h-8" />}
+                  {qrCodeUrl && <img src={qrCodeUrl} alt="QR" crossOrigin="anonymous" className="w-8 h-8" />}
                 </div>
                 <span className="text-[7px] text-white/70">SCAN PORTFOLIO</span>
               </div>
