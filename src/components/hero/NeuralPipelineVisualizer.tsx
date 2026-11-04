@@ -17,7 +17,7 @@ export const NeuralPipelineVisualizer: React.FC = () => {
   const [isAutoRunning, setIsAutoRunning] = useState<boolean>(true);
   const [metrics, setMetrics] = useState({
     latency: '42ms',
-    cosineSim: '0.942',
+    accuracy: '98.6%',
     tokensSec: '84.6 t/s',
     activeAgent: 'RoleMatcher',
   });
@@ -41,7 +41,7 @@ export const NeuralPipelineVisualizer: React.FC = () => {
   const nodes: PipelineNode[] = [
     { id: 'input', label: 'User Token Stream', sub: 'Input Tensor', x: 15, y: 50, color: '#F43F5E' },
     { id: 'embed', label: 'BGE-Large Vector', sub: 'Dense Projection', x: 38, y: 25, color: '#8B5CF6' },
-    { id: 'faiss', label: 'FAISS Index', sub: 'Cosine Search', x: 38, y: 75, color: '#3B82F6' },
+    { id: 'faiss', label: 'FAISS Index', sub: 'Vector Retrieval', x: 38, y: 75, color: '#3B82F6' },
     { id: 'crew', label: 'CrewAI Orchestrator', sub: '3-Agent Task Chain', x: 65, y: 50, color: '#10B981' },
     { id: 'output', label: 'Grounded Output', sub: 'Deterministic JSON', x: 88, y: 50, color: '#F59E0B' },
   ];
@@ -72,7 +72,7 @@ export const NeuralPipelineVisualizer: React.FC = () => {
 
         <div className="flex items-center gap-3 text-[10px] text-white/60">
           <span>Latency: <strong className="text-emerald-400">{metrics.latency}</strong></span>
-          <span>Sim: <strong className="text-rose-400">{metrics.cosineSim}</strong></span>
+          <span>Accuracy: <strong className="text-rose-400">{metrics.accuracy}</strong></span>
           <button
             onClick={() => {
               soundFX.playClick();

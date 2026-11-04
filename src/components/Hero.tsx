@@ -88,31 +88,31 @@ export const Hero: React.FC<HeroProps> = ({
     };
     window.addEventListener('resize', handleResize);
 
-    // 4 Semantic Latent Clusters
+    // 4 Semantic Visual Node Clusters (Pink/Cyan/Indigo/Emerald constellation)
     const clusterDefinitions = [
       {
-        name: 'AGENTIC_ORCHESTRATION',
+        name: 'CLUSTER_ALPHA',
         centerFactor: { x: 0.22, y: 0.32 },
         color: '#E11D48',
-        labels: ['CrewAI Multi-Agent', 'AST Token Stream', 'Role Matcher', 'Task Delegation'],
+        nodeCount: 4,
       },
       {
-        name: 'DENSE_VECTOR_RAG',
+        name: 'CLUSTER_BETA',
         centerFactor: { x: 0.78, y: 0.28 },
         color: '#38BDF8',
-        labels: ['FAISS Index', 'BGE-Large 1024d', 'Cosine Proximity', 'Strict Citation'],
+        nodeCount: 4,
       },
       {
-        name: 'FULLSTACK_REACTIVE',
+        name: 'CLUSTER_GAMMA',
         centerFactor: { x: 0.26, y: 0.72 },
         color: '#818CF8',
-        labels: ['React 19 Hooks', 'FastAPI Proxy', 'Idempotent Webhooks', 'Stripe & Clerk'],
+        nodeCount: 4,
       },
       {
-        name: 'DEEP_LEARNING_VISION',
+        name: 'CLUSTER_DELTA',
         centerFactor: { x: 0.76, y: 0.75 },
         color: '#34D399',
-        labels: ['DenseNet-121', 'Thermal Infrared', 'SWIR Multi-Spectral', 'CLAHE Normalization'],
+        nodeCount: 4,
       },
     ];
 
@@ -124,7 +124,6 @@ export const Hero: React.FC<HeroProps> = ({
       vx: number;
       vy: number;
       radius: number;
-      label: string;
       clusterIndex: number;
       color: string;
     }
@@ -134,8 +133,8 @@ export const Hero: React.FC<HeroProps> = ({
       const cx = width * cluster.centerFactor.x;
       const cy = height * cluster.centerFactor.y;
 
-      cluster.labels.forEach((label, lIdx) => {
-        const angle = (lIdx / cluster.labels.length) * Math.PI * 2 + Math.random() * 0.4;
+      for (let lIdx = 0; lIdx < cluster.nodeCount; lIdx++) {
+        const angle = (lIdx / cluster.nodeCount) * Math.PI * 2 + Math.random() * 0.4;
         const dist = 35 + Math.random() * 55;
         const nx = cx + Math.cos(angle) * dist;
         const ny = cy + Math.sin(angle) * dist;
@@ -148,11 +147,10 @@ export const Hero: React.FC<HeroProps> = ({
           vx: (Math.random() - 0.5) * 0.35,
           vy: (Math.random() - 0.5) * 0.35,
           radius: lIdx === 0 ? 3.5 : 2.2,
-          label,
           clusterIndex: cIdx,
           color: cluster.color,
         });
-      });
+      }
     });
 
     let mouseX = -1000;
@@ -278,25 +276,12 @@ export const Hero: React.FC<HeroProps> = ({
           }
         }
 
-        // Draw Node
+        // Draw Node with clean visual hover glow (no technical debug text/scores)
         const isHoveredNode = distMouse < 55;
         ctx.beginPath();
         ctx.arc(n.x, n.y, isHoveredNode ? n.radius * 1.6 : n.radius, 0, Math.PI * 2);
         ctx.fillStyle = isHoveredNode ? '#FFFFFF' : n.color;
         ctx.fill();
-
-        // Node Label Annotation when hovered or close
-        if (distMouse < 85) {
-          ctx.font = '600 9px "JetBrains Mono", monospace';
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-          ctx.fillText(n.label, n.x + 8, n.y + 3);
-
-          // Dynamic cosine similarity tag
-          const sim = (0.91 + (1 - distMouse / 85) * 0.08).toFixed(3);
-          ctx.font = '500 7.5px "JetBrains Mono", monospace';
-          ctx.fillStyle = n.color;
-          ctx.fillText(`cos_θ: ${sim}`, n.x + 8, n.y + 13);
-        }
       }
 
       animationFrameId = requestAnimationFrame(render);
@@ -367,7 +352,7 @@ def adapt_system_prompt(user_text: str, cadence_pause_ms: int):
       if (activeSnippetTab === 'agent') {
         setSimOutput('✓ Agents [Extractor, Matcher] dispatched\n✓ AST Entities extracted: 14 skills\n✓ Role alignment score: 94.2% match');
       } else if (activeSnippetTab === 'rag') {
-        setSimOutput('✓ Loaded BGE-Large embeddings (1024 dims)\n✓ Hybrid search: 3 chunks retrieved\n✓ Grounded cosine similarity: 0.942');
+        setSimOutput('✓ Loaded BGE-Large embeddings (1024 dims)\n✓ Hybrid search: 3 chunks retrieved\n✓ Grounded semantic alignment: 94.2%');
       } else {
         setSimOutput('✓ RoBERTa pipeline active\n✓ Keystroke cadence: 850ms pause detected\n✓ Tone adapted: Empathetic clarification');
       }

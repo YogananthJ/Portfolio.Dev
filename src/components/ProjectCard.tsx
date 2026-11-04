@@ -145,7 +145,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onOpenModal, 
             <div className="my-auto bg-black/40 border border-purple-500/30 p-2.5 space-y-1">
               <div className="flex items-center justify-between text-[9px] text-purple-300">
                 <span>CHUNK #BGE-1024</span>
-                <span className="text-emerald-400 font-bold">cos_sim: 0.942</span>
+                <span className="text-emerald-400 font-bold">Relevance: 94.2%</span>
               </div>
               <p className="text-[10px] text-white/80 line-clamp-2">
                 "Technical specification strict citation verification ensures answers reflect source PDF..."
