@@ -17,19 +17,70 @@ export interface ScrollSectionRevealProps {
  * (e.g., project cards, skill badges, metrics cards, timeline items).
  */
 export const revealItemVariants: Variants = {
-  hidden: { opacity: 0, y: 18 },
+  hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.5,
+      duration: 0.48,
       ease: [0.22, 1, 0.36, 1],
     },
   },
 };
 
 /**
- * Child item wrapper to be placed inside ScrollSectionReveal for staggered animation.
+ * Standard container variants for staggered child animation orchestration.
+ */
+export const staggerContainerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.07,
+      delayChildren: 0.05,
+    },
+  },
+};
+
+/**
+ * StaggerContainer component to wrap lists of cards or badges for sequential viewport animation.
+ */
+export const StaggerContainer: React.FC<{
+  children: React.ReactNode;
+  className?: string;
+  stagger?: number;
+  delay?: number;
+}> = ({ children, className = '', stagger = 0.07, delay = 0.04 }) => {
+  const shouldReduceMotion = useReducedMotion();
+
+  if (shouldReduceMotion) {
+    return <div className={className}>{children}</div>;
+  }
+
+  return (
+    <motion.div
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.08, margin: '0px 0px -30px 0px' }}
+      variants={{
+        hidden: { opacity: 0 },
+        visible: {
+          opacity: 1,
+          transition: {
+            staggerChildren: stagger,
+            delayChildren: delay,
+          },
+        },
+      }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
+/**
+ * Child item wrapper to be placed inside ScrollSectionReveal or StaggerContainer for staggered animation.
  */
 export const RevealItem: React.FC<{
   children: React.ReactNode;
@@ -37,7 +88,7 @@ export const RevealItem: React.FC<{
   yOffset?: number;
   duration?: number;
   variants?: Variants;
-}> = ({ children, className = '', yOffset = 18, duration = 0.5, variants }) => {
+}> = ({ children, className = '', yOffset = 20, duration = 0.48, variants }) => {
   const shouldReduceMotion = useReducedMotion();
 
   if (shouldReduceMotion) {

@@ -47,11 +47,11 @@ export const LayoutController: React.FC = () => {
   return (
     <aside
       aria-label="Layout & Workspace Controls"
-      className="fixed bottom-5 right-5 z-40 flex flex-col items-end"
+      className="fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-40 flex flex-col items-end max-w-[calc(100vw-2rem)] pointer-events-auto"
     >
       {/* Expanded Controls Card */}
       {expanded && (
-        <div className="mb-2 p-4 bg-[var(--bg-surface)] text-[var(--text-main)] border-2 border-[var(--border-color)] shadow-xl w-72 sm:w-80 font-mono text-xs space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <div className="mb-2 p-4 bg-[var(--bg-surface)] text-[var(--text-main)] border-2 border-[var(--border-color)] shadow-xl w-72 sm:w-80 max-w-[calc(100vw-2rem)] font-mono text-xs space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
           <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-2">
             <span className="font-bold flex items-center gap-1.5 text-[var(--text-main)] uppercase tracking-wide">
               <Sliders className="w-3.5 h-3.5 text-[var(--accent)]" />

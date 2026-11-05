@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SKILL_CATEGORIES } from '../data/portfolioData';
 import { Cpu, Search, Code, Sparkles, CheckCircle2, Network, ArrowRight } from 'lucide-react';
-import { RevealItem } from './common/ScrollSectionReveal';
+import { RevealItem, StaggerContainer } from './common/ScrollSectionReveal';
 
 interface SkillsSectionProps {
   onSelectProjectTag?: (tag: string) => void;
@@ -156,58 +156,60 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ onSelectProjectTag
               </div>
             </div>
 
-            {/* Interactive Skills Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono">
+            {/* Interactive Skills Grid with Sequential Staggered Animation */}
+            <StaggerContainer
+              key={activeCategory.category}
+              stagger={0.05}
+              className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono"
+            >
               <AnimatePresence mode="popLayout">
                 {filteredSkills.map((skill) => {
                   const isSelected = selectedSkill === skill.name;
                   return (
-                    <motion.div
-                      layout
-                      key={skill.name}
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      onClick={() => setSelectedSkill(isSelected ? null : skill.name)}
-                      className={`p-3.5 border transition-all cursor-pointer flex flex-col justify-between ${
-                        isSelected
-                          ? 'border-[var(--accent)] bg-[var(--bg-surface)] shadow-md ring-1 ring-[var(--accent)]'
-                          : 'border-[var(--border-color)] bg-[var(--bg-surface)] hover:border-[var(--text-main)]'
-                      }`}
-                    >
-                      <div>
-                        <div className="flex items-center justify-between gap-2 mb-1.5">
-                          <span className="font-bold text-xs sm:text-sm text-[var(--text-main)]">
-                            {skill.name}
-                          </span>
-                          {skill.highlight && (
-                            <span className="px-1.5 py-0.5 bg-[var(--accent)]/15 text-[var(--accent)] text-[9px] uppercase font-bold border border-[var(--accent)]/30">
-                              Core
+                    <RevealItem key={skill.name} yOffset={16} duration={0.4}>
+                      <motion.div
+                        layout
+                        onClick={() => setSelectedSkill(isSelected ? null : skill.name)}
+                        className={`p-3.5 border transition-all cursor-pointer flex flex-col justify-between h-full ${
+                          isSelected
+                            ? 'border-[var(--accent)] bg-[var(--bg-surface)] shadow-md ring-1 ring-[var(--accent)]'
+                            : 'border-[var(--border-color)] bg-[var(--bg-surface)] hover:border-[var(--text-main)]'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-2 mb-1.5">
+                            <span className="font-bold text-xs sm:text-sm text-[var(--text-main)]">
+                              {skill.name}
                             </span>
-                          )}
+                            {skill.highlight && (
+                              <span className="px-1.5 py-0.5 bg-[var(--accent)]/15 text-[var(--accent)] text-[9px] uppercase font-bold border border-[var(--accent)]/30">
+                                Core
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="text-[10px] text-[var(--text-muted)] mb-2">
+                            Proficiency: <span className="font-bold text-[var(--text-main)]">{skill.level}</span>
+                          </div>
                         </div>
 
-                        <div className="text-[10px] text-[var(--text-muted)] mb-2">
-                          Proficiency: <span className="font-bold text-[var(--text-main)]">{skill.level}</span>
-                        </div>
-                      </div>
-
-                      {/* Associated Projects and Usage Context */}
-                      {skill.usedIn.length > 0 && (
-                        <div className="pt-2 border-t border-[var(--border-color)]/60 text-[10px] text-[var(--text-muted)]">
-                          <span className="text-[9px] uppercase tracking-wider block text-white/50 mb-0.5">
-                            Demonstrated In:
-                          </span>
-                          <span className="text-[var(--accent)] font-semibold truncate block">
-                            {skill.usedIn.join(' · ')}
-                          </span>
-                        </div>
-                      )}
-                    </motion.div>
+                        {/* Associated Projects and Usage Context */}
+                        {skill.usedIn.length > 0 && (
+                          <div className="pt-2 border-t border-[var(--border-color)]/60 text-[10px] text-[var(--text-muted)]">
+                            <span className="text-[9px] uppercase tracking-wider block text-white/50 mb-0.5">
+                              Demonstrated In:
+                            </span>
+                            <span className="text-[var(--accent)] font-semibold truncate block">
+                              {skill.usedIn.join(' · ')}
+                            </span>
+                          </div>
+                        )}
+                      </motion.div>
+                    </RevealItem>
                   );
                 })}
               </AnimatePresence>
-            </div>
+            </StaggerContainer>
 
             {filteredSkills.length === 0 && (
               <div className="py-12 text-center text-xs font-mono text-[var(--text-muted)]">

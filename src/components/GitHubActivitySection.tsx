@@ -335,6 +335,7 @@ export const GitHubActivitySection: React.FC = () => {
 
       const userRes = await fetch(`https://api.github.com/users/${GITHUB_USERNAME}${cacheBustQuery}`, {
         headers: fetchHeaders,
+        signal: AbortSignal.timeout(10000),
       });
 
       if (!userRes.ok) {
@@ -366,7 +367,7 @@ export const GitHubActivitySection: React.FC = () => {
       for (let page = 1; page <= pagesToFetch; page++) {
         const pageRes = await fetch(
           `https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100&page=${page}&sort=updated${cacheBustParam}`,
-          { headers: fetchHeaders }
+          { headers: fetchHeaders, signal: AbortSignal.timeout(10000) }
         );
         if (!pageRes.ok) break;
         const pageData = await pageRes.json();
@@ -382,7 +383,7 @@ export const GitHubActivitySection: React.FC = () => {
       // 4. Fetch up to 100 public activity events
       const eventsRes = await fetch(
         `https://api.github.com/users/${GITHUB_USERNAME}/events/public?per_page=100${cacheBustParam}`,
-        { headers: fetchHeaders }
+        { headers: fetchHeaders, signal: AbortSignal.timeout(10000) }
       );
 
       const eventsData: GitHubEvent[] = eventsRes.ok && Array.isArray(await eventsRes.clone().json().catch(() => null))
@@ -396,7 +397,8 @@ export const GitHubActivitySection: React.FC = () => {
       // Safely try internal proxy route if running on fullstack node server
       try {
         const contribRes = await fetch(
-          `/api/github-contributions?username=${GITHUB_USERNAME}${forceBypassCache ? '&force=true' : ''}`
+          `/api/github-contributions?username=${GITHUB_USERNAME}${forceBypassCache ? '&force=true' : ''}`,
+          { signal: AbortSignal.timeout(10000) }
         );
         const contentType = contribRes.headers.get('content-type') || '';
         // Only parse as JSON if the server actually returned JSON (prevents HTML SPA fallback syntax error)
@@ -415,7 +417,8 @@ export const GitHubActivitySection: React.FC = () => {
       if (fetchedContributions.length === 0) {
         try {
           const directRes = await fetch(
-            `https://github-contributions-api.jogruber.de/v4/${GITHUB_USERNAME}?y=last${cacheBustParam}`
+            `https://github-contributions-api.jogruber.de/v4/${GITHUB_USERNAME}?y=last${cacheBustParam}`,
+            { signal: AbortSignal.timeout(10000) }
           );
           const directContentType = directRes.headers.get('content-type') || '';
           if (directRes.ok && directContentType.includes('application/json')) {
@@ -570,34 +573,19 @@ export const GitHubActivitySection: React.FC = () => {
 
     // 1. Primary path: Use actual GitHub profile daily contributions
     if (exactContributions.length > 0) {
-      // 52 weeks = 364 days; exactContributions has 365 days (past 12 months)
-      // 26 weeks = 182 days (past 6 months)
-      const daysToDisplay = heatMapRange === '26w'
-        ? exactContributions.slice(-182)
-        : exactContributions;
+      // Build date lookup map for exact contributions
+      const contribMap = new Map<string, ExactContributionDay>();
+      exactContributions.forEach((c) => contribMap.set(c.date, c));
 
-      const weeks: HeatMapDay[][] = [];
-      let currentWeek: HeatMapDay[] = [];
+      // Calculate totalCommits and streaks across full history
       let totalCommitsTracked = 0;
       let activeDaysCount = 0;
       let maxDayCount = 0;
       let longestStreak = 0;
       let tempStreak = 0;
-      let currentStreak = 0;
 
-      const months: Array<{ label: string; weekIndex: number }> = [];
-      let lastMonth = -1;
-
-      daysToDisplay.forEach((dayItem, idx) => {
-        const [y, m, d] = dayItem.date.split('-').map(Number);
-        const dateObj = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
-        const dayOfWeek = dateObj.getUTCDay(); // 0 is Sun, 6 is Sat
-        const month = dateObj.getUTCMonth();
-
+      exactContributions.forEach((dayItem) => {
         const count = dayItem.count;
-        const level = dayItem.level;
-        const details = dateEventDetailsMap[dayItem.date] || [];
-
         if (count > 0) {
           totalCommitsTracked += count;
           activeDaysCount += 1;
@@ -607,52 +595,71 @@ export const GitHubActivitySection: React.FC = () => {
         } else {
           tempStreak = 0;
         }
-
-        currentWeek.push({
-          date: dayItem.date,
-          dayOfWeek,
-          count,
-          level,
-          details,
-        });
-
-        // When a week is complete (7 days) or at the end of the dataset
-        if (currentWeek.length === 7 || idx === daysToDisplay.length - 1) {
-          const weekIdx = weeks.length;
-          const firstDayDate = new Date(currentWeek[0].date + 'T12:00:00Z');
-          const weekMonth = firstDayDate.getUTCMonth();
-
-          if (weekMonth !== lastMonth) {
-            months.push({
-              label: firstDayDate.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' }),
-              weekIndex: weekIdx,
-            });
-            lastMonth = weekMonth;
-          }
-
-          // Pad last week if needed to maintain 7-row alignment
-          while (currentWeek.length < 7) {
-            currentWeek.push({
-              date: `dummy-${currentWeek.length}`,
-              dayOfWeek: currentWeek.length,
-              count: 0,
-              level: 0,
-              details: [],
-            });
-          }
-
-          weeks.push(currentWeek);
-          currentWeek = [];
-        }
       });
 
-      // Calculate current streak backwards from last active day
-      for (let i = daysToDisplay.length - 1; i >= 0; i--) {
-        if (daysToDisplay[i].count > 0) {
+      // Calculate current streak backwards from latest day
+      let currentStreak = 0;
+      for (let i = exactContributions.length - 1; i >= 0; i--) {
+        if (exactContributions[i].count > 0) {
           currentStreak += 1;
         } else {
           break;
         }
+      }
+
+      // Determine date range: align cleanly with week boundaries (Sunday to Saturday)
+      const lastItemDate = exactContributions[exactContributions.length - 1]?.date || new Date().toISOString().split('T')[0];
+      const [ly, lm, ld] = lastItemDate.split('-').map(Number);
+      const lastDate = new Date(Date.UTC(ly, lm - 1, ld, 12, 0, 0));
+      const lastDayOfWeek = lastDate.getUTCDay(); // 0 = Sun, 6 = Sat
+      // End date is Saturday of the current week
+      const endDate = new Date(lastDate.getTime() + (6 - lastDayOfWeek) * 86400000);
+
+      const numWeeks = heatMapRange === '26w' ? 26 : 53;
+      const totalDays = numWeeks * 7;
+      // Start date is Sunday exactly numWeeks ago
+      const startDate = new Date(endDate.getTime() - (totalDays - 1) * 86400000);
+
+      const weeks: HeatMapDay[][] = [];
+      const months: Array<{ label: string; weekIndex: number }> = [];
+      let lastMonth = -1;
+
+      for (let w = 0; w < numWeeks; w++) {
+        const week: HeatMapDay[] = [];
+        for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+          const dayTime = startDate.getTime() + (w * 7 + dayOfWeek) * 86400000;
+          const curDate = new Date(dayTime);
+          const yyyy = curDate.getUTCFullYear();
+          const mm = String(curDate.getUTCMonth() + 1).padStart(2, '0');
+          const dd = String(curDate.getUTCDate()).padStart(2, '0');
+          const dateStr = `${yyyy}-${mm}-${dd}`;
+
+          const match = contribMap.get(dateStr);
+          const count = match ? match.count : 0;
+          const level = match ? match.level : 0;
+          const details = dateEventDetailsMap[dateStr] || [];
+
+          week.push({
+            date: dateStr,
+            dayOfWeek,
+            count,
+            level,
+            details,
+          });
+
+          // Detect month boundary on Sunday (dayOfWeek === 0)
+          if (dayOfWeek === 0) {
+            const curMonth = curDate.getUTCMonth();
+            if (curMonth !== lastMonth) {
+              months.push({
+                label: curDate.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' }),
+                weekIndex: w,
+              });
+              lastMonth = curMonth;
+            }
+          }
+        }
+        weeks.push(week);
       }
 
       return {
@@ -974,7 +981,7 @@ export const GitHubActivitySection: React.FC = () => {
               {isLoading && !totalContributionsLastYear ? (
                 <div className="h-9 w-16 bg-white/5 animate-pulse rounded-xs" />
               ) : (
-                <AnimatedCounter value={totalContributionsLastYear || heatMapStats.totalCommits || 1354} />
+                <AnimatedCounter value={totalContributionsLastYear || heatMapStats.totalCommits || 1381} />
               )}
             </div>
             <p className="text-[10.5px] text-[var(--text-muted)] mt-1.5 truncate">
@@ -989,7 +996,7 @@ export const GitHubActivitySection: React.FC = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.45 }}
-          className="mb-8 p-6 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xs shadow-xs font-mono relative"
+          className="mb-8 p-4 sm:p-6 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xs shadow-xs font-mono relative overflow-hidden"
         >
           {/* Heat Map Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--border-color)] pb-4 mb-4">
@@ -1018,7 +1025,7 @@ export const GitHubActivitySection: React.FC = () => {
                 <span className="flex items-center gap-1 text-[var(--text-muted)]">
                   <Zap className="w-3.5 h-3.5 text-[var(--accent)]" />
                   <span className="text-[var(--text-main)] font-bold">
-                    {totalContributionsLastYear || heatMapStats.totalCommits || 1354}
+                    {totalContributionsLastYear || heatMapStats.totalCommits || 1381}
                   </span>{' '}
                   contributions in the last year
                 </span>
@@ -1170,11 +1177,15 @@ export const GitHubActivitySection: React.FC = () => {
                 transition={{ duration: 0.12 }}
                 style={{
                   position: 'fixed',
-                  left: `${hoverPos.x}px`,
-                  top: `${hoverPos.y}px`,
+                  left: typeof window !== 'undefined'
+                    ? `${Math.max(130, Math.min(window.innerWidth - 130, hoverPos.x))}px`
+                    : `${hoverPos.x}px`,
+                  top: typeof window !== 'undefined'
+                    ? `${Math.max(60, hoverPos.y)}px`
+                    : `${hoverPos.y}px`,
                   transform: 'translate(-50%, -100%)',
                 }}
-                className="z-50 pointer-events-none px-3.5 py-2.5 bg-[#0D0F14]/95 backdrop-blur-md border border-[var(--accent)]/50 text-white rounded-xs shadow-2xl text-center font-mono whitespace-nowrap text-xs space-y-1.5"
+                className="z-50 pointer-events-none px-3.5 py-2.5 bg-[#0D0F14]/95 backdrop-blur-md border border-[var(--accent)]/50 text-white rounded-xs shadow-2xl text-center font-mono whitespace-nowrap text-xs space-y-1.5 max-w-[calc(100vw-1.5rem)]"
                 role="tooltip"
               >
                 {/* Headline: Exact count and formatted date */}
@@ -1213,7 +1224,7 @@ export const GitHubActivitySection: React.FC = () => {
               <span>
                 Verified GitHub profile contribution history (
                 <strong className="text-[var(--accent)] font-bold">
-                  {totalContributionsLastYear || heatMapStats.totalCommits || 1354}
+                  {totalContributionsLastYear || heatMapStats.totalCommits || 1381}
                 </strong>{' '}
                 contributions in the last year)
               </span>
@@ -1535,7 +1546,7 @@ export const GitHubActivitySection: React.FC = () => {
                   <div className="p-3 bg-[#161B22] border border-zinc-800 rounded-xs">
                     <div className="text-[10px] text-zinc-400 uppercase">1-Yr Contributions</div>
                     <div className="text-2xl font-black text-[var(--accent)] mt-1">
-                      {totalContributionsLastYear || heatMapStats.totalCommits || 1354}
+                      {totalContributionsLastYear || heatMapStats.totalCommits || 1381}
                     </div>
                     <div className="text-[9px] text-zinc-500">Official Calendar</div>
                   </div>
@@ -1581,7 +1592,7 @@ export const GitHubActivitySection: React.FC = () => {
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-bold text-white uppercase">Official Contribution Calendar (Recent Velocity)</span>
                     <span className="text-[var(--accent)] font-bold">
-                      {totalContributionsLastYear || heatMapStats.totalCommits || 1354} Total Contributions
+                      {totalContributionsLastYear || heatMapStats.totalCommits || 1381} Total Contributions
                     </span>
                   </div>
 

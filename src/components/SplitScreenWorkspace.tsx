@@ -16,8 +16,10 @@ import {
   Cpu
 } from 'lucide-react';
 
+import { ProjectItem } from '../types/portfolio';
+
 interface SplitScreenWorkspaceProps {
-  onOpenModal: (project: any) => void;
+  onOpenModal: (project: ProjectItem) => void;
 }
 
 export const SplitScreenWorkspace: React.FC<SplitScreenWorkspaceProps> = ({ onOpenModal }) => {

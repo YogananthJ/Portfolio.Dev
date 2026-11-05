@@ -34,7 +34,7 @@ export const BackToTop: React.FC = () => {
           type="button"
           aria-label="Scroll to top of page"
           title="Return to top"
-          className="fixed bottom-6 right-6 z-40 p-2.5 bg-[#0e0e0e]/90 hover:bg-[#181818] text-white border border-white/20 hover:border-[var(--accent)] transition-colors rounded-xs shadow-xl backdrop-blur-md font-mono text-xs flex items-center gap-1.5 group cursor-pointer"
+          className="fixed bottom-20 right-4 sm:bottom-22 sm:right-5 z-40 p-2.5 bg-[#0e0e0e]/90 hover:bg-[#181818] text-white border border-white/20 hover:border-[var(--accent)] transition-colors rounded-xs shadow-xl backdrop-blur-md font-mono text-xs flex items-center gap-1.5 group cursor-pointer"
         >
           <ArrowUp className="w-3.5 h-3.5 text-[var(--accent)] group-hover:-translate-y-0.5 transition-transform" />
           <span className="hidden sm:inline text-[10px] uppercase font-bold tracking-wider">Top</span>
