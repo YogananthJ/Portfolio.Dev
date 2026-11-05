@@ -286,95 +286,131 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
     wrapper.style.position = 'fixed';
     wrapper.style.left = '-9999px';
     wrapper.style.top = '0';
-    wrapper.style.width = '560px';
-    wrapper.style.height = '320px';
+    wrapper.style.width = '700px';
+    wrapper.style.height = '400px';
     wrapper.style.pointerEvents = 'none';
     wrapper.style.zIndex = '-99999';
 
+    // 700x400 landscape template perfectly matching 3.5" x 2.0" business card ratio (1.75:1)
+    // Spacious two-column layout: Left column (360px), Right column (272px) so text never clips or truncates
     wrapper.innerHTML = `
-      <div style="width: 560px; height: 320px; box-sizing: border-box; padding: 20px; background-color: #0B0E17; color: #ffffff; display: flex; flex-direction: column; justify-content: space-between; border: 2px solid #F43F5E; border-radius: 8px; position: relative; overflow: hidden; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;">
-        <div style="position: absolute; inset: 0; background-image: radial-gradient(#ffffff18 1px, transparent 1px); background-size: 12px 12px; pointer-events: none;"></div>
-        <div style="position: absolute; top: -48px; right: -48px; width: 144px; height: 144px; background: rgba(225, 29, 72, 0.2); border-radius: 9999px; filter: blur(32px); pointer-events: none;"></div>
-        <div style="position: absolute; bottom: -48px; left: -48px; width: 144px; height: 144px; background: rgba(236, 72, 153, 0.15); border-radius: 9999px; filter: blur(32px); pointer-events: none;"></div>
+      <div style="width: 700px; height: 400px; box-sizing: border-box; padding: 24px; background-color: #0B0E17; color: #ffffff; display: flex; flex-direction: column; justify-content: space-between; border: 2.5px solid #F43F5E; border-radius: 10px; position: relative; overflow: hidden; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;">
+        <div style="position: absolute; inset: 0; background-image: radial-gradient(#ffffff18 1px, transparent 1px); background-size: 14px 14px; pointer-events: none;"></div>
+        <div style="position: absolute; top: -60px; right: -60px; width: 180px; height: 180px; background: rgba(225, 29, 72, 0.2); border-radius: 9999px; filter: blur(40px); pointer-events: none;"></div>
+        <div style="position: absolute; bottom: -60px; left: -60px; width: 180px; height: 180px; background: rgba(236, 72, 153, 0.15); border-radius: 9999px; filter: blur(40px); pointer-events: none;"></div>
 
-        <div style="position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 8px;">
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; color: white;">
+        <!-- Top Header Bar -->
+        <div style="position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.06em; color: #ffffff;">
             <span style="display: inline-block; width: 8px; height: 8px; border-radius: 9999px; background-color: #F43F5E;"></span>
-            DIGITAL VISITING CARD · 2026
+            <span>DIGITAL VISITING CARD · 2026</span>
           </div>
-          <div style="font-size: 10px; color: #FB7185; font-weight: bold;">
+          <div style="font-size: 11px; color: #FB7185; font-weight: bold; letter-spacing: 0.05em;">
             ID: YJ-AIML-882
           </div>
         </div>
 
-        <div style="position: relative; z-index: 10; display: flex; gap: 14px; flex: 1; align-items: center; padding: 8px 0;">
-          <div style="flex: 7; display: flex; flex-direction: column; gap: 8px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <div style="width: 80px; height: 80px; border-radius: 6px; border: 2px solid #F43F5E; background: white; padding: 2px; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-                <img src="/assets/aistudio/favicon_507da8ac.png" crossOrigin="anonymous" alt="Avatar" style="width: 100%; height: 100%; object-fit: contain; object-position: bottom;" />
+        <!-- Main Body: Two Columns (Left: 360px identity; Right: 272px contact channels) -->
+        <div style="position: relative; z-index: 10; display: flex; justify-content: space-between; flex: 1; align-items: center; padding: 12px 0;">
+          <!-- Left Column (Identity & Education) -->
+          <div style="width: 360px; display: flex; flex-direction: column; justify-content: center; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div style="width: 88px; height: 88px; border-radius: 8px; border: 2.5px solid #F43F5E; background: #ffffff; padding: 3px; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+                <img src="/assets/aistudio/favicon_507da8ac.png" crossOrigin="anonymous" alt="Avatar" style="width: 100%; height: 100%; object-fit: contain; object-position: bottom; display: block;" />
               </div>
               <div style="min-width: 0; flex: 1;">
-                <div style="font-size: 20px; font-weight: 900; color: white; letter-spacing: -0.02em; line-height: 1.2; font-family: system-ui, sans-serif;">
+                <div style="font-size: 24px; font-weight: 900; color: #ffffff; letter-spacing: -0.02em; line-height: 1.15; font-family: system-ui, -apple-system, sans-serif;">
                   Yogananth J
                 </div>
-                <div style="font-size: 10px; font-weight: bold; color: #FB7185; text-transform: uppercase; margin-top: 2px;">
+                <div style="font-size: 11.5px; font-weight: bold; color: #FB7185; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.03em;">
                   AI Engineer · Full-Stack Developer
                 </div>
-                <div style="font-size: 9px; color: rgba(255,255,255,0.85); margin-top: 4px; border-left: 2px solid #F43F5E; padding-left: 8px;">
+                <div style="font-size: 10px; color: rgba(255,255,255,0.9); margin-top: 6px; border-left: 2px solid #F43F5E; padding-left: 8px; line-height: 1.35;">
                   B.Tech in Artificial Intelligence &amp; Data Science / ML
                 </div>
               </div>
             </div>
-            <div style="display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 2px; font-size: 8px; font-weight: bold; color: #6EE7B7; text-transform: uppercase; width: fit-content;">
+
+            <div style="display: inline-flex; align-items: center; gap: 7px; padding: 3px 10px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 3px; font-size: 9px; font-weight: bold; color: #6EE7B7; text-transform: uppercase; width: fit-content; margin-top: 2px;">
               <span style="display: inline-block; width: 6px; height: 6px; border-radius: 9999px; background-color: #34D399;"></span>
-              Open to Opportunities
+              <span>Open to Opportunities</span>
             </div>
           </div>
 
-          <div style="flex: 5; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; border-left: 1px solid rgba(255,255,255,0.15); padding-left: 12px; font-size: 9px;">
-            <div style="color: rgba(255,255,255,0.95); display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-              <span style="color: #F43F5E;">✉</span>
-              <span>mjyogananth@gmail.com</span>
+          <!-- Right Column (Contact Channels & Portfolio QR Code) -->
+          <div style="width: 272px; display: flex; flex-direction: column; justify-content: center; gap: 7px; border-left: 1px solid rgba(255,255,255,0.18); padding-left: 18px; font-size: 10px; box-sizing: border-box;">
+            <!-- Email -->
+            <div style="color: rgba(255,255,255,0.95); display: flex; align-items: center; gap: 8px; white-space: nowrap; font-size: 10.5px;">
+              <span style="color: #F43F5E; font-size: 12px; font-weight: bold; width: 14px; text-align: center;">✉</span>
+              <span style="letter-spacing: 0.01em;">mjyogananth@gmail.com</span>
             </div>
-            <div style="color: rgba(255,255,255,0.95); display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-              <span style="color: #38BDF8;">in</span>
-              <span>linkedin.com/in/yogananth-j</span>
+
+            <!-- LinkedIn -->
+            <div style="color: rgba(255,255,255,0.95); display: flex; align-items: center; gap: 8px; white-space: nowrap; font-size: 10.5px;">
+              <span style="color: #38BDF8; font-size: 11px; font-weight: bold; width: 14px; text-align: center;">in</span>
+              <span style="letter-spacing: 0.01em;">linkedin.com/in/yogananth-j</span>
             </div>
-            <div style="color: rgba(255,255,255,0.95); display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-              <span style="color: #FFFFFF;">⌨</span>
-              <span>github.com/YogananthJ</span>
+
+            <!-- GitHub -->
+            <div style="color: rgba(255,255,255,0.95); display: flex; align-items: center; gap: 8px; white-space: nowrap; font-size: 10.5px;">
+              <span style="color: #FFFFFF; font-size: 11px; font-weight: bold; width: 14px; text-align: center;">⌨</span>
+              <span style="letter-spacing: 0.01em;">github.com/YogananthJ</span>
             </div>
-            <div style="color: rgba(255,255,255,0.65); display: flex; align-items: center; gap: 6px; font-size: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-              <span style="color: #F43F5E;">📍</span>
+
+            <!-- Location -->
+            <div style="color: rgba(255,255,255,0.7); display: flex; align-items: center; gap: 8px; white-space: nowrap; font-size: 9.5px; margin-top: 1px;">
+              <span style="color: #F43F5E; font-size: 11px; width: 14px; text-align: center;">📍</span>
               <span>Gobichettipalayam, Erode, TN</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
-              <div style="padding: 2px; background: white; border-radius: 2px;">
-                ${qr ? `<img src="${qr}" crossOrigin="anonymous" alt="QR" style="width: 32px; height: 32px; display: block;" />` : ''}
+
+            <!-- QR Code Block -->
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 6px; padding: 4px 8px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; width: fit-content;">
+              <div style="padding: 2.5px; background: #ffffff; border-radius: 3px; display: flex; align-items: center; justify-content: center;">
+                ${qr ? `<img src="${qr}" crossOrigin="anonymous" alt="QR" style="width: 38px; height: 38px; display: block;" />` : ''}
               </div>
-              <span style="font-size: 7px; color: rgba(255,255,255,0.7);">SCAN PORTFOLIO</span>
+              <div style="display: flex; flex-direction: column;">
+                <span style="font-size: 8px; font-weight: bold; color: #ffffff; letter-spacing: 0.05em;">SCAN PORTFOLIO</span>
+                <span style="font-size: 7.5px; color: #FB7185;">iam-mjyogananth.pages.dev</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div style="position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 8px; font-size: 8px; color: rgba(255,255,255,0.6);">
-          <span>RFC 6350 COMPLIANT · AI &amp; AUTOMATION</span>
-          <span style="color: #FB7185;">iam-mjyogananth.pages.dev</span>
+        <!-- Bottom Footer Bar -->
+        <div style="position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 10px; font-size: 9px; color: rgba(255,255,255,0.65);">
+          <span>RFC 6350 COMPLIANT · AI &amp; AUTOMATION SPECIALIST</span>
+          <span style="color: #FB7185; font-weight: bold;">iam-mjyogananth.pages.dev</span>
         </div>
       </div>
     `;
 
     document.body.appendChild(wrapper);
 
+    // Ensure all internal images (Avatar and QR) are completely loaded before capture
+    const images = Array.from(wrapper.querySelectorAll('img'));
+    await Promise.all(
+      images.map(
+        (img) =>
+          new Promise((resolve) => {
+            if (img.complete) {
+              resolve(true);
+            } else {
+              img.onload = () => resolve(true);
+              img.onerror = () => resolve(false);
+            }
+          })
+      )
+    );
+
     try {
       const canvas = await html2canvas(wrapper.firstElementChild as HTMLElement, {
-        scale: 3, // 300+ DPI razor-sharp output
+        scale: 2.5, // 1750 x 1000 pixels (crisp 300+ DPI razor-sharp output)
         backgroundColor: '#0B0E17',
         useCORS: true,
         allowTaint: true,
         logging: false,
-        width: 560,
-        height: 320,
+        width: 700,
+        height: 400,
       });
       return canvas;
     } finally {
@@ -402,13 +438,13 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
       const imgData = cardCanvas.toDataURL('image/png');
       pdf.addImage(imgData, 'PNG', 0, 0, 3.5, 2.0, undefined, 'FAST');
 
-      // Embedded PDF Hyperlinks (clickable in Acrobat, Chrome, macOS Preview, etc.)
-      pdf.link(0.18, 0.35, 1.85, 0.70, { url: 'https://iam-mjyogananth.pages.dev' });
-      pdf.link(2.15, 0.38, 1.25, 0.20, { url: 'mailto:mjyogananth@gmail.com' });
-      pdf.link(2.15, 0.58, 1.25, 0.20, { url: 'https://www.linkedin.com/in/yogananth-j-653400307/' });
-      pdf.link(2.15, 0.78, 1.25, 0.20, { url: 'https://github.com/YogananthJ' });
-      pdf.link(2.15, 1.20, 1.25, 0.45, { url: 'https://iam-mjyogananth.pages.dev' });
-      pdf.link(2.20, 1.76, 1.20, 0.20, { url: 'https://iam-mjyogananth.pages.dev' });
+      // Embedded PDF Hyperlinks (calibrated to the 3.5" × 2.0" card layout)
+      pdf.link(0.12, 0.35, 1.80, 0.90, { url: 'https://iam-mjyogananth.pages.dev' });
+      pdf.link(2.02, 0.38, 1.36, 0.18, { url: 'mailto:mjyogananth@gmail.com' });
+      pdf.link(2.02, 0.58, 1.36, 0.18, { url: 'https://www.linkedin.com/in/yogananth-j-653400307/' });
+      pdf.link(2.02, 0.78, 1.36, 0.18, { url: 'https://github.com/YogananthJ' });
+      pdf.link(2.02, 1.10, 1.36, 0.45, { url: 'https://iam-mjyogananth.pages.dev' });
+      pdf.link(2.10, 1.76, 1.28, 0.18, { url: 'https://iam-mjyogananth.pages.dev' });
 
       pdf.save('YogananthJ_Digital_VCard.pdf');
       showToast('Downloaded PDF (YogananthJ_Digital_VCard.pdf)');
@@ -424,6 +460,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
       setExportingType(null);
     }
   };
+
 
   // Export as High-Resolution 300 DPI PNG
   const handleDownloadPNG = async () => {
