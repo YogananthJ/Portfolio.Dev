@@ -97,7 +97,34 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
   const glowShiftXBack = normalizedPos.x * 110;
   const glowShiftYBack = -normalizedPos.y * 75;
 
-  const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const [avatarBase64, setAvatarBase64] = useState<string>('');
+
+  // Preload and convert avatar image to base64 Data URI on mount
+  // Guarantees synchronous, error-free rendering in html2canvas exports without network dependencies
+  useEffect(() => {
+    let isMounted = true;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = '/assets/aistudio/favicon_507da8ac.png';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          const dataUri = canvas.toDataURL('image/png');
+          if (isMounted) setAvatarBase64(dataUri);
+        }
+      } catch {
+        // Fallback to direct path if canvas export fails
+      }
+    };
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Generate scannable QR Code on mount pointing to portfolio URL
   useEffect(() => {
@@ -291,6 +318,27 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
     wrapper.style.pointerEvents = 'none';
     wrapper.style.zIndex = '-99999';
 
+    let avatarSrc = avatarBase64 || '/assets/aistudio/favicon_507da8ac.png';
+    if (!avatarBase64 && typeof window !== 'undefined') {
+      try {
+        const preImg = new Image();
+        preImg.crossOrigin = 'anonymous';
+        preImg.src = '/assets/aistudio/favicon_507da8ac.png';
+        if (preImg.complete && preImg.naturalWidth > 0) {
+          const c = document.createElement('canvas');
+          c.width = preImg.naturalWidth;
+          c.height = preImg.naturalHeight;
+          const cx = c.getContext('2d');
+          if (cx) {
+            cx.drawImage(preImg, 0, 0);
+            avatarSrc = c.toDataURL('image/png');
+          }
+        }
+      } catch {
+        // Fallback to direct path
+      }
+    }
+
     // 700x400 landscape template perfectly matching 3.5" x 2.0" business card ratio (1.75:1)
     // Spacious two-column layout: Left column (360px), Right column (272px) so text never clips or truncates
     wrapper.innerHTML = `
@@ -316,7 +364,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
           <div style="width: 360px; display: flex; flex-direction: column; justify-content: center; gap: 12px;">
             <div style="display: flex; align-items: center; gap: 14px;">
               <div style="width: 88px; height: 88px; border-radius: 8px; border: 2.5px solid #F43F5E; background: #ffffff; padding: 3px; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
-                <img src="/assets/aistudio/favicon_507da8ac.png" crossOrigin="anonymous" alt="Avatar" style="width: 100%; height: 100%; object-fit: contain; object-position: bottom; display: block;" />
+                <img src="${avatarSrc}" crossOrigin="anonymous" alt="Avatar" style="width: 100%; height: 100%; object-fit: contain; object-position: bottom; display: block;" />
               </div>
               <div style="min-width: 0; flex: 1;">
                 <div style="font-size: 24px; font-weight: 900; color: #ffffff; letter-spacing: -0.02em; line-height: 1.15; font-family: system-ui, -apple-system, sans-serif;">
@@ -331,9 +379,10 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
               </div>
             </div>
 
-            <div style="display: inline-flex; align-items: center; gap: 7px; padding: 3px 10px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 3px; font-size: 9px; font-weight: bold; color: #6EE7B7; text-transform: uppercase; width: fit-content; margin-top: 2px;">
-              <span style="display: inline-block; width: 6px; height: 6px; border-radius: 9999px; background-color: #34D399;"></span>
-              <span>Open to Opportunities</span>
+            <!-- Open to Opportunities Badge (Perfect Centered Flex Layout with Dot) -->
+            <div style="display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 4px 12px; height: 26px; box-sizing: border-box; background: rgba(16, 185, 129, 0.12); border: 1.5px solid rgba(16, 185, 129, 0.35); border-radius: 4px; width: fit-content;">
+              <span style="display: inline-block; width: 6px; height: 6px; border-radius: 9999px; background-color: #34D399; flex-shrink: 0;"></span>
+              <span style="font-size: 9px; font-weight: 700; color: #6EE7B7; text-transform: uppercase; letter-spacing: 0.05em; line-height: 1; display: inline-flex; align-items: center;">Open to Opportunities</span>
             </div>
           </div>
 
@@ -386,13 +435,13 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
 
     document.body.appendChild(wrapper);
 
-    // Ensure all internal images (Avatar and QR) are completely loaded before capture
+    // 1. Ensure all internal images (Avatar and QR) are completely loaded
     const images = Array.from(wrapper.querySelectorAll('img'));
     await Promise.all(
       images.map(
         (img) =>
           new Promise((resolve) => {
-            if (img.complete) {
+            if (img.complete && img.naturalWidth > 0) {
               resolve(true);
             } else {
               img.onload = () => resolve(true);
@@ -401,6 +450,9 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
           })
       )
     );
+
+    // 2. Introduce a deliberate browser rendering flush delay (100ms) to ensure layout recalculation and font rendering complete
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     try {
       const canvas = await html2canvas(wrapper.firstElementChild as HTMLElement, {
@@ -901,11 +953,12 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
 
                 {/* Open to Opportunities Status */}
                 <div className="flex items-center">
-                  <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xs text-[7.5px] sm:text-[8.5px] font-mono">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span className="uppercase tracking-wider text-emerald-300 font-semibold">
-                      Open to Opportunities
+                  <div className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-xs text-[7.5px] sm:text-[8.5px] font-mono leading-none tracking-wider text-emerald-300 font-bold uppercase">
+                    <span className="relative flex h-1.5 w-1.5 shrink-0">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400"></span>
                     </span>
+                    <span className="inline-block pt-[0.5px]">Open to Opportunities</span>
                   </div>
                 </div>
               </div>
