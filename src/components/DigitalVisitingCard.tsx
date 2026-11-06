@@ -43,6 +43,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
 
   // 3D Tilt & Moving White Glow Hover State
   const cardContainerRef = useRef<HTMLDivElement | null>(null);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
   const [tilt, setTilt] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [normalizedPos, setNormalizedPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState<boolean>(false);
