@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { 
   LayoutMode, 
   ViewMode, 
@@ -18,6 +18,9 @@ interface LayoutContextType extends LayoutSettings {
   setAppearance: (appearance: AppearanceMode) => void;
   setAccentTheme: (theme: AccentTheme) => void;
   toggleSidebar: () => void;
+  isDark: boolean;
+  isThemeTransitioning: boolean;
+  toggleTheme: () => void;
 }
 
 const LayoutContext = createContext<LayoutContextType | undefined>(undefined);
@@ -50,6 +53,31 @@ export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return 'signal-red';
   });
 
+  // Theme Transition State & Timers for Global Framer Motion Cross-fade
+  const [isThemeTransitioning, setIsThemeTransitioning] = useState<boolean>(false);
+  const transitionTimeoutRef = useRef<number | null>(null);
+  const isMountedRef = useRef<boolean>(false);
+
+  // Helper to determine effective isDark boolean
+  const getIsDark = (mode: AppearanceMode): boolean => {
+    if (typeof window === 'undefined') return false;
+    if (mode === 'dark') return true;
+    if (mode === 'light') return false;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  };
+
+  const isDark = getIsDark(appearance);
+
+  const triggerThemeTransition = () => {
+    setIsThemeTransitioning(true);
+    if (transitionTimeoutRef.current) {
+      clearTimeout(transitionTimeoutRef.current);
+    }
+    transitionTimeoutRef.current = window.setTimeout(() => {
+      setIsThemeTransitioning(false);
+    }, 550);
+  };
+
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
 
   const handleSetLayoutMode = (mode: LayoutMode) => {
@@ -60,10 +88,22 @@ export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const setAppearance = (mode: AppearanceMode) => {
+    const nextIsDark = getIsDark(mode);
+    const currentIsDark = getIsDark(appearance);
+
+    if (isMountedRef.current && nextIsDark !== currentIsDark) {
+      triggerThemeTransition();
+    }
+
     setAppearanceState(mode);
     if (typeof window !== 'undefined') {
       localStorage.setItem('yogananth_appearance', mode);
     }
+  };
+
+  const toggleTheme = () => {
+    const nextMode: AppearanceMode = isDark ? 'light' : 'dark';
+    setAppearance(nextMode);
   };
 
   const setAccentTheme = (theme: AccentTheme) => {
@@ -73,6 +113,16 @@ export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
+  // Mount tracking and cleanup
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      if (transitionTimeoutRef.current) {
+        clearTimeout(transitionTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Sync DOM classes with appearance and accentTheme
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -80,11 +130,9 @@ export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const root = document.documentElement;
 
     // Handle appearance
-    const isDark = 
-      appearance === 'dark' || 
-      (appearance === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    const darkActive = getIsDark(appearance);
 
-    if (isDark) {
+    if (darkActive) {
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
@@ -98,6 +146,9 @@ export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (appearance === 'system') {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const listener = (e: MediaQueryListEvent) => {
+        if (isMountedRef.current) {
+          triggerThemeTransition();
+        }
         if (e.matches) {
           root.classList.add('dark');
         } else {
@@ -120,6 +171,8 @@ export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         activeSimulatorId,
         appearance,
         accentTheme,
+        isDark,
+        isThemeTransitioning,
         setLayoutMode: handleSetLayoutMode,
         setViewMode,
         setDensity,
@@ -129,6 +182,7 @@ export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setAppearance,
         setAccentTheme,
         toggleSidebar,
+        toggleTheme,
       }}
     >
       {children}

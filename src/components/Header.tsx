@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Terminal, Send, Menu, X, Columns2, PanelLeft, Volume2, VolumeX, FileText } from 'lucide-react';
+import { Terminal, Send, Menu, X, Columns2, PanelLeft, Volume2, VolumeX, FileText, Sun, Moon } from 'lucide-react';
 import { useLayout } from '../context/LayoutContext';
 import { soundFX } from '../utils/soundEffects';
 
@@ -11,7 +11,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, activeSection }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { layoutMode, setLayoutMode, toggleSidebar, sidebarOpen } = useLayout();
+  const { layoutMode, setLayoutMode, toggleSidebar, sidebarOpen, isDark, toggleTheme } = useLayout();
 
   const [soundActive, setSoundActive] = useState<boolean>(() => soundFX.getStatus());
 
@@ -173,6 +173,20 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
             {soundActive ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
           </button>
 
+          {/* Light / Dark Mode Toggle with Framer Motion Glassmorphism Cross-Fade */}
+          <button
+            onClick={() => {
+              soundFX.playClick();
+              toggleTheme();
+            }}
+            type="button"
+            className="p-1.5 border transition-colors cursor-pointer bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-main)] hover:border-[var(--accent)]"
+            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            {isDark ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-zinc-700 dark:text-zinc-300" />}
+          </button>
+
           {/* Terminal CLI Launcher */}
           <button
             onClick={() => {
@@ -274,6 +288,19 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
             >
               <Columns2 className="w-4 h-4" />
               <span>{layoutMode === 'split' ? 'Exit Split View' : 'Split-Screen Mode'}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                soundFX.playClick();
+                toggleTheme();
+                setMobileMenuOpen(false);
+              }}
+              type="button"
+              className="py-2.5 px-3 text-xs font-bold uppercase bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] text-center flex items-center justify-center gap-2 cursor-pointer flex-1"
+            >
+              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-zinc-700" />}
+              <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
             </button>
           </div>
         </div>

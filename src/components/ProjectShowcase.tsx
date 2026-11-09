@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { ProjectItem, ProjectCategory } from '../types/portfolio';
 import { PROJECTS } from '../data/portfolioData';
 import { ProjectCard } from './ProjectCard';
 import { useLayout } from '../context/LayoutContext';
-import { initScrollStagger } from '../utils/gsapAnimations';
 import { 
   Search, 
   LayoutGrid, 
@@ -16,7 +16,6 @@ import {
   Layers,
   Code
 } from 'lucide-react';
-import { RevealItem } from './common/ScrollSectionReveal';
 
 interface ProjectShowcaseProps {
   onOpenModal: (project: ProjectItem) => void;
@@ -25,8 +24,8 @@ interface ProjectShowcaseProps {
 export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal }) => {
   const { viewMode, setViewMode, density } = useLayout();
   const [selectedCategory, setSelectedCategory] = useState<ProjectCategory>('all');
+  const shouldReduceMotion = Boolean(useReducedMotion());
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const gridContainerRef = useRef<HTMLDivElement | null>(null);
 
   const categories: { id: ProjectCategory; label: string }[] = [
     { id: 'all', label: 'All Projects (10)' },
@@ -52,14 +51,6 @@ export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal })
       return matchesCategory && matchesSearch;
     });
   }, [selectedCategory, searchQuery]);
-
-  // Trigger GSAP stagger animation on card elements
-  useEffect(() => {
-    if (gridContainerRef.current) {
-      const cards = Array.from(gridContainerRef.current.querySelectorAll('.project-card-item')) as HTMLElement[];
-      initScrollStagger(cards, 0.08);
-    }
-  }, [filteredProjects, viewMode]);
 
   // Spacing density classes
   const densityGapClass =
@@ -168,15 +159,26 @@ export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal })
 
         {/* --- VIEW MODE 1: STANDARD GRID VIEW --- */}
         {viewMode === 'grid' && (
-          <div ref={gridContainerRef} className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${densityGapClass}`}>
+          <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${densityGapClass}`}>
             {filteredProjects.map((project, index) => (
-              <RevealItem key={project.id} className="project-card-item">
+              <motion.div
+                key={project.id}
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 32 }}
+                whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.12, margin: '0px 0px -40px 0px' }}
+                transition={{
+                  duration: 0.52,
+                  ease: [0.22, 1, 0.36, 1],
+                  delay: shouldReduceMotion ? 0 : (index % 3) * 0.08,
+                }}
+                className="h-full relative hover:z-10"
+              >
                 <ProjectCard
                   project={project}
                   onOpenModal={onOpenModal}
                   index={index}
                 />
-              </RevealItem>
+              </motion.div>
             ))}
           </div>
         )}
@@ -268,9 +270,17 @@ export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal })
             {filteredProjects.map((project, index) => {
               const isLarge = index === 0 || index === 3;
               return (
-                <div
+                <motion.div
                   key={project.id}
-                  className={`project-card-item ${
+                  initial={shouldReduceMotion ? false : { opacity: 0, y: 32 }}
+                  whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.12, margin: '0px 0px -40px 0px' }}
+                  transition={{
+                    duration: 0.52,
+                    ease: [0.22, 1, 0.36, 1],
+                    delay: shouldReduceMotion ? 0 : (index % 2) * 0.08,
+                  }}
+                  className={`relative hover:z-10 h-full ${
                     isLarge ? 'md:col-span-2' : 'md:col-span-1'
                   }`}
                 >
@@ -279,7 +289,7 @@ export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal })
                     onOpenModal={onOpenModal}
                     index={index}
                   />
-                </div>
+                </motion.div>
               );
             })}
           </div>

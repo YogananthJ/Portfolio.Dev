@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import {
   Github,
   ArrowUpRight,
@@ -26,13 +26,14 @@ interface ProjectCardProps {
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onOpenModal, index }) => {
   const cardRef = useRef<HTMLDivElement | null>(null);
+  const shouldReduceMotion = Boolean(useReducedMotion());
   const [tilt, setTilt] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState<boolean>(false);
   const [isSchematicMode, setIsSchematicMode] = useState<boolean>(false);
 
   // 3D Tilt interaction on pointer movement
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return;
+    if (shouldReduceMotion || !cardRef.current) return;
     const rect = cardRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -372,15 +373,12 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onOpenModal, 
       onMouseMove={handleMouseMove}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-40px' }}
-      transition={{ duration: 0.45, delay: index * 0.05 }}
       style={{
-        transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-        transition: isHovered ? 'transform 0.08s ease-out' : 'transform 0.35s ease-out',
+        transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale(${isHovered && !shouldReduceMotion ? 1.02 : 1})`,
+        transition: isHovered ? 'transform 0.15s ease-out' : 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+        zIndex: isHovered ? 10 : 1,
       }}
-      className="project-card-item flex flex-col bg-[var(--bg-card)] border-2 border-[var(--border-color)] shadow-sm hover:border-[var(--accent)] hover:shadow-xl transition-all duration-300 group rounded-xs relative overflow-hidden"
+      className="project-card-item flex flex-col h-full bg-[var(--bg-card)] border-2 border-[var(--border-color)] shadow-sm hover:border-[var(--accent)] hover:shadow-xl transition-all duration-300 group rounded-xs relative overflow-hidden will-change-transform"
     >
       {/* Subtle interactive hover light reflection */}
       {isHovered && (

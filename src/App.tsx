@@ -18,26 +18,46 @@ import { LayoutController } from './components/LayoutController';
 import { WorkspaceSidebar } from './components/WorkspaceSidebar';
 import { SplitScreenWorkspace } from './components/SplitScreenWorkspace';
 import { LayoutProvider, useLayout } from './context/LayoutContext';
+import { motion, useReducedMotion } from 'framer-motion';
 import { ProjectItem } from './types/portfolio';
 import { PROJECTS } from './data/portfolioData';
 import { ScrollProgressBar } from './components/common/ScrollProgressBar';
 import { BackToTop } from './components/common/BackToTop';
 import { FuturisticSpotlight } from './components/common/FuturisticSpotlight';
 import { ScrollSectionReveal } from './components/common/ScrollSectionReveal';
+import { ThemeTransitionOverlay } from './components/common/ThemeTransitionOverlay';
+import {
+  ErrorBoundary,
+  OfflineBanner,
+  ErrorHubModal,
+  NotFoundPage,
+  OfflinePage,
+  ServerErrorPage,
+  AccessDeniedPage,
+  RequestTimeoutPage,
+  BadGatewayPage,
+  ServiceUnavailablePage,
+  GatewayTimeoutPage,
+  AppExceptionPage,
+} from './components/errors';
 
 function PortfolioMainContent() {
-  const { layoutMode, setLayoutMode, setActiveSimulatorId } = useLayout();
+  const { layoutMode, setLayoutMode, setActiveSimulatorId, isThemeTransitioning } = useLayout();
+  const shouldReduceMotion = useReducedMotion();
   const [activeProject, setActiveProject] = useState<ProjectItem | null>(null);
   const [isTerminalOpen, setIsTerminalOpen] = useState<boolean>(false);
   const [isResumeModalOpen, setIsResumeModalOpen] = useState<boolean>(false);
   const [activeSection, setActiveSection] = useState<string>('overview');
+  const [isErrorHubOpen, setIsErrorHubOpen] = useState<boolean>(false);
+  const [isSimulatedCrash, setIsSimulatedCrash] = useState<boolean>(false);
 
-  // Client-side route detection for Motion Lab experiment detail pages (/motion-lab/:id)
+  // Client-side route detection for Motion Lab (/motion-lab/:id) and Error Pages (/404, /offline, etc.)
   const getRouteFromUrl = () => {
     if (typeof window === 'undefined') return { page: 'home', experimentId: '' };
     const pathname = window.location.pathname;
     const hash = window.location.hash;
 
+    // Motion Lab detail pages
     if (pathname.startsWith('/motion-lab/')) {
       const expId = pathname.replace('/motion-lab/', '').split('/')[0];
       return { page: 'motion-detail', experimentId: expId };
@@ -46,7 +66,30 @@ function PortfolioMainContent() {
       const expId = hash.replace(/^#\/?motion-lab\//, '').split('/')[0];
       return { page: 'motion-detail', experimentId: expId };
     }
-    return { page: 'home', experimentId: '' };
+
+    // Specific custom error routes (e.g. /404, /offline, /500, /403, /408, /502, /503, /504, /app-error)
+    const cleanPath = pathname.toLowerCase().replace(/\/$/, '');
+    const cleanHash = hash.toLowerCase().replace(/^#\/?/, '').replace(/\/$/, '');
+
+    const errorCodes = ['404', 'offline', '500', '403', '408', '502', '503', '504', 'app-error'];
+    for (const code of errorCodes) {
+      if (cleanPath === `/${code}` || cleanHash === code || cleanHash === `error/${code}`) {
+        return { page: `error-${code === 'app-error' ? 'app' : code}`, experimentId: '' };
+      }
+    }
+
+    if (cleanPath.startsWith('/error/')) {
+      const sub = cleanPath.replace('/error/', '').split('/')[0];
+      return { page: `error-${sub}`, experimentId: '' };
+    }
+
+    // Home or root path
+    if (cleanPath === '' || cleanPath === '/' || cleanPath === '/index.html') {
+      return { page: 'home', experimentId: '' };
+    }
+
+    // Any other unrecognized route triggers 404 (Lost in Digital Void)
+    return { page: 'error-404', experimentId: '' };
   };
 
   const [route, setRoute] = useState<{ page: string; experimentId: string }>(getRouteFromUrl);
@@ -62,6 +105,27 @@ function PortfolioMainContent() {
       window.removeEventListener('hashchange', handleRouteChange);
     };
   }, []);
+
+  // Listen for Error Experience Hub launch events from Terminal or Workspace Controls
+  useEffect(() => {
+    const handleOpenHub = () => setIsErrorHubOpen(true);
+    window.addEventListener('open-error-hub', handleOpenHub);
+    return () => window.removeEventListener('open-error-hub', handleOpenHub);
+  }, []);
+
+  const handleReturnHome = () => {
+    window.history.pushState({}, '', '/');
+    setRoute({ page: 'home', experimentId: '' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleGoBack = () => {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      handleReturnHome();
+    }
+  };
 
   const handleOpenMotionDetail = (experimentId: string) => {
     window.history.pushState({}, '', `/motion-lab/${experimentId}`);
@@ -126,8 +190,28 @@ function PortfolioMainContent() {
     }
   };
 
+  function SimulatedCrashTrigger(): never {
+    throw new Error('Simulated runtime exception triggered from Error Hub Lab');
+  }
+
   return (
-    <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-main)] flex flex-col font-sans selection:bg-[var(--accent)] selection:text-white relative w-full max-w-full overflow-x-clip">
+    <motion.div
+      animate={isThemeTransitioning && !shouldReduceMotion ? { opacity: [1, 0.88, 1] } : { opacity: 1 }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-main)] flex flex-col font-sans selection:bg-[var(--accent)] selection:text-white relative w-full max-w-full overflow-x-clip"
+    >
+      {/* Simulated crash trigger for testing ErrorBoundary */}
+      {isSimulatedCrash && <SimulatedCrashTrigger />}
+
+      {/* Real-time ambient offline warning banner */}
+      <OfflineBanner
+        onViewOfflinePage={() => {
+          window.history.pushState({}, '', '/offline');
+          setRoute({ page: 'error-offline', experimentId: '' });
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
+
       {/* Viewport Scroll Progress Bar */}
       <ScrollProgressBar />
 
@@ -152,8 +236,30 @@ function PortfolioMainContent() {
         }}
       />
 
-      {/* Main Body: Detail Page vs Dual-Pane Split Workbench vs Standard Editorial Flow */}
-      {route.page === 'motion-detail' && route.experimentId ? (
+      {/* Main Body: Error Page vs Detail Page vs Dual-Pane Split Workbench vs Standard Editorial Flow */}
+      {route.page.startsWith('error-') ? (
+        <main className="flex-1 w-full max-w-full">
+          {route.page === 'error-offline' ? (
+            <OfflinePage onReturnHome={handleReturnHome} onGoBack={handleGoBack} />
+          ) : route.page === 'error-500' ? (
+            <ServerErrorPage onReturnHome={handleReturnHome} onGoBack={handleGoBack} />
+          ) : route.page === 'error-403' ? (
+            <AccessDeniedPage onReturnHome={handleReturnHome} onGoBack={handleGoBack} />
+          ) : route.page === 'error-408' ? (
+            <RequestTimeoutPage onReturnHome={handleReturnHome} onGoBack={handleGoBack} />
+          ) : route.page === 'error-502' ? (
+            <BadGatewayPage onReturnHome={handleReturnHome} onGoBack={handleGoBack} />
+          ) : route.page === 'error-503' ? (
+            <ServiceUnavailablePage onReturnHome={handleReturnHome} onGoBack={handleGoBack} />
+          ) : route.page === 'error-504' ? (
+            <GatewayTimeoutPage onReturnHome={handleReturnHome} onGoBack={handleGoBack} />
+          ) : route.page === 'error-app' ? (
+            <AppExceptionPage onReturnHome={handleReturnHome} onReload={() => window.location.reload()} />
+          ) : (
+            <NotFoundPage onReturnHome={handleReturnHome} onGoBack={handleGoBack} />
+          )}
+        </main>
+      ) : route.page === 'motion-detail' && route.experimentId ? (
         <main className="flex-1 w-full max-w-full overflow-x-clip">
           <MotionExperimentPage
             experimentId={route.experimentId}
@@ -216,8 +322,8 @@ function PortfolioMainContent() {
         </main>
       )}
 
-      {/* Footer (shown in standard mode or detail view) */}
-      {(layoutMode === 'standard' || route.page === 'motion-detail') && <Footer />}
+      {/* Footer (shown in standard mode or detail view, hidden during dedicated error page experiences) */}
+      {(layoutMode === 'standard' || route.page === 'motion-detail') && !route.page.startsWith('error-') && <Footer />}
 
       {/* Deep-Dive Project Modal with Interactive Simulator */}
       <ProjectModal
@@ -229,6 +335,18 @@ function PortfolioMainContent() {
       <ResumeModal
         isOpen={isResumeModalOpen}
         onClose={() => setIsResumeModalOpen(false)}
+      />
+
+      {/* Interactive Error Experience Testing Lab Modal */}
+      <ErrorHubModal
+        isOpen={isErrorHubOpen}
+        onClose={() => setIsErrorHubOpen(false)}
+        onSelectErrorRoute={(path) => {
+          window.history.pushState({}, '', path);
+          setRoute(getRouteFromUrl());
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onTriggerSimulatedCrash={() => setIsSimulatedCrash(true)}
       />
 
       {/* Developer Terminal Console Drawer (Cmd+K) */}
@@ -259,14 +377,19 @@ function PortfolioMainContent() {
 
       {/* Floating Back To Top Button */}
       <BackToTop />
-    </div>
+
+      {/* Global Framer Motion Glassmorphism Theme Transition Overlay */}
+      <ThemeTransitionOverlay />
+    </motion.div>
   );
 }
 
 export default function App() {
   return (
-    <LayoutProvider>
-      <PortfolioMainContent />
-    </LayoutProvider>
+    <ErrorBoundary>
+      <LayoutProvider>
+        <PortfolioMainContent />
+      </LayoutProvider>
+    </ErrorBoundary>
   );
 }

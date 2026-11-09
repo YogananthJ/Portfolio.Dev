@@ -152,6 +152,64 @@ class SoundFX {
       // Audio fallback
     }
   }
+
+  // System alert / failure tone for offline drop or exception
+  public playWarning() {
+    if (!this.isEnabled) return;
+    try {
+      this.initContext();
+      if (!this.ctx) return;
+
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(440, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(220, this.ctx.currentTime + 0.18);
+
+      gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.18);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.18);
+    } catch {
+      // Audio fallback
+    }
+  }
+
+  // Positive connection restored / system resolved chime
+  public playSuccess() {
+    if (!this.isEnabled) return;
+    try {
+      this.initContext();
+      if (!this.ctx) return;
+
+      const notes = [440, 554.37, 659.25]; // A4, C#5, E5 major triad
+      notes.forEach((freq, idx) => {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        const start = this.ctx.currentTime + idx * 0.05;
+        osc.frequency.setValueAtTime(freq, start);
+
+        gain.gain.setValueAtTime(0.035, start);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.22);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(start);
+        osc.stop(start + 0.22);
+      });
+    } catch {
+      // Audio fallback
+    }
+  }
 }
 
 export const soundFX = new SoundFX();

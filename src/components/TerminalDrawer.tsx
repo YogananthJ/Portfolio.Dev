@@ -288,6 +288,7 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
                   <div><strong className="text-white cursor-pointer" onClick={() => runCommand('sudo hire')}>sudo hire</strong> — Root privileges recruitment</div>
                   <div><strong className="text-white cursor-pointer" onClick={() => runCommand('secret')}>secret</strong> — Easter eggs &amp; hidden flags</div>
                   <div><strong className="text-white cursor-pointer" onClick={() => runCommand('hack')}>hack</strong> — Harmless neural simulation</div>
+                  <div><strong className="text-rose-400 cursor-pointer" onClick={() => runCommand('error')}>error &lt;code|hub&gt;</strong> — Preview custom error system (404, 500, etc.)</div>
                 </div>
               </div>
             </div>
@@ -1384,6 +1385,63 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
               </div>
             );
           }
+        }
+        break;
+      }
+
+      case 'error':
+      case 'errors': {
+        const sub = arg.trim().toLowerCase();
+        if (sub === 'hub' || sub === 'lab') {
+          onClose();
+          window.dispatchEvent(new CustomEvent('open-error-hub'));
+          outputNode = (
+            <div className="text-xs text-rose-400 font-bold">
+              Opening Custom Error Experience Lab...
+            </div>
+          );
+        } else if (['404', 'offline', '500', '403', '408', '502', '503', '504', 'app'].includes(sub)) {
+          onClose();
+          const targetRoute = sub === 'app' ? '/app-error' : `/${sub}`;
+          window.history.pushState({}, '', targetRoute);
+          window.dispatchEvent(new PopStateEvent('popstate'));
+          outputNode = (
+            <div className="text-xs text-rose-400 font-bold">
+              Navigating to {sub.toUpperCase()} error page ({targetRoute})...
+            </div>
+          );
+        } else {
+          outputNode = (
+            <div className="p-3 bg-white/5 border border-rose-500/30 text-xs font-mono space-y-2">
+              <div className="text-rose-400 font-bold uppercase flex items-center justify-between">
+                <span>CUSTOM ERROR EXPERIENCE SYSTEM:</span>
+                <span className="text-[10px] text-zinc-400">9 BESPOKE ENVIRONMENTS</span>
+              </div>
+              <p className="text-white/80 leading-relaxed">
+                Trigger any custom error state or launch the interactive test lab:
+              </p>
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {['404', 'offline', '500', '403', '408', '502', '503', '504', 'app'].map((code) => (
+                  <button
+                    key={code}
+                    onClick={() => runCommand(`error ${code}`)}
+                    className="px-2 py-0.5 bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white border border-rose-500/40 rounded-xs font-bold uppercase text-[10px] cursor-pointer transition-colors"
+                  >
+                    {code}
+                  </button>
+                ))}
+                <button
+                  onClick={() => runCommand('error hub')}
+                  className="px-2 py-0.5 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-white border border-emerald-500/40 rounded-xs font-bold uppercase text-[10px] cursor-pointer transition-colors"
+                >
+                  Interactive Lab
+                </button>
+              </div>
+              <div className="text-[10px] text-white/50 pt-1 border-t border-white/10">
+                Usage: <code>error &lt;code|hub&gt;</code> — Example: <code className="text-rose-300 cursor-pointer" onClick={() => runCommand('error 404')}>error 404</code> or <code className="text-rose-300 cursor-pointer" onClick={() => runCommand('error offline')}>error offline</code>
+              </div>
+            </div>
+          );
         }
         break;
       }

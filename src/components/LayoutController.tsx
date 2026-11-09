@@ -13,9 +13,11 @@ import {
   Sun,
   Moon,
   Laptop,
-  Palette
+  Palette,
+  ShieldAlert
 } from 'lucide-react';
 import { AccentTheme } from '../types/layout';
+import { soundFX } from '../utils/soundEffects';
 
 export const LayoutController: React.FC = () => {
   const {
@@ -76,7 +78,10 @@ export const LayoutController: React.FC = () => {
                 return (
                   <button
                     key={item.id}
-                    onClick={() => setAppearance(item.id as any)}
+                    onClick={() => {
+                      soundFX.playClick();
+                      setAppearance(item.id as any);
+                    }}
                     type="button"
                     className={`py-1.5 px-2 text-center border font-bold uppercase transition-colors flex items-center justify-center gap-1 text-[11px] ${
                       isSelected
@@ -242,10 +247,25 @@ export const LayoutController: React.FC = () => {
             <button
               onClick={toggleSidebar}
               type="button"
-              className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold border border-[var(--border-color)] bg-[var(--bg-card)] hover:bg-[var(--bg-canvas)] text-[var(--text-main)]"
+              className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold border border-[var(--border-color)] bg-[var(--bg-card)] hover:bg-[var(--bg-canvas)] text-[var(--text-main)] cursor-pointer"
             >
               {sidebarOpen ? <PanelLeftClose className="w-3 h-3" /> : <PanelLeft className="w-3 h-3" />}
               <span>{sidebarOpen ? 'Hide' : 'Show'}</span>
+            </button>
+          </div>
+
+          {/* 8. Custom Error Experience Testing Lab */}
+          <div className="pt-2 border-t border-[var(--border-color)]">
+            <button
+              onClick={() => {
+                soundFX.playClick();
+                window.dispatchEvent(new CustomEvent('open-error-hub'));
+              }}
+              type="button"
+              className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2 text-[11px] font-bold border border-rose-500/40 text-rose-400 bg-rose-500/10 hover:bg-rose-500 hover:text-white transition-colors cursor-pointer"
+            >
+              <ShieldAlert className="w-3.5 h-3.5" />
+              <span>Error System Lab</span>
             </button>
           </div>
         </div>

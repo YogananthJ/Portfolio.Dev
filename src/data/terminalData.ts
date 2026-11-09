@@ -217,5 +217,6 @@ export const ALL_COMMAND_NAMES = [
   'whyhire', 'why-hire', 'why-hire-me', 'fresher', 'why-fresher', 'pitch',
   'matrix', 'quote', 'joke', 'motd', 'fortune', 'theme', 'sudo hire', 'secret', 'hack', 'ping', 'status',
   'contact', 'hire', 'resume', 'linkedin', 'collaborate', 'availability', 'services',
-  'history', 'date', 'uptime', 'clear', 'banner', 'neofetch', 'ls', 'cat', 'open', 'exit', 'echo'
+  'history', 'date', 'uptime', 'clear', 'banner', 'neofetch', 'ls', 'cat', 'open', 'exit', 'echo',
+  'error', 'errors'
 ];
