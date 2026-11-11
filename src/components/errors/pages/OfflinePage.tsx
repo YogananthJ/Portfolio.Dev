@@ -85,11 +85,11 @@ export const OfflinePage: React.FC<OfflinePageProps> = ({ onReturnHome, onGoBack
     <ErrorPageLayout
       details={{
         code: 'OFFLINE',
-        badge: isOnline ? 'ONLINE RESTORED' : 'SIGNAL LOST',
-        title: 'Connection Lost',
-        subtitle: 'Your connection seems to have disappeared into the static.',
-        description: 'No packet carrier detected on your primary network interface. Interactive model simulators and remote repository fetches are currently paused until connectivity returns.',
-        protocolCode: 'NET_ERR_DISCONNECTED',
+        badge: isOnline ? 'CARRIER RESTORED' : 'COMMUNICATION FAILURE',
+        title: 'SIGNAL DISCONNECTED',
+        subtitle: 'The connection to your digital universe has been interrupted.',
+        description: 'Carrier signal lost across communication nodes. Local cached data remains accessible, but live neural simulators and remote data transmissions are paused until your uplink is restored.',
+        protocolCode: 'NET_CARRIER_INTERRUPTED',
       }}
       illustration={<SignalLostOfflineIllustration />}
       primaryAction={{

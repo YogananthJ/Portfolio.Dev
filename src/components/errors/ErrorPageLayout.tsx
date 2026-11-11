@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ShieldAlert, Terminal, Radio, Cpu, ArrowRight } from 'lucide-react';
+import { ShieldAlert } from 'lucide-react';
 import { ErrorDetails, ErrorActionConfig } from './types';
 import { ErrorActions } from './ErrorActions';
 
@@ -53,7 +53,7 @@ export const ErrorPageLayout: React.FC<ErrorPageLayoutProps> = ({
       />
 
       {/* Top Telemetry Header Bar */}
-      <header className="relative z-20 border-b border-white/10 bg-[#0B0E17]/80 backdrop-blur-md px-4 sm:px-8 py-3 flex items-center justify-between text-xs font-mono">
+      <header className="relative z-20 border-b border-white/10 bg-[#0B0E17]/85 backdrop-blur-md px-4 sm:px-8 py-3.5 flex items-center justify-between text-xs font-mono">
         <div className="flex items-center gap-3">
           <a
             href="/"
@@ -63,9 +63,9 @@ export const ErrorPageLayout: React.FC<ErrorPageLayoutProps> = ({
             <span className="w-1.5 h-1.5 bg-rose-500" />
           </a>
           <span className="text-zinc-600 hidden sm:inline">/</span>
-          <span className="hidden sm:inline-flex items-center gap-1 text-rose-400 font-bold uppercase tracking-wider text-[11px]">
+          <span className="hidden sm:inline-flex items-center gap-1.5 text-rose-400 font-bold uppercase tracking-wider text-[11px]">
             <ShieldAlert className="w-3.5 h-3.5" />
-            <span>INCIDENT_TELEMETRY</span>
+            <span>ERROR_UNIVERSE // INCIDENT_LOG</span>
           </span>
         </div>
 
@@ -74,83 +74,84 @@ export const ErrorPageLayout: React.FC<ErrorPageLayoutProps> = ({
             TIME: <span className="text-zinc-200">{currentTimestamp}</span>
           </span>
           <span className="px-2 py-0.5 rounded-xs bg-rose-500/15 border border-rose-500/40 text-rose-400 font-bold uppercase tracking-wide">
-            STATUS: {details.code}
+            SECTOR: {details.code}
           </span>
         </div>
       </header>
 
-      {/* Main Content Showcase */}
-      <main className="relative z-10 flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 lg:px-12 py-8 sm:py-16 flex items-center">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center w-full">
+      {/* Main Content Showcase: Large Cinematic Illustration & Side-by-Side Narrative */}
+      <main className="relative z-10 flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 lg:px-12 py-8 sm:py-14 flex items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 xl:gap-16 items-center w-full">
           
-          {/* Left Column: Descriptive Typography & Actions */}
+          {/* Left Column (Desktop) / Lower Column (Mobile): Error Code, Story Title, Narrative & Actions */}
           <motion.div
             initial={shouldReduceMotion ? false : { opacity: 0, x: -24 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className="lg:col-span-6 space-y-6 flex flex-col justify-center order-2 lg:order-1"
+            className="lg:col-span-5 xl:col-span-5 space-y-6 flex flex-col justify-center order-2 lg:order-1"
           >
-            {/* Incident Badge Pill */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-xs text-[11px] font-mono tracking-wider text-rose-400 w-fit">
-              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-              <span className="font-bold uppercase">{details.badge}</span>
-              <span className="text-zinc-500">·</span>
+            {/* Clean Unboxed Metadata Line (No Pill Enclosures) */}
+            <div className="flex flex-wrap items-center gap-2 text-xs font-mono tracking-wider text-rose-400">
+              <span className="font-bold uppercase tracking-wider">{details.badge}</span>
+              <span className="text-zinc-600" aria-hidden="true">·</span>
               <span className="text-zinc-400">{details.protocolCode || `HTTP_${details.code}`}</span>
+              <span className="text-zinc-600" aria-hidden="true">·</span>
+              <span className="text-zinc-500 text-[11px]">SECTOR_FAILSAFE</span>
             </div>
 
-            {/* Giant Monolithic Code & Header */}
-            <div>
-              <div className="font-mono text-5xl sm:text-7xl lg:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-500 via-purple-400 to-cyan-400 tracking-tight leading-none">
+            {/* Giant Monolithic Error Code & Story Title */}
+            <div className="space-y-1">
+              <div className="font-mono text-6xl sm:text-7xl lg:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-500 via-purple-400 to-cyan-400 tracking-tight leading-none">
                 {details.code}
               </div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-black text-white uppercase tracking-tight mt-2">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-black text-white uppercase tracking-tight">
                 {details.title}
               </h1>
             </div>
 
-            {/* Subtitle & Core Narrative */}
-            <div className="space-y-2 max-w-xl">
-              <p className="text-base sm:text-lg text-zinc-200 font-medium leading-relaxed">
-                {details.subtitle}
+            {/* Subtitle & Story Narrative */}
+            <div className="space-y-3 max-w-xl">
+              <p className="text-lg sm:text-xl text-rose-200/90 font-medium leading-relaxed font-sans">
+                &ldquo;{details.subtitle}&rdquo;
               </p>
-              <p className="text-xs sm:text-sm text-zinc-400 font-mono leading-relaxed border-l-2 border-rose-500/60 pl-3">
+              <p className="text-sm sm:text-base text-zinc-300 font-sans leading-relaxed">
                 {details.description}
               </p>
             </div>
 
-            {/* Optional System Diagnostics Telemetry Box */}
-            <div className="p-3.5 bg-[#0C101A] border border-white/10 rounded-xs font-mono text-[11px] text-zinc-400 space-y-1">
+            {/* Diagnostic Telemetry Console */}
+            <div className="p-3.5 bg-[#0A0D15] border border-white/10 rounded-xs font-mono text-[11px] text-zinc-400 space-y-1 relative">
               <div className="flex items-center justify-between text-zinc-500 pb-1 border-b border-white/5 text-[10px]">
-                <span>DIAGNOSTIC_CONSOLE</span>
-                <span className="text-emerald-400 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> ACTIVE_TRAP
-                </span>
+                <span className="tracking-wider">INCIDENT_DIAGNOSTICS</span>
+                <span className="text-emerald-400">FAILSAFE_STABLE</span>
               </div>
-              <div className="text-zinc-300">
-                <span className="text-rose-400 font-bold">&gt;&gt;</span> {systemTip || 'Automated error recovery protocol initiated. Check network and router telemetry.'}
+              <div className="text-zinc-300 pt-0.5">
+                <span className="text-rose-400 font-bold">&gt;&gt;</span> {systemTip || 'Automated error recovery protocol active. Select an action below.'}
               </div>
             </div>
 
-            {/* Additional Custom Children (e.g. search bars, ping meter) */}
+            {/* Additional Custom Children (e.g. search / network indicators) */}
             {children}
 
-            {/* Interactive Functional Buttons */}
-            <ErrorActions
-              primaryAction={primaryAction}
-              secondaryAction={secondaryAction}
-              tertiaryAction={tertiaryAction}
-              onReturnHome={onReturnHome}
-              onGoBack={onGoBack}
-              onRetry={onRetry}
-            />
+            {/* Interactive Functional Actions */}
+            <div className="pt-2">
+              <ErrorActions
+                primaryAction={primaryAction}
+                secondaryAction={secondaryAction}
+                tertiaryAction={tertiaryAction}
+                onReturnHome={onReturnHome}
+                onGoBack={onGoBack}
+                onRetry={onRetry}
+              />
+            </div>
           </motion.div>
 
-          {/* Right Column: Unique Bespoke SVG Illustration */}
+          {/* Right Column (Desktop) / Upper Column (Mobile): Large Cinematic Illustration */}
           <motion.div
-            initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.94 }}
+            initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
-            className="lg:col-span-6 flex items-center justify-center order-1 lg:order-2 w-full"
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.08 }}
+            className="lg:col-span-7 xl:col-span-7 flex items-center justify-center order-1 lg:order-2 w-full"
           >
             {illustration}
           </motion.div>
@@ -159,19 +160,19 @@ export const ErrorPageLayout: React.FC<ErrorPageLayoutProps> = ({
       </main>
 
       {/* Cyberpunk Telemetry Footer */}
-      <footer className="relative z-20 border-t border-white/10 bg-[#0B0E17]/80 px-4 sm:px-8 py-3 flex flex-col sm:flex-row items-center justify-between gap-2 text-[10px] font-mono text-zinc-500">
+      <footer className="relative z-20 border-t border-white/10 bg-[#0B0E17]/85 px-4 sm:px-8 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-2 text-[10px] font-mono text-zinc-500">
         <div className="flex items-center gap-2">
-          <span>PORTFOLIO_SYSTEMS // AI_ENGINEERING</span>
-          <span>·</span>
-          <span>AUTONOMOUS_FAILSAFE</span>
+          <span>PORTFOLIO_SYSTEMS // ERROR_UNIVERSE</span>
+          <span aria-hidden="true">·</span>
+          <span>AUTONOMOUS_FAILSAFE_PROTOCOL</span>
         </div>
         <div className="flex items-center gap-4">
           <a href="/#contact" className="hover:text-rose-400 transition-colors">
-            REPORT_INCIDENT
+            REPORT_ANOMALY
           </a>
-          <span>·</span>
+          <span aria-hidden="true">·</span>
           <a href="/" className="hover:text-white transition-colors">
-            HOMEPAGE
+            RETURN_HOME
           </a>
         </div>
       </footer>

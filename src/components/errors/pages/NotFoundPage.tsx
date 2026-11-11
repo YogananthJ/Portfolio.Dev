@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, ArrowLeft, Search } from 'lucide-react';
+import { Home, ArrowLeft } from 'lucide-react';
 import { ErrorPageLayout } from '../ErrorPageLayout';
 import { AstronautVoid404Illustration } from '../illustrations/AstronautVoid404Illustration';
 
@@ -13,11 +13,11 @@ export const NotFoundPage: React.FC<NotFoundPageProps> = ({ onReturnHome, onGoBa
     <ErrorPageLayout
       details={{
         code: '404',
-        badge: 'DIGITAL VOID DETECTED',
-        title: 'Page Not Found',
-        subtitle: 'Looks like this page disappeared into another dimension.',
-        description: 'The requested route coordinates do not match any published neural node or project dossier. It may have been relocated, unmounted, or sucked into the digital void.',
-        protocolCode: 'HTTP_404_NOT_FOUND',
+        badge: 'DIMENSIONAL DRIFT',
+        title: 'LOST IN SPACE',
+        subtitle: "You've travelled beyond the boundaries of this website.",
+        description: 'A digital explorer has drifted past the outer sector coordinates into an unknown dimension. The page you are looking for has been fractured, relocated, or lost among the digital stars.',
+        protocolCode: 'HTTP_404_VOID',
       }}
       illustration={<AstronautVoid404Illustration />}
       primaryAction={{
@@ -40,7 +40,7 @@ export const NotFoundPage: React.FC<NotFoundPageProps> = ({ onReturnHome, onGoBa
         variant: 'secondary',
         shortcut: 'Esc',
       }}
-      systemTip="The path may have expired. Verify spelling or jump back to the verified projects directory."
+      systemTip="The coordinates you entered do not exist in this sector. Verify the URL or return to the verified project directory."
     />
   );
 };

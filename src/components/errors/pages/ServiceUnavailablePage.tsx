@@ -27,15 +27,15 @@ export const ServiceUnavailablePage: React.FC<ServiceUnavailablePageProps> = ({ 
     <ErrorPageLayout
       details={{
         code: '503',
-        badge: 'SCHEDULED MAINTENANCE',
-        title: 'Service Temporarily Unavailable',
-        subtitle: "We're working on getting things back online.",
-        description: 'System infrastructure is undergoing active firmware deployment, load rebalancing, or scheduled telemetry calibration. Normal service operations will resume momentarily.',
-        protocolCode: 'HTTP_503_SERVICE_UNAVAILABLE',
+        badge: 'SYSTEM CALIBRATION',
+        title: 'UNDER MAINTENANCE',
+        subtitle: "We're repairing this part of the digital universe. Please return shortly.",
+        description: 'The digital universe is undergoing repairs. Automated maintenance drones and diagnostic systems are currently recalibrating circuit panels, upgrading firmware matrices, and tightening memory conduits.',
+        protocolCode: 'HTTP_503_MAINTENANCE',
       }}
       illustration={<ServiceMaintenance503Illustration />}
       primaryAction={{
-        label: isRetrying ? 'Checking Maintenance...' : 'Retry',
+        label: isRetrying ? 'Checking Status...' : 'Check Status',
         onClick: handleRetry,
         icon: <RefreshCw className={`w-4 h-4 ${isRetrying ? 'animate-spin' : ''}`} />,
         variant: 'primary',

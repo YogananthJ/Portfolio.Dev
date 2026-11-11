@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, Github, ArrowUpRight, CheckCircle2, ExternalLink, Info, Cpu, Binary, GitBranch, Layers, ArrowRight } from 'lucide-react';
+import { X, Github, ArrowUpRight, CheckCircle2, ExternalLink, Info, Cpu, Binary, GitBranch, Layers, ArrowRight, Link2, Check } from 'lucide-react';
 import { ProjectItem } from '../types/portfolio';
 import { ProjectSimulator } from './ProjectSimulator';
 import { soundFX } from '../utils/soundEffects';
@@ -11,6 +11,8 @@ interface ProjectModalProps {
 
 export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) => {
   const [activeTraceStep, setActiveTraceStep] = useState<number>(0);
+  const [copied, setCopied] = useState<boolean>(false);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -24,6 +26,36 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [project, onClose]);
+
+  const handleCopyLink = async () => {
+    if (!project) return;
+    soundFX.playClick(750);
+
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const pathname = typeof window !== 'undefined' ? window.location.pathname : '/';
+    const projectUrl = `${origin}${pathname}?project=${encodeURIComponent(project.id)}`;
+
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(projectUrl);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = projectUrl;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        textArea.remove();
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2200);
+    } catch (err) {
+      console.error('Failed to copy project URL:', err);
+    }
+  };
 
   if (!project) return null;
 
@@ -51,14 +83,40 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
             <span className="text-[var(--text-muted)] font-mono text-xs">{project.year}</span>
           </div>
 
-          <button
-            onClick={onClose}
-            type="button"
-            className="p-1 text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors"
-            aria-label="Close modal"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCopyLink}
+              type="button"
+              className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono transition-all rounded-xs border cursor-pointer ${
+                copied
+                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50'
+                  : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-main)] hover:border-[var(--accent)]'
+              }`}
+              title={copied ? 'Unique project link copied to clipboard!' : 'Copy unique project link'}
+              aria-label={copied ? 'Unique project link copied to clipboard' : 'Copy unique project link'}
+            >
+              {copied ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="font-bold text-emerald-400">Copied</span>
+                </>
+              ) : (
+                <>
+                  <Link2 className="w-3.5 h-3.5 text-[var(--accent)]" />
+                  <span className="hidden sm:inline">Copy Link</span>
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={onClose}
+              type="button"
+              className="p-1 text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors cursor-pointer"
+              aria-label="Close modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Modal Scrollable Body */}
@@ -285,12 +343,36 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               )}
+
+              <button
+                onClick={handleCopyLink}
+                type="button"
+                className={`flex items-center gap-1.5 px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider transition-all border cursor-pointer ${
+                  copied
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50'
+                    : 'text-[var(--text-main)] bg-[var(--bg-surface)] border-[var(--border-color)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
+                }`}
+                title={copied ? 'Unique project link copied to clipboard!' : 'Copy unique project link to clipboard'}
+                aria-label={copied ? 'Unique project link copied to clipboard' : 'Copy unique project link to clipboard'}
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Link Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Link2 className="w-3.5 h-3.5 text-[var(--accent)]" />
+                    <span>Copy Link</span>
+                  </>
+                )}
+              </button>
             </div>
 
             <button
               onClick={onClose}
               type="button"
-              className="px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+              className="px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors cursor-pointer"
             >
               Close Window [Esc]
             </button>

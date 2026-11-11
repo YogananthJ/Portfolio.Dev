@@ -23,6 +23,7 @@ import { ProjectItem } from './types/portfolio';
 import { PROJECTS } from './data/portfolioData';
 import { ScrollProgressBar } from './components/common/ScrollProgressBar';
 import { BackToTop } from './components/common/BackToTop';
+import { QuickActionsMenu } from './components/common/QuickActionsMenu';
 import { FuturisticSpotlight } from './components/common/FuturisticSpotlight';
 import { ScrollSectionReveal } from './components/common/ScrollSectionReveal';
 import { ThemeTransitionOverlay } from './components/common/ThemeTransitionOverlay';
@@ -173,14 +174,60 @@ function PortfolioMainContent() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [layoutMode]);
 
+  // Check for project deep-link in URL search params (?project=...) or hash (#project-...)
+  useEffect(() => {
+    const syncProjectFromUrl = () => {
+      if (typeof window === 'undefined') return;
+      const params = new URLSearchParams(window.location.search);
+      const projectId = params.get('project');
+      const hash = window.location.hash;
+      const hashProjectId = hash.startsWith('#project-') ? hash.replace('#project-', '') : null;
+      const targetId = projectId || hashProjectId;
+      if (targetId) {
+        const found = PROJECTS.find((p) => p.id === targetId);
+        if (found) {
+          setActiveProject(found);
+        }
+      }
+    };
+
+    syncProjectFromUrl();
+    window.addEventListener('popstate', syncProjectFromUrl);
+    window.addEventListener('hashchange', syncProjectFromUrl);
+    return () => {
+      window.removeEventListener('popstate', syncProjectFromUrl);
+      window.removeEventListener('hashchange', syncProjectFromUrl);
+    };
+  }, []);
+
   const handleOpenProjectModal = (project: ProjectItem) => {
     setActiveProject(project);
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('project', project.id);
+      window.history.replaceState({}, '', url.toString());
+    } catch {
+      // Fallback if URL mutation fails
+    }
+  };
+
+  const handleCloseProjectModal = () => {
+    setActiveProject(null);
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has('project')) {
+        url.searchParams.delete('project');
+        window.history.replaceState({}, '', url.pathname + (url.search ? url.search : '') + url.hash);
+      }
+    } catch {
+      // Fallback
+    }
   };
 
   const handleLaunchSimulator = (projectId: string) => {
     const proj = PROJECTS.find((p) => p.id === projectId) || PROJECTS[0];
     setActiveSimulatorId(projectId);
-    setActiveProject(proj);
+    handleOpenProjectModal(proj);
   };
 
   const handleExploreWork = () => {
@@ -231,7 +278,7 @@ function PortfolioMainContent() {
           const proj = PROJECTS.find((p) => p.id === id);
           if (proj) {
             setActiveSimulatorId(id);
-            setActiveProject(proj);
+            handleOpenProjectModal(proj);
           }
         }}
       />
@@ -328,7 +375,7 @@ function PortfolioMainContent() {
       {/* Deep-Dive Project Modal with Interactive Simulator */}
       <ProjectModal
         project={activeProject}
-        onClose={() => setActiveProject(null)}
+        onClose={handleCloseProjectModal}
       />
 
       {/* Official Technical Resume & Engineering Dossier Modal */}
@@ -367,7 +414,7 @@ function PortfolioMainContent() {
           const p = PROJECTS.find((item) => item.id === id);
           if (p) {
             setIsTerminalOpen(false);
-            setActiveProject(p);
+            handleOpenProjectModal(p);
           }
         }}
       />
@@ -377,6 +424,9 @@ function PortfolioMainContent() {
 
       {/* Floating Back To Top Button */}
       <BackToTop />
+
+      {/* Expandable Quick Actions Menu in Bottom-Left Corner */}
+      <QuickActionsMenu onOpenTerminal={() => setIsTerminalOpen(true)} />
 
       {/* Global Framer Motion Glassmorphism Theme Transition Overlay */}
       <ThemeTransitionOverlay />

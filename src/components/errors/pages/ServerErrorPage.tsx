@@ -27,15 +27,15 @@ export const ServerErrorPage: React.FC<ServerErrorPageProps> = ({ onReturnHome, 
     <ErrorPageLayout
       details={{
         code: '500',
-        badge: 'CORE SYSTEM EXCEPTION',
-        title: 'Internal Server Error',
-        subtitle: 'Something went wrong on our side.',
-        description: 'An unexpected exception halted internal server execution. The server core encountered a condition that prevented it from fulfilling the incoming request.',
-        protocolCode: 'HTTP_500_INTERNAL_SERVER_ERROR',
+        badge: 'CENTRAL CORE BREACH',
+        title: 'CORE MALFUNCTION',
+        subtitle: 'Something went wrong inside the system core.',
+        description: 'The central intelligence core has malfunctioned. Mechanical containment systems have isolated the fault to prevent cascading system anomalies while automated recovery sequences initialize.',
+        protocolCode: 'HTTP_500_CORE_FAULT',
       }}
       illustration={<ServerCoreFailure500Illustration />}
       primaryAction={{
-        label: isRetrying ? 'Rebooting Kernel...' : 'Try Again',
+        label: isRetrying ? 'Rebooting Core...' : 'Reboot Core',
         onClick: handleRetry,
         icon: <RefreshCw className={`w-4 h-4 ${isRetrying ? 'animate-spin' : ''}`} />,
         variant: 'primary',

@@ -1,21 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { ArrowUp } from 'lucide-react';
 
 export const BackToTop: React.FC = () => {
-  const [isVisible, setIsVisible] = useState(false);
+  const [isActive, setIsActive] = useState<boolean>(false);
+  const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 450) {
-        setIsVisible(true);
-      } else {
-        setIsVisible(false);
-      }
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 700;
+      // Transitions to active/visible once user scrolls past the first viewport height (100vh)
+      setIsActive(window.scrollY > viewportHeight);
     };
 
+    // Run initial scroll detection on mount
+    handleScroll();
+
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('resize', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
   }, []);
 
   const scrollToTop = () => {
@@ -24,17 +30,40 @@ export const BackToTop: React.FC = () => {
 
   return (
     <AnimatePresence>
-      {isVisible && (
+      {isActive && (
         <motion.button
-          initial={{ opacity: 0, scale: 0.8, y: 16 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.8, y: 16 }}
-          transition={{ duration: 0.25, ease: 'easeOut' }}
+          initial={
+            shouldReduceMotion
+              ? { opacity: 0, x: '-50%' }
+              : { opacity: 0, y: 24, x: '-50%' }
+          }
+          animate={
+            shouldReduceMotion
+              ? { opacity: 1, x: '-50%' }
+              : { opacity: 1, y: 0, x: '-50%' }
+          }
+          exit={
+            shouldReduceMotion
+              ? { opacity: 0, x: '-50%' }
+              : { opacity: 0, y: 20, x: '-50%' }
+          }
+          transition={{
+            duration: 0.35,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.96 }}
           onClick={scrollToTop}
           type="button"
           aria-label="Scroll to top of page"
           title="Return to top"
-          className="fixed bottom-20 right-4 sm:bottom-22 sm:right-5 z-40 p-2.5 bg-[#0e0e0e]/90 hover:bg-[#181818] text-white border border-white/20 hover:border-[var(--accent)] transition-colors rounded-xs shadow-xl backdrop-blur-md font-mono text-xs flex items-center gap-1.5 group cursor-pointer"
+          style={{
+            position: 'fixed',
+            left: '50%',
+            bottom: '24px',
+            zIndex: 50,
+          }}
+          className="fixed z-50 left-1/2 bottom-6 -translate-x-1/2 p-2.5 bg-[#0e0e0e]/90 hover:bg-[#181818] text-white border border-white/20 hover:border-[var(--accent)] transition-colors rounded-xs shadow-xl backdrop-blur-md font-mono text-xs flex items-center gap-1.5 group cursor-pointer select-none"
         >
           <ArrowUp className="w-3.5 h-3.5 text-[var(--accent)] group-hover:-translate-y-0.5 transition-transform" />
           <span className="hidden sm:inline text-[10px] uppercase font-bold tracking-wider">Top</span>

@@ -13,11 +13,11 @@ export const AccessDeniedPage: React.FC<AccessDeniedPageProps> = ({ onReturnHome
     <ErrorPageLayout
       details={{
         code: '403',
-        badge: 'SECURITY PERIMETER ACTIVE',
-        title: 'Access Denied',
-        subtitle: "You don't have permission to access this resource.",
-        description: 'Biometric authorization credentials or administrative cryptographic tokens were missing or insufficient to bypass this sector security bulkhead.',
-        protocolCode: 'HTTP_403_FORBIDDEN',
+        badge: 'RESTRICTED ZONE',
+        title: 'SECURITY LOCKDOWN',
+        subtitle: 'This sector is protected. Access has been denied.',
+        description: 'An unauthorized visitor has reached a restricted digital zone. Security scanners have engaged, forcefield barriers are active, and access to this sector is locked.',
+        protocolCode: 'HTTP_403_LOCKDOWN',
       }}
       illustration={<RestrictedZone403Illustration />}
       primaryAction={{
