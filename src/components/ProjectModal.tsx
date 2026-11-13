@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { X, Github, ArrowUpRight, CheckCircle2, ExternalLink, Info, Cpu, Binary, GitBranch, Layers, ArrowRight, Link2, Check } from 'lucide-react';
 import { ProjectItem } from '../types/portfolio';
 import { ProjectSimulator } from './ProjectSimulator';
+import { ProjectInsightsPanel } from './ProjectInsightsPanel';
 import { soundFX } from '../utils/soundEffects';
 
 interface ProjectModalProps {
@@ -162,6 +163,9 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
               </div>
             )}
           </div>
+
+          {/* Compact Project Insights (Verified Metrics + Conditional D3 Bar Chart) */}
+          <ProjectInsightsPanel project={project} />
 
           {/* Interactive Lifecycle Execution Trace */}
           <div className="border-t border-[var(--border-color)] pt-6">

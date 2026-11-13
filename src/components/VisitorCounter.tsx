@@ -24,23 +24,116 @@ const BASELINE_COUNT = 1428;
 // Module-level lock ensuring strict single-flight execution across concurrent renders
 let isSyncingGlobally = false;
 
+function isTransientNetworkError(error: unknown): boolean {
+  if (!error) return false;
+  const msg = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+  const code =
+    typeof error === 'object' && error !== null && 'code' in error
+      ? String((error as { code?: unknown }).code).toLowerCase()
+      : '';
+  return (
+    code === 'unavailable' ||
+    msg.includes('client is offline') ||
+    msg.includes('could not reach cloud firestore') ||
+    msg.includes('network') ||
+    msg.includes('failed to fetch')
+  );
+}
+
+function getCachedCount(): number {
+  try {
+    const cached = localStorage.getItem('portfolio_cached_visitors');
+    const parsed = cached ? parseInt(cached, 10) : NaN;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : BASELINE_COUNT;
+  } catch {
+    return BASELINE_COUNT;
+  }
+}
+
 export const VisitorCounter: React.FC<VisitorCounterProps> = ({ className = '' }) => {
   const [visitorCount, setVisitorCount] = useState<number | null>(null);
   const [displayCount, setDisplayCount] = useState<number>(BASELINE_COUNT);
   const [isNewVisitor, setIsNewVisitor] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isOfflineFallback, setIsOfflineFallback] = useState<boolean>(
+    typeof navigator !== 'undefined' ? !navigator.onLine : false
+  );
   const prevCountRef = useRef<number>(BASELINE_COUNT - 30);
-  const hasInitializedRef = useRef<boolean>(false);
 
   // 1. Fetch & Increment count strictly once per browser using localStorage
   useEffect(() => {
     let isMounted = true;
-    if (hasInitializedRef.current) return;
-    hasInitializedRef.current = true;
+    let hasResolved = false;
+    let unsubscribeSnapshot: (() => void) | null = null;
+    let loadingTimeoutId: number | null = null;
 
     const docRef = doc(db, 'analytics', ANALYTICS_DOC_ID);
 
+    const markLoaded = () => {
+      hasResolved = true;
+      if (loadingTimeoutId !== null) {
+        clearTimeout(loadingTimeoutId);
+        loadingTimeoutId = null;
+      }
+      if (isMounted) {
+        setIsLoading(false);
+      }
+    };
+
+    const applyCachedFallback = (incrementDisplay = false) => {
+      if (!isMounted) return;
+      const fallback = getCachedCount();
+      setVisitorCount(incrementDisplay ? fallback + 1 : fallback);
+      setIsOfflineFallback(true);
+      markLoaded();
+    };
+
+    const detachSnapshot = () => {
+      if (unsubscribeSnapshot) {
+        unsubscribeSnapshot();
+        unsubscribeSnapshot = null;
+      }
+    };
+
+    const attachSnapshot = () => {
+      if (unsubscribeSnapshot || !isMounted) return;
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+
+      unsubscribeSnapshot = onSnapshot(
+        docRef,
+        (snapshot) => {
+          if (!isMounted) return;
+          if (snapshot.exists()) {
+            const data = snapshot.data();
+            if (typeof data?.count === 'number') {
+              setVisitorCount(data.count);
+              setIsOfflineFallback(snapshot.metadata.fromCache);
+              try {
+                localStorage.setItem('portfolio_cached_visitors', data.count.toString());
+              } catch {
+                // Ignore storage quota errors
+              }
+              markLoaded();
+            }
+          }
+        },
+        (error) => {
+          if (!isMounted) return;
+          if (isTransientNetworkError(error)) {
+            applyCachedFallback(false);
+          } else {
+            console.warn('Firestore snapshot listener info:', error.message);
+          }
+        }
+      );
+    };
+
     async function syncVisitorCount() {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        applyCachedFallback(false);
+        return;
+      }
+
       let hasBeenCounted = false;
       let visitorId = '';
 
@@ -61,34 +154,18 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({ className = '' }
       }
 
       // Case A: This browser has ALREADY been counted previously.
-      // Simply fetch the current count and DO NOT increment.
+      // Let onSnapshot fetch and maintain live synchronization without duplicate getDoc calls.
       if (hasBeenCounted) {
-        try {
-          const docSnap = await getDoc(docRef);
-          if (isMounted) {
-            if (docSnap.exists()) {
-              const data = docSnap.data();
-              const count = typeof data?.count === 'number' ? data.count : BASELINE_COUNT;
-              setVisitorCount(count);
-            } else {
-              setVisitorCount(BASELINE_COUNT);
-            }
-            setIsLoading(false);
-          }
-        } catch (err) {
-          console.warn('Firestore read error in visitor counter:', err);
-          if (isMounted) {
-            const cached = localStorage.getItem('portfolio_cached_visitors');
-            setVisitorCount(cached ? parseInt(cached, 10) : BASELINE_COUNT);
-            setIsLoading(false);
-          }
-        }
+        attachSnapshot();
         return;
       }
 
       // Case B: Brand new browser visit.
-      // Guard against race conditions (e.g. React StrictMode double-mounting or multiple tabs)
-      if (isSyncingGlobally) return;
+      // Guard against race conditions (e.g. concurrent renders or multiple tabs)
+      if (isSyncingGlobally) {
+        attachSnapshot();
+        return;
+      }
       isSyncingGlobally = true;
 
       // Mark as counted IMMEDIATELY so any subsequent refresh or concurrent tab never increments again
@@ -103,6 +180,11 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({ className = '' }
         try {
           docSnap = await getDoc(docRef);
         } catch (err) {
+          if (isTransientNetworkError(err)) {
+            applyCachedFallback(true);
+            setIsNewVisitor(true);
+            return;
+          }
           handleFirestoreError(err, OperationType.GET, `analytics/${ANALYTICS_DOC_ID}`);
           return;
         }
@@ -116,13 +198,19 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({ className = '' }
               lastUpdated: new Date().toISOString(),
             });
           } catch (err) {
+            if (isTransientNetworkError(err)) {
+              applyCachedFallback(true);
+              setIsNewVisitor(true);
+              return;
+            }
             handleFirestoreError(err, OperationType.CREATE, `analytics/${ANALYTICS_DOC_ID}`);
           }
 
           if (isMounted) {
             setVisitorCount(initialCount);
+            setIsOfflineFallback(false);
             setIsNewVisitor(true);
-            setIsLoading(false);
+            markLoaded();
           }
         } else {
           // Document exists: atomically increment visitor count in Firestore
@@ -136,57 +224,66 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({ className = '' }
               lastUpdated: new Date().toISOString(),
             });
           } catch (err) {
+            if (isTransientNetworkError(err)) {
+              applyCachedFallback(true);
+              setIsNewVisitor(true);
+              return;
+            }
             handleFirestoreError(err, OperationType.UPDATE, `analytics/${ANALYTICS_DOC_ID}`);
           }
 
           if (isMounted) {
             setVisitorCount(nextCount);
+            setIsOfflineFallback(false);
             setIsNewVisitor(true);
-            setIsLoading(false);
+            markLoaded();
           }
         }
+
+        attachSnapshot();
       } catch (err) {
         console.warn('Firestore write error, falling back to cached baseline:', err);
         if (isMounted) {
-          const cached = localStorage.getItem('portfolio_cached_visitors');
-          const fallback = cached ? parseInt(cached, 10) : BASELINE_COUNT;
-          setVisitorCount(fallback + 1);
+          applyCachedFallback(true);
           setIsNewVisitor(true);
-          setIsLoading(false);
         }
       } finally {
         isSyncingGlobally = false;
       }
     }
 
+    // Ensure loading indicator never stalls indefinitely if network is blocked
+    loadingTimeoutId = window.setTimeout(() => {
+      if (isMounted && !hasResolved) {
+        applyCachedFallback(false);
+      }
+    }, 6000);
+
     syncVisitorCount();
 
-    // Attach real-time Firestore onSnapshot listener for live synchronization across all visitors
-    const unsubscribe = onSnapshot(
-      docRef,
-      (snapshot) => {
-        if (!isMounted) return;
-        if (snapshot.exists()) {
-          const data = snapshot.data();
-          if (typeof data?.count === 'number') {
-            setVisitorCount(data.count);
-            try {
-              localStorage.setItem('portfolio_cached_visitors', data.count.toString());
-            } catch {
-              // Ignore
-            }
-            setIsLoading(false);
-          }
-        }
-      },
-      (error) => {
-        console.warn('Firestore snapshot listener info:', error.message);
-      }
-    );
+    const handleOnline = () => {
+      if (!isMounted) return;
+      setIsOfflineFallback(false);
+      attachSnapshot();
+    };
+
+    const handleOffline = () => {
+      if (!isMounted) return;
+      detachSnapshot();
+      applyCachedFallback(false);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
     return () => {
       isMounted = false;
-      unsubscribe();
+      if (loadingTimeoutId !== null) {
+        clearTimeout(loadingTimeoutId);
+      }
+      detachSnapshot();
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
@@ -224,8 +321,14 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({ className = '' }
         <div className="relative flex items-center justify-center w-8 h-8 rounded bg-white/5 border border-white/10 text-white/80 group-hover:text-white transition-colors">
           <Eye className="w-4 h-4 text-[#E11D48]" />
           <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            {!isOfflineFallback && (
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            )}
+            <span
+              className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                isOfflineFallback ? 'bg-amber-400' : 'bg-emerald-500'
+              }`}
+            ></span>
           </span>
         </div>
 
@@ -233,9 +336,13 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({ className = '' }
           <div className="flex items-center gap-1.5 text-[10px] tracking-wider text-white/50 uppercase font-semibold">
             <span>TOTAL VISITORS</span>
             <span className="inline-block w-1 h-1 rounded-full bg-white/30"></span>
-            <span className="text-emerald-400 font-bold flex items-center gap-1">
+            <span
+              className={`font-bold flex items-center gap-1 ${
+                isOfflineFallback ? 'text-amber-400' : 'text-emerald-400'
+              }`}
+            >
               <Activity className="w-2.5 h-2.5 inline" />
-              FIRESTORE LIVE
+              {isOfflineFallback ? 'CACHED SYNC' : 'FIRESTORE LIVE'}
             </span>
           </div>
 
