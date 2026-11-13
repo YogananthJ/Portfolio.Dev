@@ -435,6 +435,7 @@ def adapt_system_prompt(user_text: str, cadence_pause_ms: int):
       {/* Dynamic Background Particle & Geometric Grid Canvas */}
       <canvas
         ref={canvasRef}
+        aria-hidden="true"
         className="absolute inset-0 w-full h-full pointer-events-none opacity-60 z-0"
       />
 

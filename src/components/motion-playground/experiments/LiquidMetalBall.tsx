@@ -450,6 +450,8 @@ export const LiquidMetalBall: React.FC<LiquidMetalBallProps> = ({
       {/* Canvas */}
       <canvas
         ref={canvasRef}
+        role="img"
+        aria-label="Interactive reflective liquid metal chrome sphere simulation"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}

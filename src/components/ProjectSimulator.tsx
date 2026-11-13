@@ -602,6 +602,7 @@ export const ProjectSimulator: React.FC<ProjectSimulatorProps> = ({ project }) =
               <div className="relative h-44 bg-zinc-900 border border-[var(--border-color)] flex items-center justify-center overflow-hidden">
                 {/* Simulated Satellite Tile */}
                 <div
+                  aria-hidden="true"
                   className="absolute inset-0 opacity-60"
                   style={{
                     backgroundColor: spectralBand === 'rgb' ? '#3f3f46' : spectralBand === 'swir' ? '#18181b' : '#09090b',

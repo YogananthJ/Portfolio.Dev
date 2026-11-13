@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ImageOff } from 'lucide-react';
 
 interface ImageWithFallbackProps extends React.ImgHTMLAttributes<HTMLImageElement> {
@@ -12,9 +12,14 @@ export const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
   fallbackText = 'IMAGE_UNAVAILABLE',
   className = '',
   fallbackClassName = '',
+  decoding = 'async',
   ...props
 }) => {
   const [hasError, setHasError] = useState<boolean>(false);
+
+  useEffect(() => {
+    setHasError(false);
+  }, [src]);
 
   if (hasError || !src) {
     return (
@@ -36,6 +41,7 @@ export const ImageWithFallback: React.FC<ImageWithFallbackProps> = ({
     <img
       src={src}
       alt={alt}
+      decoding={decoding}
       className={className}
       onError={() => setHasError(true)}
       {...props}

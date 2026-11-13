@@ -290,6 +290,8 @@ export const InfiniteTunnel: React.FC<InfiniteTunnelProps> = ({
       {/* Canvas */}
       <canvas
         ref={canvasRef}
+        role="img"
+        aria-label="Interactive infinite perspective geometric tunnel animation"
         onPointerMove={handlePointerMove}
         onPointerLeave={handlePointerLeave}
         className="w-full h-full block touch-none cursor-pointer"

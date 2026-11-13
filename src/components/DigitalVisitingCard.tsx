@@ -686,6 +686,8 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                       onError={() => setAvatarError(true)}
                       className="w-full h-full object-contain object-bottom select-none group-hover/front:scale-104 transition-transform duration-300"
                       loading="eager"
+                      decoding="async"
+                      fetchPriority="high"
                     />
                   )}
                 </div>
@@ -959,13 +961,14 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                   {/* Clean Avatar Thumbnail */}
                   <div className="w-13 h-13 sm:w-15 sm:h-15 rounded-md border-2 border-rose-500 bg-white p-0.5 shrink-0 overflow-hidden shadow-sm flex items-center justify-center">
                     {avatarError ? (
-                      <span className="font-display font-black text-base text-[#121216]" aria-label="Yogananth J initials">
+                      <span className="font-display font-black text-base text-[#121216]" aria-hidden="true">
                         YJ
                       </span>
                     ) : (
                       <img
                         src="/assets/aistudio/favicon_507da8ac.png"
-                        alt="Yogananth J profile avatar"
+                        alt=""
+                        aria-hidden="true"
                         width={60}
                         height={60}
                         loading="lazy"
@@ -1077,7 +1080,11 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                       {qrCodeUrl ? (
                         <img 
                           src={qrCodeUrl} 
-                          alt="Portfolio QR Code" 
+                          alt="QR code linking to iam-mjyogananth.pages.dev"
+                          width={36}
+                          height={36}
+                          loading="lazy"
+                          decoding="async"
                           className="w-8 h-8 sm:w-9 sm:h-9"
                         />
                       ) : (

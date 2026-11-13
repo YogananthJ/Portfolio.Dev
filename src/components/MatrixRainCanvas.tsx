@@ -73,7 +73,7 @@ export const MatrixRainCanvas: React.FC<MatrixRainCanvasProps> = ({ onExit }) =>
 
   return (
     <div className="relative w-full h-full min-h-[360px] bg-[#050D08] overflow-hidden flex flex-col justify-between p-4 font-mono select-none">
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
+      <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 w-full h-full" />
       <div className="relative z-10 flex items-center justify-between text-xs text-emerald-400 bg-black/60 px-3 py-1.5 border border-emerald-500/40">
         <span className="font-bold flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>

@@ -443,6 +443,8 @@ export const AtomicNetwork: React.FC<AtomicNetworkProps> = ({
       {/* Canvas */}
       <canvas
         ref={canvasRef}
+        role="img"
+        aria-label="Interactive molecular spring lattice and shockwave particle simulation"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerLeave}

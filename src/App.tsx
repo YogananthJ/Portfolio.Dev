@@ -16,6 +16,7 @@ import { LayoutProvider, useLayout } from './context/LayoutContext';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ProjectItem } from './types/portfolio';
 import { PROJECTS } from './data/portfolioData';
+import { ALL_EXPERIMENT_DETAILS } from './components/motion-playground/detail-data';
 import { ScrollProgressBar } from './components/common/ScrollProgressBar';
 import { BackToTop } from './components/common/BackToTop';
 import { QuickActionsMenu } from './components/common/QuickActionsMenu';
@@ -92,11 +93,17 @@ function PortfolioMainContent() {
     // Motion Lab detail pages
     if (pathname.startsWith('/motion-lab/')) {
       const expId = pathname.replace('/motion-lab/', '').split('/')[0];
-      return { page: 'motion-detail', experimentId: expId };
+      if (expId && Object.prototype.hasOwnProperty.call(ALL_EXPERIMENT_DETAILS, expId)) {
+        return { page: 'motion-detail', experimentId: expId };
+      }
+      return { page: 'error-404', experimentId: '' };
     }
     if (hash.startsWith('#/motion-lab/') || hash.startsWith('#motion-lab/')) {
       const expId = hash.replace(/^#\/?motion-lab\//, '').split('/')[0];
-      return { page: 'motion-detail', experimentId: expId };
+      if (expId && Object.prototype.hasOwnProperty.call(ALL_EXPERIMENT_DETAILS, expId)) {
+        return { page: 'motion-detail', experimentId: expId };
+      }
+      return { page: 'error-404', experimentId: '' };
     }
 
     // Specific custom error routes (e.g. /404, /offline, /500, /403, /408, /502, /503, /504, /app-error)
@@ -137,6 +144,66 @@ function PortfolioMainContent() {
       window.removeEventListener('hashchange', handleRouteChange);
     };
   }, []);
+
+  // Synchronize document title, meta description, robots, canonical, and OG tags with active route
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const BASE_URL = 'https://iam-mjyogananth.pages.dev';
+    const DEFAULT_TITLE = 'Yogananth J | AI/ML Engineer & Full-Stack Developer';
+    const DEFAULT_DESC =
+      'Portfolio of Yogananth J: AI/ML Engineer & Full-Stack Developer building RAG pipelines, CrewAI agents, PyTorch vision models, and React web apps.';
+
+    const setMeta = (attr: 'name' | 'property', key: string, content: string) => {
+      const el = document.querySelector(`meta[${attr}="${key}"]`);
+      if (el) el.setAttribute('content', content);
+    };
+
+    const canonicalEl = document.querySelector('link[rel="canonical"]');
+
+    if (route.page.startsWith('error-')) {
+      const code = route.page.replace('error-', '').toUpperCase();
+      const errTitle = `${code} | Yogananth J`;
+      document.title = errTitle;
+      setMeta('name', 'robots', 'noindex, nofollow');
+      setMeta('name', 'description', DEFAULT_DESC);
+      if (canonicalEl) canonicalEl.setAttribute('href', `${BASE_URL}/`);
+      setMeta('property', 'og:title', errTitle);
+      setMeta('property', 'og:url', `${BASE_URL}/`);
+      return;
+    }
+
+    if (route.page === 'motion-detail' && route.experimentId) {
+      const detail =
+        ALL_EXPERIMENT_DETAILS[route.experimentId as keyof typeof ALL_EXPERIMENT_DETAILS];
+      if (detail) {
+        const expUrl = `${BASE_URL}/motion-lab/${detail.id}`;
+        const expTitle = `${detail.title} — Motion Lab | Yogananth J`;
+        const expDesc = `${detail.subtitle}. ${detail.description}`.slice(0, 158);
+        document.title = expTitle;
+        setMeta('name', 'robots', 'index, follow');
+        setMeta('name', 'description', expDesc);
+        if (canonicalEl) canonicalEl.setAttribute('href', expUrl);
+        setMeta('property', 'og:title', expTitle);
+        setMeta('property', 'og:description', expDesc);
+        setMeta('property', 'og:url', expUrl);
+        setMeta('name', 'twitter:title', expTitle);
+        setMeta('name', 'twitter:description', expDesc);
+        setMeta('name', 'twitter:url', expUrl);
+        return;
+      }
+    }
+
+    document.title = DEFAULT_TITLE;
+    setMeta('name', 'robots', 'index, follow');
+    setMeta('name', 'description', DEFAULT_DESC);
+    if (canonicalEl) canonicalEl.setAttribute('href', `${BASE_URL}/`);
+    setMeta('property', 'og:title', DEFAULT_TITLE);
+    setMeta('property', 'og:description', DEFAULT_DESC);
+    setMeta('property', 'og:url', `${BASE_URL}/`);
+    setMeta('name', 'twitter:title', DEFAULT_TITLE);
+    setMeta('name', 'twitter:description', DEFAULT_DESC);
+    setMeta('name', 'twitter:url', `${BASE_URL}/`);
+  }, [route]);
 
   // Listen for Error Experience Hub launch events from Terminal or Workspace Controls
   useEffect(() => {

@@ -39,8 +39,7 @@ export const MotionExperimentPage: React.FC<MotionExperimentPageProps> = ({
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    document.title = `${detail.title} — Motion Lab | Yogananth`;
-  }, [detail.title]);
+  }, [experimentId]);
 
   const handleRegisterControls = (controls: { reset: () => void; replay: () => void }) => {
     previewControlsRef.current = controls;

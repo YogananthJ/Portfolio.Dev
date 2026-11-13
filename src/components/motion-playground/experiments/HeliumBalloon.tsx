@@ -775,6 +775,8 @@ export const HeliumBalloon: React.FC<HeliumBalloonProps> = ({
       {/* Main Interactive Canvas */}
       <canvas
         ref={canvasRef}
+        role="img"
+        aria-label="Interactive helium balloon physics simulation with draggable kraft tag"
         className="w-full h-full block touch-none cursor-grab active:cursor-grabbing"
       />
 

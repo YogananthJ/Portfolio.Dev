@@ -798,6 +798,8 @@ export const GalacticCore: React.FC<GalacticCoreProps> = ({
       {/* Main Simulation Canvas */}
       <canvas
         ref={canvasRef}
+        role="img"
+        aria-label="Interactive rotating barred spiral galaxy particle simulation"
         className="w-full h-full block touch-none cursor-grab active:cursor-grabbing"
       />
 
