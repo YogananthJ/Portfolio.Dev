@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { PERSONAL_INFO, PROJECTS, CERTIFICATIONS, SKILL_CATEGORIES } from '../data/portfolioData';
 import { soundFX } from '../utils/soundEffects';
+import { useDialogA11y } from '../hooks/useDialogA11y';
 
 interface ResumeModalProps {
   isOpen: boolean;
@@ -31,20 +32,18 @@ interface ResumeModalProps {
 
 export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose }) => {
   const [copied, setCopied] = useState<boolean>(false);
+  const dialogRef = React.useRef<HTMLDivElement | null>(null);
+
+  useDialogA11y(isOpen, dialogRef, onClose);
 
   React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
     if (isOpen) {
       document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleKeyDown);
     }
     return () => {
       document.body.style.overflow = 'auto';
-      window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -58,7 +57,7 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose }) => 
 AI Engineer | Full-Stack Developer | Automation Specialist
 Email: ${PERSONAL_INFO.email} | Location: ${PERSONAL_INFO.location}
 GitHub: ${PERSONAL_INFO.github} | LinkedIn: ${PERSONAL_INFO.linkedin}
-Portfolio: https://github.com/YogananthJ
+Portfolio: https://iam-mjyogananth.pages.dev
 
 ------------------------------------------------------------
 PROFESSIONAL SUMMARY
@@ -151,13 +150,19 @@ ACADEMIC EDUCATION
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto" onClick={onClose}>
         <motion.div
+          ref={dialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="resume-modal-title"
+          tabIndex={-1}
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ duration: 0.25, ease: 'easeOut' }}
-          className="relative w-full max-w-4xl bg-[#0F0F11] border border-white/20 rounded-xs shadow-2xl overflow-hidden my-6 max-h-[92vh] flex flex-col font-sans"
+          onClick={(e) => e.stopPropagation()}
+          className="relative w-full max-w-4xl bg-[#0F0F11] border border-white/20 rounded-xs shadow-2xl overflow-hidden my-6 max-h-[92vh] flex flex-col font-sans focus:outline-none"
         >
           {/* Modal Top Control Bar */}
           <div className="flex items-center justify-between px-5 py-3.5 bg-[#18181B] border-b border-white/10 shrink-0 font-mono text-xs">
@@ -222,9 +227,9 @@ ACADEMIC EDUCATION
             <header className="border-b border-white/15 pb-6">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div>
-                  <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white font-display">
+                  <h2 id="resume-modal-title" className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white font-display">
                     YOGANANTH J
-                  </h1>
+                  </h2>
                   <p className="text-sm sm:text-base font-bold text-[var(--accent)] font-mono mt-1">
                     AI Engineer · Full-Stack Developer · Automation Specialist
                   </p>
@@ -242,13 +247,13 @@ ACADEMIC EDUCATION
                   </div>
                   <div className="flex items-center sm:justify-end gap-1.5">
                     <Github className="w-3.5 h-3.5 text-emerald-400" />
-                    <a href={PERSONAL_INFO.github} target="_blank" rel="noreferrer" className="hover:text-white underline">
+                    <a href={PERSONAL_INFO.github} target="_blank" rel="noopener noreferrer" className="hover:text-white underline">
                       github.com/YogananthJ
                     </a>
                   </div>
                   <div className="flex items-center sm:justify-end gap-1.5">
                     <Linkedin className="w-3.5 h-3.5 text-sky-400" />
-                    <a href={PERSONAL_INFO.linkedin} target="_blank" rel="noreferrer" className="hover:text-white underline">
+                    <a href={PERSONAL_INFO.linkedin} target="_blank" rel="noopener noreferrer" className="hover:text-white underline">
                       linkedin.com/in/yogananth-j
                     </a>
                   </div>
@@ -262,10 +267,10 @@ ACADEMIC EDUCATION
 
             {/* 2. Industry Certifications */}
             <section className="space-y-3">
-              <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2 border-b border-white/10 pb-1">
+              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2 border-b border-white/10 pb-1">
                 <Award className="w-4 h-4 text-amber-400" />
                 <span>Verified Industry Certifications</span>
-              </h2>
+              </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 font-mono text-xs">
                 {CERTIFICATIONS.map((cert) => (
@@ -286,10 +291,10 @@ ACADEMIC EDUCATION
 
             {/* 3. Core Technical Skills */}
             <section className="space-y-3">
-              <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-sky-400 flex items-center gap-2 border-b border-white/10 pb-1">
+              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-sky-400 flex items-center gap-2 border-b border-white/10 pb-1">
                 <Cpu className="w-4 h-4 text-sky-400" />
                 <span>Technical Skills Matrix</span>
-              </h2>
+              </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs font-mono">
                 <div className="p-3 bg-[#16161A] border border-white/10 rounded-xs space-y-1">
@@ -324,13 +329,13 @@ ACADEMIC EDUCATION
 
             {/* 4. Flagship Projects & Engineering Builds */}
             <section className="space-y-4">
-              <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-400 flex items-center justify-between border-b border-white/10 pb-1">
+              <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-400 flex items-center justify-between border-b border-white/10 pb-1">
                 <span className="flex items-center gap-2">
                   <Layers className="w-4 h-4 text-emerald-400" />
                   <span>Featured Engineering Builds &amp; Demonstrators</span>
                 </span>
                 <span className="text-[10px] text-zinc-400">10 Verified Systems</span>
-              </h2>
+              </h3>
 
               <div className="space-y-3.5">
                 {/* Project 1: Vibeathon */}
@@ -367,7 +372,7 @@ ACADEMIC EDUCATION
                     <a
                       href="https://cognitive-core-ai.streamlit.app/"
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       className="font-mono text-xs text-sky-400 hover:underline flex items-center gap-1"
                     >
                       <span>cognitive-core-ai.streamlit.app</span>
@@ -395,7 +400,7 @@ ACADEMIC EDUCATION
                     <a
                       href="https://t.me/CareerPilotAgent2026_bot"
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       className="font-mono text-xs text-sky-400 hover:underline flex items-center gap-1"
                     >
                       <span>@CareerPilotAgent2026_bot</span>

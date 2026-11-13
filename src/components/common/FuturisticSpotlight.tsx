@@ -66,7 +66,14 @@ export const FuturisticSpotlight: React.FC = () => {
       scrollTimeout: null as number | null,
     };
 
-    let rafId: number;
+    let rafId: number | null = null;
+    let isDisposed = false;
+
+    const scheduleLoop = () => {
+      if (!isDisposed && rafId === null && !document.hidden) {
+        rafId = requestAnimationFrame(updateLoop);
+      }
+    };
 
     // Direct helper to trigger outward shockwave ripples without React re-renders
     const triggerRipple = (
@@ -113,6 +120,7 @@ export const FuturisticSpotlight: React.FC = () => {
         if (cursorRootRef.current) cursorRootRef.current.style.opacity = '1';
         if (spotlightRef.current) spotlightRef.current.style.opacity = '1';
       }
+      scheduleLoop();
 
       // Check text selection in progress
       const hasSelection = typeof window !== 'undefined' && window.getSelection && (window.getSelection()?.toString().length ?? 0) > 0;
@@ -266,6 +274,7 @@ export const FuturisticSpotlight: React.FC = () => {
     const handleScroll = () => {
       state.isScrolling = true;
       if (state.scrollTimeout) window.clearTimeout(state.scrollTimeout);
+      scheduleLoop();
 
       state.scrollTimeout = window.setTimeout(() => {
         state.isScrolling = false;
@@ -277,6 +286,7 @@ export const FuturisticSpotlight: React.FC = () => {
       state.isPointerInWindow = true;
       if (cursorRootRef.current) cursorRootRef.current.style.opacity = '1';
       if (spotlightRef.current) spotlightRef.current.style.opacity = '1';
+      scheduleLoop();
     };
 
     const handlePointerLeave = () => {
@@ -375,7 +385,31 @@ export const FuturisticSpotlight: React.FC = () => {
         spotlightRef.current.style.background = `radial-gradient(650px circle at ${state.targetX}px ${state.targetY}px, rgba(225, 29, 72, 0.05), rgba(56, 189, 248, 0.02), transparent 75%)`;
       }
 
-      rafId = requestAnimationFrame(updateLoop);
+      const settled =
+        Math.abs(state.targetX + state.magneticX - state.currentX) < 0.05 &&
+        Math.abs(state.targetY + state.magneticY - state.currentY) < 0.05 &&
+        Math.abs(targetScaleX - state.currentScaleX) < 0.002 &&
+        Math.abs(targetScaleY - state.currentScaleY) < 0.002 &&
+        !state.isScrolling &&
+        !state.isDragging;
+
+      rafId = null;
+      if (!isDisposed && !document.hidden && (state.isPointerInWindow || !settled)) {
+        if (!settled || state.isScrolling || state.isDragging || state.speed > 0.1) {
+          rafId = requestAnimationFrame(updateLoop);
+        }
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        if (rafId !== null) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+      } else if (state.isPointerInWindow) {
+        scheduleLoop();
+      }
     };
 
     // Attach listeners with passive options for maximum scroll/touch performance
@@ -387,10 +421,12 @@ export const FuturisticSpotlight: React.FC = () => {
     window.addEventListener('scroll', handleScroll, { passive: true });
     document.addEventListener('pointerenter', handlePointerEnter, { passive: true });
     document.addEventListener('pointerleave', handlePointerLeave, { passive: true });
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    rafId = requestAnimationFrame(updateLoop);
+    scheduleLoop();
 
     return () => {
+      isDisposed = true;
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerdown', handlePointerDown);
       window.removeEventListener('pointerup', handlePointerUp);
@@ -399,7 +435,8 @@ export const FuturisticSpotlight: React.FC = () => {
       window.removeEventListener('scroll', handleScroll);
       document.removeEventListener('pointerenter', handlePointerEnter);
       document.removeEventListener('pointerleave', handlePointerLeave);
-      cancelAnimationFrame(rafId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (rafId !== null) cancelAnimationFrame(rafId);
       if (state.scrollTimeout) window.clearTimeout(state.scrollTimeout);
     };
   }, []);

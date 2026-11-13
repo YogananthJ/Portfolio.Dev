@@ -233,7 +233,7 @@ export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal })
                           <a
                             href={proj.demoUrl}
                             target="_blank"
-                            rel="noreferrer"
+                            rel="noopener noreferrer"
                             className="p-1.5 text-[var(--accent)] hover:underline font-bold"
                             title="Open Live App"
                           >
@@ -243,7 +243,7 @@ export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal })
                         <a
                           href={proj.githubUrl}
                           target="_blank"
-                          rel="noreferrer"
+                          rel="noopener noreferrer"
                           className="p-1.5 text-[var(--text-muted)] hover:text-[var(--text-main)]"
                           title="View Repository"
                         >

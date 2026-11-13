@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { applyUtmToAnchor, processExternalLinksInRoot } from '../utils/utmTracker';
+import { trackExternalLinkClick } from '../utils/linkAnalytics';
 
 /**
  * Global React hook that attaches `utm_source=<window.location.hostname>`
@@ -48,16 +49,19 @@ export function useGlobalUtmTracking(): void {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['href', 'download'],
+      attributeFilter: ['href', 'download', 'target', 'rel'],
     });
 
     // 3. Capture-phase interaction guard before navigation or context-menu copy
     const handleAnchorInteraction = (event: Event) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
-      const anchor = target.closest('a[href]');
+      const anchor = target.closest('a[href], a[target="_blank"]');
       if (anchor instanceof HTMLAnchorElement) {
         applyUtmToAnchor(anchor);
+        if (event.type === 'click' || event.type === 'auxclick') {
+          trackExternalLinkClick(anchor);
+        }
       }
     };
 

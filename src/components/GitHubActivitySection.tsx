@@ -1474,9 +1474,9 @@ export const GitHubActivitySection: React.FC = () => {
                     <FileDown className="w-4 h-4 text-emerald-400" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-base text-white uppercase">
+                    <h2 id="github-export-modal-title" className="font-bold text-base text-white uppercase">
                       Executive GitHub Telemetry Report
-                    </h3>
+                    </h2>
                     <p className="text-xs text-zinc-400">
                       High-quality vector report card ready for print &amp; PDF export
                     </p>
@@ -1504,9 +1504,9 @@ export const GitHubActivitySection: React.FC = () => {
                       <Sparkles className="w-3 h-3" />
                       <span>OFFICIAL DEVELOPER TELEMETRY AUDIT</span>
                     </div>
-                    <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight uppercase">
+                    <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight uppercase">
                       Yogananth J // Open-Source Telemetry
-                    </h2>
+                    </h3>
                     <p className="text-xs text-zinc-400 mt-0.5">
                       Profile: <span className="text-white font-bold">github.com/{GITHUB_USERNAME}</span>
                     </p>

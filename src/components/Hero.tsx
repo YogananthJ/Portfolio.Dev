@@ -77,7 +77,13 @@ export const Hero: React.FC<HeroProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let animationFrameId: number;
+    let animationFrameId: number | null = null;
+    let isDisposed = false;
+    let isPageVisible = !document.hidden;
+    let isCanvasInView = true;
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let prefersReduced = motionQuery.matches;
+
     let width = (canvas.width = canvas.parentElement?.clientWidth || window.innerWidth);
     let height = (canvas.height = canvas.parentElement?.clientHeight || 650);
 
@@ -284,13 +290,74 @@ export const Hero: React.FC<HeroProps> = ({
         ctx.fill();
       }
 
-      animationFrameId = requestAnimationFrame(render);
+      if (!prefersReduced && isPageVisible && isCanvasInView && !isDisposed) {
+        animationFrameId = requestAnimationFrame(render);
+      } else {
+        animationFrameId = null;
+      }
     };
+
+    const startLoop = () => {
+      if (isDisposed || animationFrameId !== null) return;
+      if (prefersReduced) {
+        render();
+        return;
+      }
+      if (isPageVisible && isCanvasInView) {
+        animationFrameId = requestAnimationFrame(render);
+      }
+    };
+
+    const stopLoop = () => {
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      isPageVisible = !document.hidden;
+      if (isPageVisible && isCanvasInView && !prefersReduced) {
+        startLoop();
+      } else {
+        stopLoop();
+      }
+    };
+
+    const handleMotionChange = (e: MediaQueryListEvent) => {
+      prefersReduced = e.matches;
+      stopLoop();
+      startLoop();
+    };
+
+    let intersectionObserver: IntersectionObserver | null = null;
+    if (typeof IntersectionObserver !== 'undefined') {
+      intersectionObserver = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0];
+          isCanvasInView = entry ? entry.isIntersecting : true;
+          if (isCanvasInView && isPageVisible && !prefersReduced) {
+            startLoop();
+          } else {
+            stopLoop();
+          }
+        },
+        { threshold: 0.01 }
+      );
+      intersectionObserver.observe(canvas);
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    motionQuery.addEventListener('change', handleMotionChange);
 
     render();
 
     return () => {
-      cancelAnimationFrame(animationFrameId);
+      isDisposed = true;
+      stopLoop();
+      intersectionObserver?.disconnect();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      motionQuery.removeEventListener('change', handleMotionChange);
       window.removeEventListener('resize', handleResize);
       canvas.parentElement?.removeEventListener('mousemove', onMouseMove);
       canvas.parentElement?.removeEventListener('mouseleave', onMouseLeave);

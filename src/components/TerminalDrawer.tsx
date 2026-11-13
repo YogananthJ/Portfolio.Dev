@@ -390,13 +390,13 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
             <div className="space-y-1.5 pl-2">
               <div>
                 <span className="text-white/60">GitHub: </span>
-                <a href={PERSONAL_INFO.github} target="_blank" rel="noreferrer" className="text-blue-400 underline font-bold">
+                <a href={PERSONAL_INFO.github} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline font-bold">
                   {PERSONAL_INFO.github}
                 </a>
               </div>
               <div>
                 <span className="text-white/60">LinkedIn: </span>
-                <a href={PERSONAL_INFO.linkedin} target="_blank" rel="noreferrer" className="text-blue-400 underline font-bold">
+                <a href={PERSONAL_INFO.linkedin} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline font-bold">
                   {PERSONAL_INFO.linkedin}
                 </a>
               </div>
@@ -583,7 +583,7 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
               </div>
 
               <div className="pt-2 border-t border-white/10 flex items-center justify-between">
-                <a href={found.githubUrl} target="_blank" rel="noreferrer" className="text-blue-400 underline flex items-center gap-1">
+                <a href={found.githubUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline flex items-center gap-1">
                   <span>GitHub Repository</span>
                   <ArrowUpRight className="w-3 h-3" />
                 </a>
@@ -616,7 +616,7 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
                   <button onClick={() => onSelectProject?.(p.id)} className="text-[#E11D48] underline font-bold text-[10px]">
                     [Run Simulator]
                   </button>
-                  <a href={p.githubUrl} target="_blank" rel="noreferrer" className="text-blue-400 underline text-[10px]">
+                  <a href={p.githubUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-[10px]">
                     [Inspect Source]
                   </a>
                 </div>
@@ -746,7 +746,7 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
             <a
               href={PERSONAL_INFO.github}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-[#E11D48] text-white border border-white/20 transition-colors font-bold"
             >
               <span>Visit github.com/YogananthJ</span>
@@ -1121,8 +1121,8 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
             <div className="text-emerald-400 font-bold uppercase">VERIFIED CONTACT CHANNELS:</div>
             <div className="space-y-1 text-white/90">
               <div>* <strong>Direct Email:</strong> <a href={`mailto:${PERSONAL_INFO.email}`} className="text-[#E11D48] underline font-bold">{PERSONAL_INFO.email}</a></div>
-              <div>* <strong>LinkedIn:</strong> <a href={PERSONAL_INFO.linkedin} target="_blank" rel="noreferrer" className="text-blue-400 underline">{PERSONAL_INFO.linkedin}</a></div>
-              <div>* <strong>GitHub:</strong> <a href={PERSONAL_INFO.github} target="_blank" rel="noreferrer" className="text-blue-400 underline">{PERSONAL_INFO.github}</a></div>
+              <div>* <strong>LinkedIn:</strong> <a href={PERSONAL_INFO.linkedin} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">{PERSONAL_INFO.linkedin}</a></div>
+              <div>* <strong>GitHub:</strong> <a href={PERSONAL_INFO.github} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">{PERSONAL_INFO.github}</a></div>
               <div>* <strong>Location:</strong> {PERSONAL_INFO.location}</div>
             </div>
             <div className="pt-1">
@@ -1199,10 +1199,10 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
       case 'linkedin': {
         outputNode = (
           <div className="text-xs">
-            Opening LinkedIn profile: <a href={PERSONAL_INFO.linkedin} target="_blank" rel="noreferrer" className="text-blue-400 underline font-bold">{PERSONAL_INFO.linkedin}</a>
+            Opening LinkedIn profile: <a href={PERSONAL_INFO.linkedin} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline font-bold">{PERSONAL_INFO.linkedin}</a>
           </div>
         );
-        window.open(appendUtmSource(PERSONAL_INFO.linkedin), '_blank');
+        window.open(appendUtmSource(PERSONAL_INFO.linkedin), '_blank', 'noopener,noreferrer');
         break;
       }
 
@@ -1525,6 +1525,7 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
     <div
       role="dialog"
       aria-modal="true"
+      aria-label="Developer Terminal Console"
       className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/80 backdrop-blur-xs font-mono"
       onClick={onClose}
     >

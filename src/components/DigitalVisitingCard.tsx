@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import QRCode from 'qrcode';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
 import { 
   Mail, 
   Linkedin, 
@@ -48,6 +46,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
   const [normalizedPos, setNormalizedPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState<boolean>(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(false);
+  const [avatarError, setAvatarError] = useState<boolean>(false);
 
   // Respect user's reduced-motion preference
   useEffect(() => {
@@ -175,7 +174,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Close download dropdown when clicking outside
+  // Close download dropdown when clicking outside or pressing Escape
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
@@ -183,8 +182,17 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
         setDownloadMenuOpen(false);
       }
     };
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setDownloadMenuOpen(false);
+      }
+    };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    window.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('keydown', handleEscape);
+    };
   }, []);
 
   // Show Toast Feedback
@@ -456,6 +464,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     try {
+      const { default: html2canvas } = await import('html2canvas');
       const canvas = await html2canvas(wrapper.firstElementChild as HTMLElement, {
         scale: 2.5, // 1750 x 1000 pixels (crisp 300+ DPI razor-sharp output)
         backgroundColor: '#0B0E17',
@@ -479,9 +488,15 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
       setExportingType('pdf');
       setDownloadMenuOpen(false);
 
-      const cardCanvas = await generateCardCanvas();
+      const [cardCanvas, jspdfModule] = await Promise.all([
+        generateCardCanvas(),
+        import('jspdf'),
+      ]);
 
-      const PDFConstructor = typeof jsPDF === 'function' ? jsPDF : (jsPDF as any).jsPDF;
+      const PDFConstructor =
+        typeof jspdfModule.jsPDF === 'function'
+          ? jspdfModule.jsPDF
+          : (jspdfModule as { default?: typeof jspdfModule.jsPDF }).default || (jspdfModule as any);
       const pdf = new PDFConstructor({
         orientation: 'landscape',
         unit: 'in',
@@ -608,6 +623,8 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
             }}
             title="Click photo to flip and reveal the digital visiting card"
             role="button"
+            aria-pressed={isFlipped}
+            aria-label="Flip digital visiting card to view contact details"
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
@@ -651,12 +668,26 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
 
                 {/* CENTER: Exact Character Illustration (/assets/aistudio/favicon_507da8ac.png) */}
                 <div className="relative z-10 w-full flex-1 flex items-end justify-center px-4 pt-8 pb-5 overflow-hidden pointer-events-none">
-                  <img
-                    src="/assets/aistudio/favicon_507da8ac.png"
-                    alt="Yogananth J Character Illustration"
-                    className="w-full h-full object-contain object-bottom select-none group-hover/front:scale-104 transition-transform duration-300"
-                    loading="eager"
-                  />
+                  {avatarError ? (
+                    <div
+                      className="w-36 h-36 sm:w-40 sm:h-40 rounded-lg border-2 border-black bg-[#141418] text-white flex flex-col items-center justify-center mb-4 shadow-md font-display"
+                      role="img"
+                      aria-label="Yogananth J — AI Engineer and Full-Stack Developer"
+                    >
+                      <span className="text-4xl font-black tracking-tight text-rose-500">YJ</span>
+                      <span className="text-[9px] font-mono uppercase tracking-widest text-zinc-400 mt-1">AI Engineer</span>
+                    </div>
+                  ) : (
+                    <img
+                      src="/assets/aistudio/favicon_507da8ac.png"
+                      alt="Yogananth J — AI Engineer and Full-Stack Developer portrait illustration"
+                      width={320}
+                      height={320}
+                      onError={() => setAvatarError(true)}
+                      className="w-full h-full object-contain object-bottom select-none group-hover/front:scale-104 transition-transform duration-300"
+                      loading="eager"
+                    />
+                  )}
                 </div>
 
                 {/* BOTTOM: "OPEN TO OPPORTUNITIES" White Banner */}
@@ -714,6 +745,8 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
             }}
             title="Click anywhere on card to flip back to photo cover [Shortcut: F]"
             role="button"
+            aria-pressed={isFlipped}
+            aria-label="Flip digital visiting card back to portrait photo"
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
@@ -777,9 +810,11 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                       setDownloadMenuOpen((prev) => !prev);
                     }}
                     disabled={exportingType !== null}
+                    aria-expanded={downloadMenuOpen}
+                    aria-haspopup="menu"
                     className="flex items-center gap-1 px-2 py-1 bg-[#181B24] hover:bg-rose-500/25 text-white/90 hover:text-white border border-white/20 hover:border-rose-500/60 rounded-xs font-mono text-[8.5px] sm:text-[9.5px] font-bold uppercase transition-all cursor-pointer"
                     title="Download Visiting Card (PDF, PNG, vCard)"
-                    aria-label="Download options"
+                    aria-label="Download visiting card options"
                   >
                     {exportingType ? (
                       <Loader2 className="w-3 h-3 animate-spin text-rose-400" />
@@ -923,18 +958,29 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                 <div className="flex items-center gap-2.5">
                   {/* Clean Avatar Thumbnail */}
                   <div className="w-13 h-13 sm:w-15 sm:h-15 rounded-md border-2 border-rose-500 bg-white p-0.5 shrink-0 overflow-hidden shadow-sm flex items-center justify-center">
-                    <img
-                      src="/assets/aistudio/favicon_507da8ac.png"
-                      alt="Yogananth J Avatar"
-                      className="w-full h-full object-contain object-bottom pointer-events-none"
-                    />
+                    {avatarError ? (
+                      <span className="font-display font-black text-base text-[#121216]" aria-label="Yogananth J initials">
+                        YJ
+                      </span>
+                    ) : (
+                      <img
+                        src="/assets/aistudio/favicon_507da8ac.png"
+                        alt="Yogananth J profile avatar"
+                        width={60}
+                        height={60}
+                        loading="lazy"
+                        decoding="async"
+                        onError={() => setAvatarError(true)}
+                        className="w-full h-full object-contain object-bottom pointer-events-none"
+                      />
+                    )}
                   </div>
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <h3 className="font-display text-base sm:text-lg md:text-xl font-black text-white tracking-tight leading-tight truncate">
+                      <h2 className="font-display text-base sm:text-lg md:text-xl font-black text-white tracking-tight leading-tight truncate">
                         Yogananth J
-                      </h3>
+                      </h2>
                       <span title="Verified AI Engineer">
                         <CheckCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
                       </span>

@@ -111,9 +111,9 @@ export const ProjectInsightsPanel: React.FC<ProjectInsightsPanelProps> = ({ proj
       <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
         <div className="flex items-center gap-2">
           <BarChart3 className="w-3.5 h-3.5 text-cyan-400" />
-          <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--text-main)]">
+          <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--text-main)]">
             Project Insights
-          </h4>
+          </h3>
         </div>
 
         <span className="text-[10px] font-mono text-[var(--text-muted)]">

@@ -83,34 +83,85 @@ export function appendUtmSource(rawUrl: string, sourceHostname?: string): string
 }
 
 /**
+ * Ensures any anchor opening in a new tab (`target="_blank"`) includes
+ * `noopener` and `noreferrer` in its `rel` attribute while preserving
+ * existing `rel` tokens and avoiding redundant DOM writes.
+ */
+export function ensureSecureBlankTarget(anchor: HTMLAnchorElement): boolean {
+  if (!anchor) {
+    return false;
+  }
+
+  const targetAttr = anchor.getAttribute('target');
+  if (!targetAttr || targetAttr.trim().toLowerCase() !== '_blank') {
+    return false;
+  }
+
+  const existingRel = anchor.getAttribute('rel') || '';
+  const tokens = existingRel
+    .split(/\s+/)
+    .map((t) => t.trim())
+    .filter(Boolean);
+
+  const lowerSet = new Set(tokens.map((t) => t.toLowerCase()));
+  let changed = false;
+
+  if (!lowerSet.has('noopener')) {
+    tokens.push('noopener');
+    lowerSet.add('noopener');
+    changed = true;
+  }
+  if (!lowerSet.has('noreferrer')) {
+    tokens.push('noreferrer');
+    lowerSet.add('noreferrer');
+    changed = true;
+  }
+
+  if (!changed) {
+    return false;
+  }
+
+  anchor.setAttribute('rel', tokens.join(' '));
+  return true;
+}
+
+/**
  * Applies `utm_source` to a single HTMLAnchorElement if it is a valid external
- * HTTP(S) link and not marked with the `download` attribute.
- * Returns `true` if the `href` attribute was updated.
+ * HTTP(S) link and not marked with the `download` attribute, and secures
+ * `target="_blank"` anchors with `rel="noopener noreferrer"`.
+ * Returns `true` if any attribute was updated.
  */
 export function applyUtmToAnchor(
   anchor: HTMLAnchorElement,
   sourceHostname?: string
 ): boolean {
-  if (!anchor || anchor.hasAttribute('download')) {
+  if (!anchor) {
     return false;
+  }
+
+  let updated = ensureSecureBlankTarget(anchor);
+
+  if (anchor.hasAttribute('download')) {
+    return updated;
   }
 
   const rawHref = anchor.getAttribute('href');
   if (!rawHref) {
-    return false;
+    return updated;
   }
 
   const nextHref = appendUtmSource(rawHref, sourceHostname);
   if (nextHref !== rawHref) {
     anchor.setAttribute('href', nextHref);
-    return true;
+    updated = true;
   }
 
-  return false;
+  return updated;
 }
 
 /**
- * Scans a DOM subtree for anchor elements and applies UTM tracking to external links.
+ * Scans a DOM subtree for anchor elements and applies UTM tracking + link
+ * security attributes to external/new-tab links.
  */
 export function processExternalLinksInRoot(
   root: ParentNode | Element,
@@ -121,7 +172,7 @@ export function processExternalLinksInRoot(
   }
 
   if ('querySelectorAll' in root) {
-    const anchors = root.querySelectorAll<HTMLAnchorElement>('a[href]');
+    const anchors = root.querySelectorAll<HTMLAnchorElement>('a[href], a[target="_blank"]');
     for (let i = 0; i < anchors.length; i++) {
       applyUtmToAnchor(anchors[i], sourceHostname);
     }

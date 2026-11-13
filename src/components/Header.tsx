@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Terminal, Send, Menu, X, Columns2, PanelLeft, Volume2, VolumeX, FileText, Sun, Moon } from 'lucide-react';
 import { useLayout } from '../context/LayoutContext';
 import { soundFX } from '../utils/soundEffects';
@@ -35,6 +35,27 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
   const primaryNavLinks = navLinks.slice(0, 6);
   const secondaryNavLinks = navLinks.slice(6);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const moreMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMoreMenuOpen(false);
+        setMobileMenuOpen(false);
+      }
+    };
+    const handleMouseDown = (e: MouseEvent) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) {
+        setMoreMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handleMouseDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleMouseDown);
+    };
+  }, []);
 
   return (
     <header className="sticky top-0 z-40 bg-[var(--bg-canvas)]/95 backdrop-blur-md border-b border-[var(--border-color)] transition-colors w-full">
@@ -45,6 +66,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
           <button
             onClick={toggleSidebar}
             type="button"
+            aria-expanded={sidebarOpen}
             className={`p-1.5 border transition-colors cursor-pointer ${
               sidebarOpen
                 ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
@@ -67,13 +89,14 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
 
         {/* Zone 2: Navigation Links (Wide screens: all 9; Laptops: 6 primary + More dropdown; Tablet/Mobile: Drawer) */}
         {/* 2A. Wide desktop: full navigation strip (>= 1280px) */}
-        <nav className="hidden xl:flex items-center gap-3.5 2xl:gap-5 text-xs xl:text-[13px] font-semibold text-[var(--text-muted)] font-mono">
+        <nav aria-label="Primary navigation" className="hidden xl:flex items-center gap-3.5 2xl:gap-5 text-xs xl:text-[13px] font-semibold text-[var(--text-muted)] font-mono">
           {navLinks.map((link) => {
             const isActive = activeSection === link.id && layoutMode === 'standard';
             return (
               <a
                 key={link.id}
                 href={link.href}
+                aria-current={isActive ? 'location' : undefined}
                 className={`whitespace-nowrap transition-colors py-1 relative ${
                   isActive
                     ? 'text-[var(--accent)] font-bold'
@@ -90,13 +113,14 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
         </nav>
 
         {/* 2B. Laptop desktop (1024px - 1279px): 6 primary links + sleek "More" dropdown */}
-        <nav className="hidden lg:flex xl:hidden items-center gap-2.5 text-xs font-semibold text-[var(--text-muted)] font-mono">
+        <nav aria-label="Compact navigation" className="hidden lg:flex xl:hidden items-center gap-2.5 text-xs font-semibold text-[var(--text-muted)] font-mono">
           {primaryNavLinks.map((link) => {
             const isActive = activeSection === link.id && layoutMode === 'standard';
             return (
               <a
                 key={link.id}
                 href={link.href}
+                aria-current={isActive ? 'location' : undefined}
                 className={`whitespace-nowrap transition-colors py-1 relative ${
                   isActive
                     ? 'text-[var(--accent)] font-bold'
@@ -112,17 +136,22 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
           })}
 
           {/* "More" dropdown for secondary links */}
-          <div className="relative">
+          <div className="relative" ref={moreMenuRef}>
             <button
               onClick={() => setMoreMenuOpen((prev) => !prev)}
               type="button"
+              aria-expanded={moreMenuOpen}
+              aria-haspopup="menu"
+              aria-controls="header-more-menu"
               className="px-2 py-1 flex items-center gap-1 hover:text-[var(--text-main)] transition-colors cursor-pointer"
             >
               <span>More</span>
-              <span className="text-[10px]">▾</span>
+              <span className="text-[10px]" aria-hidden="true">▾</span>
             </button>
             {moreMenuOpen && (
               <div 
+                id="header-more-menu"
+                role="menu"
                 className="absolute top-full right-0 mt-1.5 w-36 bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-xl py-1 z-50 rounded-xs"
                 onMouseLeave={() => setMoreMenuOpen(false)}
               >
@@ -130,6 +159,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
                   <a
                     key={link.id}
                     href={link.href}
+                    role="menuitem"
                     onClick={() => setMoreMenuOpen(false)}
                     className="block px-3 py-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-colors"
                   >
@@ -147,6 +177,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
           <button
             onClick={() => setLayoutMode(layoutMode === 'split' ? 'standard' : 'split')}
             type="button"
+            aria-pressed={layoutMode === 'split'}
+            aria-label="Toggle Dual-Pane Split Screen Workbench"
             className={`hidden sm:flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 text-xs font-mono font-bold uppercase border transition-colors whitespace-nowrap cursor-pointer ${
               layoutMode === 'split'
                 ? 'bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm'
@@ -162,6 +194,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
           <button
             onClick={handleToggleSound}
             type="button"
+            aria-pressed={soundActive}
             className={`p-1.5 border transition-colors cursor-pointer ${
               soundActive
                 ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
@@ -231,6 +264,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             type="button"
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-nav-drawer"
             className="flex lg:hidden p-1.5 sm:p-2 text-[var(--text-main)] hover:bg-[var(--bg-surface)] border border-[var(--border-color)] cursor-pointer"
             aria-label="Toggle navigation menu"
           >
@@ -241,7 +276,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
 
       {/* Mobile/Tablet Full Drawer Navigation Menu (< 1024px) */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-b border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-4 space-y-3 shadow-2xl font-mono animate-in fade-in slide-in-from-top-2 duration-200">
+        <nav
+          id="mobile-nav-drawer"
+          aria-label="Mobile navigation"
+          className="lg:hidden border-b border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-4 space-y-3 shadow-2xl font-mono animate-in fade-in slide-in-from-top-2 duration-200"
+        >
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pb-3 border-b border-[var(--border-color)]">
             {navLinks.map((link) => {
               const isActive = activeSection === link.id && layoutMode === 'standard';
@@ -303,7 +342,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
               <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
             </button>
           </div>
-        </div>
+        </nav>
       )}
     </header>
   );

@@ -8,7 +8,35 @@ export default defineConfig(() => {
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(import.meta.dirname, '.'),
+      },
+    },
+    build: {
+      rolldownOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return undefined;
+            if (id.includes('/react-dom/') || id.includes('/react/') || id.includes('/scheduler/')) {
+              return 'vendor-react';
+            }
+            if (id.includes('/framer-motion/')) {
+              return 'vendor-motion';
+            }
+            if (id.includes('/gsap/')) {
+              return 'vendor-gsap';
+            }
+            if (id.includes('/firebase/') || id.includes('/@firebase/')) {
+              return 'vendor-firebase';
+            }
+            if (id.includes('/d3') || id.includes('/d3-')) {
+              return 'vendor-d3';
+            }
+            if (id.includes('/lucide-react/')) {
+              return 'vendor-icons';
+            }
+            return undefined;
+          },
+        },
       },
     },
     server: {

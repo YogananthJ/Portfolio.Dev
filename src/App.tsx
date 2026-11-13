@@ -1,22 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { ProjectShowcase } from './components/ProjectShowcase';
 import { ArchitectureExplorer } from './components/ArchitectureExplorer';
 import { SimulatorsSection } from './components/SimulatorsSection';
 import { MotionPlayground } from './components/motion-playground/MotionPlayground';
-import { MotionExperimentPage } from './components/motion-playground/detail/MotionExperimentPage';
 import { SkillsSection } from './components/SkillsSection';
 import { GitHubActivitySection } from './components/GitHubActivitySection';
 import { ExperienceSection } from './components/ExperienceSection';
 import { ContactSection } from './components/ContactSection';
 import { Footer } from './components/Footer';
-import { ProjectModal } from './components/ProjectModal';
-import { ResumeModal } from './components/ResumeModal';
-import { TerminalDrawer } from './components/TerminalDrawer';
 import { LayoutController } from './components/LayoutController';
 import { WorkspaceSidebar } from './components/WorkspaceSidebar';
-import { SplitScreenWorkspace } from './components/SplitScreenWorkspace';
 import { LayoutProvider, useLayout } from './context/LayoutContext';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ProjectItem } from './types/portfolio';
@@ -28,20 +23,54 @@ import { FuturisticSpotlight } from './components/common/FuturisticSpotlight';
 import { ScrollSectionReveal } from './components/common/ScrollSectionReveal';
 import { ThemeTransitionOverlay } from './components/common/ThemeTransitionOverlay';
 import { useGlobalUtmTracking } from './hooks/useGlobalUtmTracking';
-import {
-  ErrorBoundary,
-  OfflineBanner,
-  ErrorHubModal,
-  NotFoundPage,
-  OfflinePage,
-  ServerErrorPage,
-  AccessDeniedPage,
-  RequestTimeoutPage,
-  BadGatewayPage,
-  ServiceUnavailablePage,
-  GatewayTimeoutPage,
-  AppExceptionPage,
-} from './components/errors';
+import { useErrorMonitoring } from './hooks/useErrorMonitoring';
+import { ErrorBoundary } from './components/errors/ErrorBoundary';
+import { SectionErrorBoundary } from './components/errors/SectionErrorBoundary';
+import { OfflineBanner } from './components/errors/OfflineBanner';
+import { AppExceptionPage } from './components/errors/pages/AppExceptionPage';
+
+const MotionExperimentPage = lazy(() =>
+  import('./components/motion-playground/detail/MotionExperimentPage').then((m) => ({ default: m.MotionExperimentPage }))
+);
+const ProjectModal = lazy(() =>
+  import('./components/ProjectModal').then((m) => ({ default: m.ProjectModal }))
+);
+const ResumeModal = lazy(() =>
+  import('./components/ResumeModal').then((m) => ({ default: m.ResumeModal }))
+);
+const TerminalDrawer = lazy(() =>
+  import('./components/TerminalDrawer').then((m) => ({ default: m.TerminalDrawer }))
+);
+const SplitScreenWorkspace = lazy(() =>
+  import('./components/SplitScreenWorkspace').then((m) => ({ default: m.SplitScreenWorkspace }))
+);
+const ErrorHubModal = lazy(() =>
+  import('./components/errors/ErrorHubModal').then((m) => ({ default: m.ErrorHubModal }))
+);
+const NotFoundPage = lazy(() =>
+  import('./components/errors/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage }))
+);
+const OfflinePage = lazy(() =>
+  import('./components/errors/pages/OfflinePage').then((m) => ({ default: m.OfflinePage }))
+);
+const ServerErrorPage = lazy(() =>
+  import('./components/errors/pages/ServerErrorPage').then((m) => ({ default: m.ServerErrorPage }))
+);
+const AccessDeniedPage = lazy(() =>
+  import('./components/errors/pages/AccessDeniedPage').then((m) => ({ default: m.AccessDeniedPage }))
+);
+const RequestTimeoutPage = lazy(() =>
+  import('./components/errors/pages/RequestTimeoutPage').then((m) => ({ default: m.RequestTimeoutPage }))
+);
+const BadGatewayPage = lazy(() =>
+  import('./components/errors/pages/BadGatewayPage').then((m) => ({ default: m.BadGatewayPage }))
+);
+const ServiceUnavailablePage = lazy(() =>
+  import('./components/errors/pages/ServiceUnavailablePage').then((m) => ({ default: m.ServiceUnavailablePage }))
+);
+const GatewayTimeoutPage = lazy(() =>
+  import('./components/errors/pages/GatewayTimeoutPage').then((m) => ({ default: m.GatewayTimeoutPage }))
+);
 
 function PortfolioMainContent() {
   const { layoutMode, setLayoutMode, setActiveSimulatorId, isThemeTransitioning } = useLayout();
@@ -52,6 +81,7 @@ function PortfolioMainContent() {
   const [activeSection, setActiveSection] = useState<string>('overview');
   const [isErrorHubOpen, setIsErrorHubOpen] = useState<boolean>(false);
   const [isSimulatedCrash, setIsSimulatedCrash] = useState<boolean>(false);
+  const { friendlyNotice, dismissNotice } = useErrorMonitoring();
 
   // Client-side route detection for Motion Lab (/motion-lab/:id) and Error Pages (/404, /offline, etc.)
   const getRouteFromUrl = () => {
@@ -248,6 +278,14 @@ function PortfolioMainContent() {
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-main)] flex flex-col font-sans selection:bg-[var(--accent)] selection:text-white relative w-full max-w-full overflow-x-clip"
     >
+      {/* Skip to main content link for keyboard and screen-reader users */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-3 focus:py-2 focus:bg-[var(--accent)] focus:text-white focus:font-mono focus:text-xs focus:font-bold focus:shadow-lg"
+      >
+        Skip to main content
+      </a>
+
       {/* Simulated crash trigger for testing ErrorBoundary */}
       {isSimulatedCrash && <SimulatedCrashTrigger />}
 
@@ -286,87 +324,117 @@ function PortfolioMainContent() {
 
       {/* Main Body: Error Page vs Detail Page vs Dual-Pane Split Workbench vs Standard Editorial Flow */}
       {route.page.startsWith('error-') ? (
-        <main className="flex-1 w-full max-w-full">
-          {route.page === 'error-offline' ? (
-            <OfflinePage onReturnHome={handleReturnHome} onGoBack={handleGoBack} />
-          ) : route.page === 'error-500' ? (
-            <ServerErrorPage onReturnHome={handleReturnHome} onGoBack={handleGoBack} />
-          ) : route.page === 'error-403' ? (
-            <AccessDeniedPage onReturnHome={handleReturnHome} onGoBack={handleGoBack} />
-          ) : route.page === 'error-408' ? (
-            <RequestTimeoutPage onReturnHome={handleReturnHome} onGoBack={handleGoBack} />
-          ) : route.page === 'error-502' ? (
-            <BadGatewayPage onReturnHome={handleReturnHome} onGoBack={handleGoBack} />
-          ) : route.page === 'error-503' ? (
-            <ServiceUnavailablePage onReturnHome={handleReturnHome} onGoBack={handleGoBack} />
-          ) : route.page === 'error-504' ? (
-            <GatewayTimeoutPage onReturnHome={handleReturnHome} onGoBack={handleGoBack} />
-          ) : route.page === 'error-app' ? (
-            <AppExceptionPage onReturnHome={handleReturnHome} onReload={() => window.location.reload()} />
-          ) : (
-            <NotFoundPage onReturnHome={handleReturnHome} onGoBack={handleGoBack} />
-          )}
+        <main id="main-content" tabIndex={-1} className="flex-1 w-full max-w-full focus:outline-none">
+          <SectionErrorBoundary sectionName="Diagnostic View">
+            <Suspense fallback={<div className="min-h-[60vh] flex items-center justify-center font-mono text-xs text-[var(--text-muted)]">Loading diagnostic view...</div>}>
+              {route.page === 'error-offline' ? (
+                <OfflinePage onReturnHome={handleReturnHome} onGoBack={handleGoBack} />
+              ) : route.page === 'error-500' ? (
+                <ServerErrorPage onReturnHome={handleReturnHome} onGoBack={handleGoBack} />
+              ) : route.page === 'error-403' ? (
+                <AccessDeniedPage onReturnHome={handleReturnHome} onGoBack={handleGoBack} />
+              ) : route.page === 'error-408' ? (
+                <RequestTimeoutPage onReturnHome={handleReturnHome} onGoBack={handleGoBack} />
+              ) : route.page === 'error-502' ? (
+                <BadGatewayPage onReturnHome={handleReturnHome} onGoBack={handleGoBack} />
+              ) : route.page === 'error-503' ? (
+                <ServiceUnavailablePage onReturnHome={handleReturnHome} onGoBack={handleGoBack} />
+              ) : route.page === 'error-504' ? (
+                <GatewayTimeoutPage onReturnHome={handleReturnHome} onGoBack={handleGoBack} />
+              ) : route.page === 'error-app' ? (
+                <AppExceptionPage onReturnHome={handleReturnHome} onReload={() => window.location.reload()} />
+              ) : (
+                <NotFoundPage onReturnHome={handleReturnHome} onGoBack={handleGoBack} />
+              )}
+            </Suspense>
+          </SectionErrorBoundary>
         </main>
       ) : route.page === 'motion-detail' && route.experimentId ? (
-        <main className="flex-1 w-full max-w-full overflow-x-clip">
-          <MotionExperimentPage
-            experimentId={route.experimentId}
-            onBack={handleBackToMotionLab}
-          />
+        <main id="main-content" tabIndex={-1} className="flex-1 w-full max-w-full overflow-x-clip focus:outline-none">
+          <SectionErrorBoundary sectionName="Motion Experiment">
+            <Suspense fallback={<div className="min-h-[60vh] flex items-center justify-center font-mono text-xs text-[var(--text-muted)]">Loading motion experiment...</div>}>
+              <MotionExperimentPage
+                experimentId={route.experimentId}
+                onBack={handleBackToMotionLab}
+              />
+            </Suspense>
+          </SectionErrorBoundary>
         </main>
       ) : layoutMode === 'split' ? (
-        <main className="flex-1 w-full max-w-full overflow-x-clip">
-          <SplitScreenWorkspace onOpenModal={handleOpenProjectModal} />
+        <main id="main-content" tabIndex={-1} className="flex-1 w-full max-w-full overflow-x-clip focus:outline-none">
+          <SectionErrorBoundary sectionName="Split-Screen Workspace">
+            <Suspense fallback={<div className="min-h-[60vh] flex items-center justify-center font-mono text-xs text-[var(--text-muted)]">Loading split workspace...</div>}>
+              <SplitScreenWorkspace onOpenModal={handleOpenProjectModal} />
+            </Suspense>
+          </SectionErrorBoundary>
         </main>
       ) : (
-        <main className="flex-1 w-full max-w-full overflow-x-clip">
+        <main id="main-content" tabIndex={-1} className="flex-1 w-full max-w-full overflow-x-clip focus:outline-none">
           {/* Monolithic Hero Collage Section with Profile Portrait */}
-          <Hero
-            onOpenTerminal={() => setIsTerminalOpen(true)}
-            onExploreWork={handleExploreWork}
-            onLaunchSimulator={handleLaunchSimulator}
-            onOpenResume={() => setIsResumeModalOpen(true)}
-          />
+          <SectionErrorBoundary sectionName="Hero Overview">
+            <Hero
+              onOpenTerminal={() => setIsTerminalOpen(true)}
+              onExploreWork={handleExploreWork}
+              onLaunchSimulator={handleLaunchSimulator}
+              onOpenResume={() => setIsResumeModalOpen(true)}
+            />
+          </SectionErrorBoundary>
 
           {/* Selected Works & Engineered Systems (Grid / List / Bento View) */}
-          <ScrollSectionReveal>
-            <ProjectShowcase onOpenModal={handleOpenProjectModal} />
-          </ScrollSectionReveal>
+          <SectionErrorBoundary sectionName="Selected Projects">
+            <ScrollSectionReveal>
+              <ProjectShowcase onOpenModal={handleOpenProjectModal} />
+            </ScrollSectionReveal>
+          </SectionErrorBoundary>
 
           {/* Interactive Architecture Explorer (Node & Edge Schematics) */}
-          <ScrollSectionReveal>
-            <ArchitectureExplorer initialProjectId="cognitive-ai" />
-          </ScrollSectionReveal>
+          <SectionErrorBoundary sectionName="Architecture Explorer">
+            <ScrollSectionReveal>
+              <ArchitectureExplorer initialProjectId="cognitive-ai" />
+            </ScrollSectionReveal>
+          </SectionErrorBoundary>
 
           {/* Dedicated Live Interactive Model Lab & Simulators (AI Projects Only) */}
-          <ScrollSectionReveal>
-            <SimulatorsSection />
-          </ScrollSectionReveal>
+          <SectionErrorBoundary sectionName="AI Simulators">
+            <ScrollSectionReveal>
+              <SimulatorsSection />
+            </ScrollSectionReveal>
+          </SectionErrorBoundary>
 
           {/* Motion Playground & Interactive Animation Code Lab */}
-          <ScrollSectionReveal>
-            <MotionPlayground onOpenDetail={handleOpenMotionDetail} />
-          </ScrollSectionReveal>
+          <SectionErrorBoundary sectionName="Motion Playground">
+            <ScrollSectionReveal>
+              <MotionPlayground onOpenDetail={handleOpenMotionDetail} />
+            </ScrollSectionReveal>
+          </SectionErrorBoundary>
 
           {/* Core Toolkit & Competencies */}
-          <ScrollSectionReveal>
-            <SkillsSection />
-          </ScrollSectionReveal>
+          <SectionErrorBoundary sectionName="Technical Skills">
+            <ScrollSectionReveal>
+              <SkillsSection />
+            </ScrollSectionReveal>
+          </SectionErrorBoundary>
 
           {/* GitHub Activity & Open-Source Metrics */}
-          <ScrollSectionReveal>
-            <GitHubActivitySection />
-          </ScrollSectionReveal>
+          <SectionErrorBoundary sectionName="GitHub Activity">
+            <ScrollSectionReveal>
+              <GitHubActivitySection />
+            </ScrollSectionReveal>
+          </SectionErrorBoundary>
 
           {/* Verified Milestones & Certifications */}
-          <ScrollSectionReveal>
-            <ExperienceSection />
-          </ScrollSectionReveal>
+          <SectionErrorBoundary sectionName="Experience & Milestones">
+            <ScrollSectionReveal>
+              <ExperienceSection />
+            </ScrollSectionReveal>
+          </SectionErrorBoundary>
 
           {/* Contact & Inquiries */}
-          <ScrollSectionReveal>
-            <ContactSection onOpenResume={() => setIsResumeModalOpen(true)} />
-          </ScrollSectionReveal>
+          <SectionErrorBoundary sectionName="Contact Section">
+            <ScrollSectionReveal>
+              <ContactSection onOpenResume={() => setIsResumeModalOpen(true)} />
+            </ScrollSectionReveal>
+          </SectionErrorBoundary>
         </main>
       )}
 
@@ -374,51 +442,94 @@ function PortfolioMainContent() {
       {(layoutMode === 'standard' || route.page === 'motion-detail') && !route.page.startsWith('error-') && <Footer />}
 
       {/* Deep-Dive Project Modal with Interactive Simulator */}
-      <ProjectModal
-        project={activeProject}
-        onClose={handleCloseProjectModal}
-      />
+      <SectionErrorBoundary sectionName="Project Details Modal">
+        <Suspense fallback={null}>
+          {activeProject && (
+            <ProjectModal
+              project={activeProject}
+              onClose={handleCloseProjectModal}
+            />
+          )}
+        </Suspense>
+      </SectionErrorBoundary>
 
       {/* Official Technical Resume & Engineering Dossier Modal */}
-      <ResumeModal
-        isOpen={isResumeModalOpen}
-        onClose={() => setIsResumeModalOpen(false)}
-      />
+      <SectionErrorBoundary sectionName="Resume Modal">
+        <Suspense fallback={null}>
+          {isResumeModalOpen && (
+            <ResumeModal
+              isOpen={isResumeModalOpen}
+              onClose={() => setIsResumeModalOpen(false)}
+            />
+          )}
+        </Suspense>
+      </SectionErrorBoundary>
 
       {/* Interactive Error Experience Testing Lab Modal */}
-      <ErrorHubModal
-        isOpen={isErrorHubOpen}
-        onClose={() => setIsErrorHubOpen(false)}
-        onSelectErrorRoute={(path) => {
-          window.history.pushState({}, '', path);
-          setRoute(getRouteFromUrl());
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-        onTriggerSimulatedCrash={() => setIsSimulatedCrash(true)}
-      />
+      <SectionErrorBoundary sectionName="Error Experience Lab">
+        <Suspense fallback={null}>
+          {isErrorHubOpen && (
+            <ErrorHubModal
+              isOpen={isErrorHubOpen}
+              onClose={() => setIsErrorHubOpen(false)}
+              onSelectErrorRoute={(path) => {
+                window.history.pushState({}, '', path);
+                setRoute(getRouteFromUrl());
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onTriggerSimulatedCrash={() => setIsSimulatedCrash(true)}
+            />
+          )}
+        </Suspense>
+      </SectionErrorBoundary>
 
       {/* Developer Terminal Console Drawer (Cmd+K) */}
-      <TerminalDrawer
-        isOpen={isTerminalOpen}
-        onClose={() => setIsTerminalOpen(false)}
-        onOpenResume={() => setIsResumeModalOpen(true)}
-        onNavigateSection={(sectionId) => {
-          if (layoutMode === 'split') {
-            setLayoutMode('standard');
-          }
-          setTimeout(() => {
-            const el = document.getElementById(sectionId);
-            if (el) el.scrollIntoView({ behavior: 'smooth' });
-          }, 100);
-        }}
-        onSelectProject={(id) => {
-          const p = PROJECTS.find((item) => item.id === id);
-          if (p) {
-            setIsTerminalOpen(false);
-            handleOpenProjectModal(p);
-          }
-        }}
-      />
+      <SectionErrorBoundary sectionName="Terminal Console">
+        <Suspense fallback={null}>
+          {isTerminalOpen && (
+            <TerminalDrawer
+              isOpen={isTerminalOpen}
+              onClose={() => setIsTerminalOpen(false)}
+              onOpenResume={() => setIsResumeModalOpen(true)}
+              onNavigateSection={(sectionId) => {
+                if (layoutMode === 'split') {
+                  setLayoutMode('standard');
+                }
+                setTimeout(() => {
+                  const el = document.getElementById(sectionId);
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }}
+              onSelectProject={(id) => {
+                const p = PROJECTS.find((item) => item.id === id);
+                if (p) {
+                  setIsTerminalOpen(false);
+                  handleOpenProjectModal(p);
+                }
+              }}
+            />
+          )}
+        </Suspense>
+      </SectionErrorBoundary>
+
+      {/* Non-intrusive visitor-friendly runtime fallback notice (hidden when healthy) */}
+      {friendlyNotice && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed top-16 right-4 z-[60] max-w-xs px-3 py-2 bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-color)] shadow-lg font-mono text-[11px] flex items-center justify-between gap-3"
+        >
+          <span>{friendlyNotice}</span>
+          <button
+            type="button"
+            onClick={dismissNotice}
+            aria-label="Dismiss notification"
+            className="text-[var(--text-muted)] hover:text-[var(--text-main)] font-bold px-1 cursor-pointer"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Global Floating Layout & Workspace Controller */}
       <LayoutController />

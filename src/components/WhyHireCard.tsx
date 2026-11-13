@@ -180,7 +180,7 @@ export const WhyHireCard: React.FC<WhyHireCardProps> = ({
                 <a
                   href="https://cognitive-core-ai.streamlit.app/"
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="text-emerald-400 hover:underline text-[10px] font-bold flex items-center gap-0.5"
                 >
                   <span>Open Streamlit App</span>
@@ -190,7 +190,7 @@ export const WhyHireCard: React.FC<WhyHireCardProps> = ({
                 <a
                   href="https://t.me/CareerPilotAgent2026_bot"
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="text-cyan-400 hover:underline text-[10px] font-bold flex items-center gap-0.5"
                 >
                   <span>Telegram Bot</span>
@@ -486,7 +486,7 @@ export const WhyHireCard: React.FC<WhyHireCardProps> = ({
           <a
             href={PERSONAL_INFO.linkedin}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="text-blue-400 hover:text-blue-300 underline flex items-center gap-0.5"
           >
             <span>LinkedIn</span>

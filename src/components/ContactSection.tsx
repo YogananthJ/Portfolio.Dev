@@ -12,6 +12,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
   const [subject, setSubject] = useState('Full-Time Software / ML Engineer Inquiry');
   const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [copiedEmail, setCopiedEmail] = useState(false);
 
   const templateIntents = [
@@ -33,7 +34,15 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim() || !message.trim()) return;
+    if (!name.trim() || !email.trim() || !message.trim()) {
+      setFormError('Please enter your name, email address, and message before sending.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setFormError('Please enter a valid email address.');
+      return;
+    }
+    setFormError(null);
 
     // Construct robust mailto link
     const mailSubject = encodeURIComponent(subject || `Portfolio Message from ${name}`);
@@ -178,26 +187,46 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4 font-mono text-xs">
+            <form onSubmit={handleSubmit} noValidate className="space-y-4 font-mono text-xs">
+              {formError && (
+                <div
+                  role="alert"
+                  aria-live="assertive"
+                  className="p-3 bg-rose-500/15 border border-rose-500/50 text-rose-300 font-bold text-xs"
+                >
+                  {formError}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-white/70 uppercase font-bold mb-1">Your Name</label>
+                  <label htmlFor="contact-name" className="block text-white/70 uppercase font-bold mb-1">Your Name</label>
                   <input
+                    id="contact-name"
                     type="text"
                     required
+                    aria-invalid={Boolean(formError && !name.trim())}
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      if (formError) setFormError(null);
+                    }}
                     placeholder="e.g. Maya Chen"
                     className="w-full px-3 py-2.5 bg-[#121212] border border-white/20 text-white focus:outline-[#E11D48]"
                   />
                 </div>
                 <div>
-                  <label className="block text-white/70 uppercase font-bold mb-1">Your Email</label>
+                  <label htmlFor="contact-email" className="block text-white/70 uppercase font-bold mb-1">Your Email</label>
                   <input
+                    id="contact-email"
                     type="email"
                     required
+                    aria-invalid={Boolean(formError && (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())))}
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (formError) setFormError(null);
+                    }}
                     placeholder="e.g. maya@company.com"
                     className="w-full px-3 py-2.5 bg-[#121212] border border-white/20 text-white focus:outline-[#E11D48]"
                   />
@@ -205,8 +234,9 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
               </div>
 
               <div>
-                <label className="block text-white/70 uppercase font-bold mb-1">Subject</label>
+                <label htmlFor="contact-subject" className="block text-white/70 uppercase font-bold mb-1">Subject</label>
                 <input
+                  id="contact-subject"
                   type="text"
                   required
                   value={subject}
@@ -217,12 +247,17 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
               </div>
 
               <div>
-                <label className="block text-white/70 uppercase font-bold mb-1">Message</label>
+                <label htmlFor="contact-message" className="block text-white/70 uppercase font-bold mb-1">Message</label>
                 <textarea
+                  id="contact-message"
                   required
+                  aria-invalid={Boolean(formError && !message.trim())}
                   rows={5}
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+                  onChange={(e) => {
+                    setMessage(e.target.value);
+                    if (formError) setFormError(null);
+                  }}
                   placeholder="Type your message here..."
                   className="w-full p-3 bg-[#121212] border border-white/20 text-white focus:outline-[#E11D48] leading-relaxed"
                 />
@@ -231,14 +266,14 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
               <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <button
                   type="submit"
-                  className="flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold uppercase tracking-wider text-white bg-[#E11D48] hover:bg-[#F20D26] transition-all shadow-[2px_2px_0px_0px_#ffffff]"
+                  className="flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold uppercase tracking-wider text-white bg-[#E11D48] hover:bg-[#F20D26] transition-all shadow-[2px_2px_0px_0px_#ffffff] cursor-pointer"
                 >
                   <Send className="w-4 h-4" />
                   <span>Send via Email Client</span>
                 </button>
 
                 {submitted && (
-                  <div className="text-emerald-400 font-bold flex items-center gap-1.5 text-xs">
+                  <div role="status" aria-live="polite" className="text-emerald-400 font-bold flex items-center gap-1.5 text-xs">
                     <CheckCircle2 className="w-4 h-4" />
                     <span>Opening your mail app to send!</span>
                   </div>

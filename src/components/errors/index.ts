@@ -16,3 +16,4 @@ export * from './pages/BadGatewayPage';
 export * from './pages/ServiceUnavailablePage';
 export * from './pages/GatewayTimeoutPage';
 export * from './pages/AppExceptionPage';
+export * from './SectionErrorBoundary';

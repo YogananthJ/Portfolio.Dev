@@ -131,9 +131,9 @@ export const SplitScreenWorkspace: React.FC<SplitScreenWorkspaceProps> = ({ onOp
                       <div className="text-[10px] font-mono uppercase text-[var(--accent)] font-bold">
                         {p.categoryLabel} · {p.projectKind}
                       </div>
-                      <h4 className="text-base font-bold text-[var(--text-main)] uppercase tracking-tight mt-0.5">
+                      <h3 className="text-base font-bold text-[var(--text-main)] uppercase tracking-tight mt-0.5">
                         {p.title}
-                      </h4>
+                      </h3>
                     </div>
 
                     <span className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-main)]">

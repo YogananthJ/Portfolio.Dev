@@ -68,7 +68,7 @@ export const PROJECTS: ProjectItem[] = [
       { label: 'Build Sprint', value: '48 Hours', context: 'Concept to functional deployment' },
       { label: 'E2E Test Coverage', value: 'Playwright Verified', context: 'Automated order/inventory flow' },
     ],
-    githubUrl: 'https://github.com/YogananthJ',
+    githubUrl: 'https://github.com/YogananthJ/Restaurant_Nerve_Center',
     year: '2025',
     highlights: [
       'Solo finalist out of hundreds of participants at Vibeathon 6.0',
@@ -175,7 +175,7 @@ export const PROJECTS: ProjectItem[] = [
       { label: 'Retrieval Latency', value: '< 180ms', context: 'Top-5 cosine search on FAISS' },
       { label: 'Citation Mode', value: 'Strict Grounding', context: 'Prevents hallucination outside PDF' },
     ],
-    githubUrl: 'https://github.com/YogananthJ/PDF-RAG-Chatbot',
+    githubUrl: 'https://github.com/YogananthJ',
     year: '2025',
     highlights: [
       'Recursive table and character-aware document chunking to prevent fragmented contextual bounds',
@@ -342,7 +342,7 @@ export const PROJECTS: ProjectItem[] = [
       { label: 'Payments', value: 'Stripe Webhooks', context: 'Instant idempotent ticket issuance' },
       { label: 'Lighthouse Score', value: '98 / 100', context: 'Optimized client performance' },
     ],
-    githubUrl: 'https://github.com/YogananthJ/event-management',
+    githubUrl: 'https://github.com/YogananthJ/Event_Management_Website',
     year: '2025',
     highlights: [
       'Self-directed personal full-stack build demonstrating production web engineering principles',

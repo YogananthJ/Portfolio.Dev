@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { X, Github, ArrowUpRight, CheckCircle2, ExternalLink, Info, Cpu, Binary, GitBranch, Layers, ArrowRight, Link2, Check } from 'lucide-react';
 import { ProjectItem } from '../types/portfolio';
 import { ProjectSimulator } from './ProjectSimulator';
 import { ProjectInsightsPanel } from './ProjectInsightsPanel';
 import { soundFX } from '../utils/soundEffects';
+import { useDialogA11y } from '../hooks/useDialogA11y';
 
 interface ProjectModalProps {
   project: ProjectItem | null;
@@ -13,20 +14,18 @@ interface ProjectModalProps {
 export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) => {
   const [activeTraceStep, setActiveTraceStep] = useState<number>(0);
   const [copied, setCopied] = useState<boolean>(false);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+
+  useDialogA11y(Boolean(project), dialogRef, onClose);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
     if (project) {
       document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleKeyDown);
     }
     return () => {
       document.body.style.overflow = 'auto';
-      window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [project, onClose]);
+  }, [project]);
 
   const handleCopyLink = async () => {
     if (!project) return;
@@ -69,7 +68,9 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-4xl bg-[var(--bg-card)] border-2 border-[var(--border-color)] shadow-2xl my-auto overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        ref={dialogRef}
+        tabIndex={-1}
+        className="relative w-full max-w-4xl bg-[var(--bg-card)] border-2 border-[var(--border-color)] shadow-2xl my-auto overflow-hidden animate-in fade-in zoom-in-95 duration-200 focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header Bar */}
@@ -147,9 +148,9 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
 
           {/* Detailed Description */}
           <div>
-            <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--accent)] mb-2">
+            <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--accent)] mb-2">
               System Architecture &amp; Methodology
-            </h4>
+            </h3>
             <p className="text-xs sm:text-sm text-[var(--text-main)] leading-relaxed mb-4">
               {project.description}
             </p>
@@ -172,9 +173,9 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
             <div className="flex items-center justify-between gap-2 mb-3">
               <div className="flex items-center gap-2">
                 <Binary className="w-4 h-4 text-[var(--accent)]" />
-                <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--text-main)]">
+                <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--text-main)]">
                   Lifecycle Execution Trace
-                </h4>
+                </h3>
               </div>
               <span className="text-[10px] font-mono text-emerald-500 font-bold flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -283,9 +284,9 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
             <div id="modal-simulator" className="border-t border-[var(--border-color)] pt-6">
               <div className="flex items-center gap-2 mb-3">
                 <Cpu className="w-4 h-4 text-[var(--accent)]" />
-                <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--text-main)]">
+                <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--text-main)]">
                   Interactive Model Simulator
-                </h4>
+                </h3>
               </div>
               <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] p-4">
                 <ProjectSimulator project={project} />
@@ -295,9 +296,9 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
 
           {/* Key Achievements */}
           <div>
-            <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--accent)] mb-3">
+            <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--accent)] mb-3">
               Technical Key Achievements
-            </h4>
+            </h3>
             <ul className="space-y-2">
               {project.highlights.map((highlight, i) => (
                 <li key={i} className="flex items-start gap-2.5 text-xs sm:text-sm text-[var(--text-main)] leading-relaxed">
@@ -310,9 +311,9 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
 
           {/* Tech stack tags */}
           <div>
-            <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-2">
+            <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-2">
               Technologies &amp; Libraries
-            </h4>
+            </h3>
             <div className="flex flex-wrap gap-1.5">
               {project.tags.map((t) => (
                 <span key={t} className="px-2.5 py-1 text-xs font-mono bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-color)]">

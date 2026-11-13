@@ -318,9 +318,9 @@ export const ArchitectureExplorer: React.FC<Props> = ({ initialProjectId = 'cogn
                             {node.type}
                           </span>
                         </div>
-                        <h4 className="text-xs font-bold text-[var(--text-main)] line-clamp-1">
+                        <h3 className="text-xs font-bold text-[var(--text-main)] line-clamp-1">
                           {node.label}
-                        </h4>
+                        </h3>
                         <p className="text-[10px] text-[var(--text-muted)] font-mono line-clamp-1 mt-0.5">
                           {node.subtitle}
                         </p>
@@ -371,7 +371,7 @@ export const ArchitectureExplorer: React.FC<Props> = ({ initialProjectId = 'cogn
                           {getNodeIcon(node.type)}
                           {node.type}
                         </span>
-                        <h4 className="text-sm font-bold text-[var(--text-main)]">{node.label}</h4>
+                        <h3 className="text-sm font-bold text-[var(--text-main)]">{node.label}</h3>
                       </div>
                       <span className="text-xs font-mono text-[var(--text-muted)]">{node.subtitle}</span>
                     </div>

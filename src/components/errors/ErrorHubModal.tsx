@@ -15,6 +15,7 @@ import {
   Play
 } from 'lucide-react';
 import { soundFX } from '../../utils/soundEffects';
+import { useDialogA11y } from '../../hooks/useDialogA11y';
 
 interface ErrorHubModalProps {
   isOpen: boolean;
@@ -29,6 +30,9 @@ export const ErrorHubModal: React.FC<ErrorHubModalProps> = ({
   onSelectErrorRoute,
   onTriggerSimulatedCrash,
 }) => {
+  const dialogRef = React.useRef<HTMLDivElement | null>(null);
+  useDialogA11y(isOpen, dialogRef, onClose);
+
   if (!isOpen) return null;
 
   const ERROR_SCENARIOS = [
@@ -99,11 +103,15 @@ export const ErrorHubModal: React.FC<ErrorHubModalProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200" onClick={onClose}>
       <div 
-        className="w-full max-w-3xl bg-[#0E1119] border-2 border-rose-500/60 rounded-sm shadow-2xl p-6 font-mono text-xs text-white max-h-[90vh] overflow-y-auto space-y-6"
+        ref={dialogRef}
+        tabIndex={-1}
+        className="w-full max-w-3xl bg-[#0E1119] border-2 border-rose-500/60 rounded-sm shadow-2xl p-6 font-mono text-xs text-white max-h-[90vh] overflow-y-auto space-y-6 focus:outline-none"
         role="dialog"
+        aria-modal="true"
         aria-label="Error Experience System Testing Hub"
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-white/10">

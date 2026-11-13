@@ -295,7 +295,8 @@ export const LayoutController: React.FC = () => {
           className="flex items-center gap-2 px-3.5 py-2 text-xs font-mono font-bold uppercase bg-[var(--bg-surface)] text-[var(--text-main)] hover:border-[var(--accent)] border-2 border-[var(--border-color)] shadow-md transition-all"
         >
           <Sliders className="w-3.5 h-3.5 text-[var(--accent)]" />
-          <span>Layout Options</span>
+          <span className="hidden sm:inline">Layout Options</span>
+          <span className="sm:hidden">Layout</span>
           <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
         </button>
       </div>
