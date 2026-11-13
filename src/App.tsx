@@ -27,6 +27,7 @@ import { QuickActionsMenu } from './components/common/QuickActionsMenu';
 import { FuturisticSpotlight } from './components/common/FuturisticSpotlight';
 import { ScrollSectionReveal } from './components/common/ScrollSectionReveal';
 import { ThemeTransitionOverlay } from './components/common/ThemeTransitionOverlay';
+import { useGlobalUtmTracking } from './hooks/useGlobalUtmTracking';
 import {
   ErrorBoundary,
   OfflineBanner,
@@ -435,6 +436,8 @@ function PortfolioMainContent() {
 }
 
 export default function App() {
+  useGlobalUtmTracking();
+
   return (
     <ErrorBoundary>
       <LayoutProvider>

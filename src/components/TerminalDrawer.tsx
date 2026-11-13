@@ -36,6 +36,7 @@ import {
 import { TerminalTheme } from '../types/terminal';
 import { MatrixRainCanvas } from './MatrixRainCanvas';
 import { WhyHireCard } from './WhyHireCard';
+import { appendUtmSource } from '../utils/utmTracker';
 
 interface TerminalDrawerProps {
   isOpen: boolean;
@@ -1201,7 +1202,7 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
             Opening LinkedIn profile: <a href={PERSONAL_INFO.linkedin} target="_blank" rel="noreferrer" className="text-blue-400 underline font-bold">{PERSONAL_INFO.linkedin}</a>
           </div>
         );
-        window.open(PERSONAL_INFO.linkedin, '_blank');
+        window.open(appendUtmSource(PERSONAL_INFO.linkedin), '_blank');
         break;
       }
 
