@@ -6,6 +6,8 @@
  * Do-Not-Track respect.
  */
 
+import { trackExternalPortfolioClick } from './ga4';
+
 export type ExternalLinkCategory =
   | 'github'
   | 'linkedin'
@@ -99,6 +101,15 @@ export function trackExternalLinkClick(anchor: HTMLAnchorElement): ExternalLinkE
     if (sessionEvents.length > MAX_EVENTS) {
       sessionEvents.shift();
     }
+
+    trackExternalPortfolioClick({
+      category: eventRecord.category,
+      hostname: eventRecord.hostname,
+      section: eventRecord.section,
+      projectId: anchor.getAttribute('data-project-id') || undefined,
+      linkRole: anchor.getAttribute('data-link-role') || undefined,
+      pathname: parsed.pathname,
+    });
 
     if (typeof window !== 'undefined') {
       try {

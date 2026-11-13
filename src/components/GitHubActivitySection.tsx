@@ -24,6 +24,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { soundFX } from '../utils/soundEffects';
+import { trackPortfolioExport } from '../utils/ga4';
 
 interface GitHubRepo {
   id: number;
@@ -746,11 +747,13 @@ export const GitHubActivitySection: React.FC = () => {
 
   const handleTriggerPrint = () => {
     soundFX.playClick();
+    trackPortfolioExport('github_report_print', 'github-activity');
     window.print();
   };
 
   const handleDownloadJSON = () => {
     soundFX.playClick();
+    trackPortfolioExport('github_audit_json', 'github-activity');
     const auditData = {
       user: GITHUB_USERNAME,
       profileUrl: `https://github.com/${GITHUB_USERNAME}`,

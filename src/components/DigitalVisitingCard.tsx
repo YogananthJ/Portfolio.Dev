@@ -25,6 +25,7 @@ import {
   RotateCw
 } from 'lucide-react';
 import { soundFX } from '../utils/soundEffects';
+import { trackVisitingCardExport } from '../utils/ga4';
 
 interface DigitalVisitingCardProps {
   className?: string;
@@ -284,6 +285,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
       }, 2500);
 
       showToast('Saved vCard (YogananthJ.vcf)');
+      trackVisitingCardExport('vcf');
       try {
         soundFX?.playChime?.();
       } catch {
@@ -516,6 +518,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
 
       pdf.save('YogananthJ_Digital_VCard.pdf');
       showToast('Downloaded PDF (YogananthJ_Digital_VCard.pdf)');
+      trackVisitingCardExport('pdf');
       try {
         soundFX?.playChime?.();
       } catch {
@@ -549,6 +552,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
       }, 2000);
 
       showToast('Downloaded PNG (YogananthJ_Digital_VCard.png)');
+      trackVisitingCardExport('png');
       try {
         soundFX?.playChime?.();
       } catch {

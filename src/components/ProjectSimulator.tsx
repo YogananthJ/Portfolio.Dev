@@ -91,6 +91,8 @@ export const ProjectSimulator: React.FC<ProjectSimulatorProps> = ({ project }) =
                 href={project.simulatorConfig.externalLiveUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                data-project-id={project.id}
+                data-link-role="project_demo"
                 className="inline-flex items-center gap-1.5 px-3 py-1 bg-pink-600 hover:bg-pink-700 text-white font-bold transition-colors"
               >
                 <span>{project.simulatorConfig.externalLabel || 'Open Live Streamlit App'}</span>
@@ -207,6 +209,8 @@ export const ProjectSimulator: React.FC<ProjectSimulatorProps> = ({ project }) =
                 href={project.simulatorConfig.externalLiveUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                data-project-id={project.id}
+                data-link-role="project_demo"
                 className="inline-flex items-center gap-1.5 px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white font-bold transition-colors"
               >
                 <span>{project.simulatorConfig.externalLabel || 'Chat on Telegram (@CareerPilotAgent2026_bot)'}</span>

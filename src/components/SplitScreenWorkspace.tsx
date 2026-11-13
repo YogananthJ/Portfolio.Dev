@@ -194,6 +194,8 @@ export const SplitScreenWorkspace: React.FC<SplitScreenWorkspaceProps> = ({ onOp
                     href={selectedProject.demoUrl}
                     target="_blank"
                     rel="noopener noreferrer"
+                    data-project-id={selectedProject.id}
+                    data-link-role="project_demo"
                     className="flex items-center gap-1 px-3 py-1.5 bg-[var(--accent)] text-white font-bold uppercase text-[11px]"
                   >
                     <span>Live App</span>
@@ -204,6 +206,8 @@ export const SplitScreenWorkspace: React.FC<SplitScreenWorkspaceProps> = ({ onOp
                   href={selectedProject.githubUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  data-project-id={selectedProject.id}
+                  data-link-role="project_repo"
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-[var(--accent)] text-[var(--text-main)] transition-colors font-bold uppercase text-[11px]"
                 >
                   <Github className="w-3.5 h-3.5" />

@@ -25,6 +25,7 @@ import { ScrollSectionReveal } from './components/common/ScrollSectionReveal';
 import { ThemeTransitionOverlay } from './components/common/ThemeTransitionOverlay';
 import { useGlobalUtmTracking } from './hooks/useGlobalUtmTracking';
 import { useErrorMonitoring } from './hooks/useErrorMonitoring';
+import { trackGa4PageView, trackProjectModalOpen } from './utils/ga4';
 import { ErrorBoundary } from './components/errors/ErrorBoundary';
 import { SectionErrorBoundary } from './components/errors/SectionErrorBoundary';
 import { OfflineBanner } from './components/errors/OfflineBanner';
@@ -169,6 +170,11 @@ function PortfolioMainContent() {
       if (canonicalEl) canonicalEl.setAttribute('href', `${BASE_URL}/`);
       setMeta('property', 'og:title', errTitle);
       setMeta('property', 'og:url', `${BASE_URL}/`);
+      const errPath =
+        typeof window !== 'undefined' && window.location.pathname && window.location.pathname !== '/'
+          ? window.location.pathname
+          : `/${route.page}`;
+      trackGa4PageView(errPath, errTitle);
       return;
     }
 
@@ -189,6 +195,7 @@ function PortfolioMainContent() {
         setMeta('name', 'twitter:title', expTitle);
         setMeta('name', 'twitter:description', expDesc);
         setMeta('name', 'twitter:url', expUrl);
+        trackGa4PageView(`/motion-lab/${detail.id}`, expTitle);
         return;
       }
     }
@@ -203,6 +210,7 @@ function PortfolioMainContent() {
     setMeta('name', 'twitter:title', DEFAULT_TITLE);
     setMeta('name', 'twitter:description', DEFAULT_DESC);
     setMeta('name', 'twitter:url', `${BASE_URL}/`);
+    trackGa4PageView('/', DEFAULT_TITLE);
   }, [route]);
 
   // Listen for Error Experience Hub launch events from Terminal or Workspace Controls
@@ -300,6 +308,7 @@ function PortfolioMainContent() {
 
   const handleOpenProjectModal = (project: ProjectItem) => {
     setActiveProject(project);
+    trackProjectModalOpen(project.id, project.category);
     try {
       const url = new URL(window.location.href);
       url.searchParams.set('project', project.id);

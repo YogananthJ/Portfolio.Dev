@@ -24,6 +24,7 @@ import {
 import { PERSONAL_INFO, PROJECTS, CERTIFICATIONS, SKILL_CATEGORIES } from '../data/portfolioData';
 import { soundFX } from '../utils/soundEffects';
 import { useDialogA11y } from '../hooks/useDialogA11y';
+import { trackResumeDownload } from '../utils/ga4';
 
 interface ResumeModalProps {
   isOpen: boolean;
@@ -49,6 +50,7 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose }) => 
 
   const handlePrint = () => {
     soundFX.playClick();
+    trackResumeDownload('pdf_print', 'resume_modal');
     window.print();
   };
 
@@ -129,6 +131,7 @@ ACADEMIC EDUCATION
 
   const handleDownloadATS = () => {
     soundFX.playClick();
+    trackResumeDownload('ats_txt', 'resume_modal');
     const text = generateATSPlainText();
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);

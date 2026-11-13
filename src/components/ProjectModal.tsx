@@ -330,6 +330,8 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
                 href={project.githubUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                data-project-id={project.id}
+                data-link-role="project_repo"
                 className="flex items-center gap-2 px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider text-white bg-[var(--accent)] hover:opacity-90 transition-opacity"
               >
                 <Github className="w-3.5 h-3.5" />
@@ -342,6 +344,8 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
                   href={project.demoUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  data-project-id={project.id}
+                  data-link-role="project_demo"
                   className="flex items-center gap-1.5 px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider text-[var(--text-main)] bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--accent)] transition-colors"
                 >
                   <span>Open Live Demo</span>

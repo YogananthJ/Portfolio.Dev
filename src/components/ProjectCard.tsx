@@ -473,6 +473,8 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onOpenModal, 
               href={project.githubUrl}
               target="_blank"
               rel="noopener noreferrer"
+              data-project-id={project.id}
+              data-link-role="project_repo"
               className="p-1.5 hover:bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-main)] hover:text-[var(--accent)] transition-colors"
               title="View GitHub Repository"
             >
@@ -483,6 +485,8 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onOpenModal, 
                 href={project.demoUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                data-project-id={project.id}
+                data-link-role="project_demo"
                 className="flex items-center gap-1 px-2 py-1 text-[11px] bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/30 font-bold hover:bg-[var(--accent)] hover:text-white transition-colors"
               >
                 <span>Live</span>

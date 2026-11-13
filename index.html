@@ -101,6 +101,53 @@
       ]
     }
     </script>
+
+    <!-- Google tag (gtag.js) — GA4 Measurement ID: G-D1GRL5P56Q -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-D1GRL5P56Q"></script>
+    <script>
+      (function () {
+        if (window.__GA4_INITIALIZED__) return;
+        window.__GA4_INITIALIZED__ = true;
+
+        var MEASUREMENT_ID = 'G-D1GRL5P56Q';
+        var CONSENT_KEY = 'portfolio_analytics_consent';
+        var dntEnabled =
+          (typeof navigator !== 'undefined' && navigator.doNotTrack === '1') ||
+          (typeof navigator !== 'undefined' && navigator.globalPrivacyControl === true);
+        var storedConsent = null;
+        try {
+          storedConsent = window.localStorage ? window.localStorage.getItem(CONSENT_KEY) : null;
+        } catch (e) {
+          storedConsent = null;
+        }
+
+        var analyticsConsent = !dntEnabled && storedConsent !== 'denied' ? 'granted' : 'denied';
+        if (analyticsConsent !== 'granted') {
+          window['ga-disable-' + MEASUREMENT_ID] = true;
+        }
+
+        window.dataLayer = window.dataLayer || [];
+        function gtag() {
+          window.dataLayer.push(arguments);
+        }
+        window.gtag = window.gtag || gtag;
+
+        gtag('consent', 'default', {
+          analytics_storage: analyticsConsent,
+          ad_storage: 'denied',
+          ad_user_data: 'denied',
+          ad_personalization: 'denied'
+        });
+
+        gtag('js', new Date());
+        gtag('config', MEASUREMENT_ID, {
+          send_page_view: false,
+          allow_google_signals: false,
+          allow_ad_personalization_signals: false,
+          anonymize_ip: true
+        });
+      })();
+    </script>
   </head>
   <body class="bg-[#F5F2EB] text-[#121212] selection:bg-[#E11D48] selection:text-white">
     <div id="root"></div>

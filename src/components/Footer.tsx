@@ -1,9 +1,35 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { PERSONAL_INFO } from '../data/portfolioData';
-import { ArrowUp, Github, Linkedin, Heart } from 'lucide-react';
+import { ArrowUp, Github, Linkedin, Shield } from 'lucide-react';
 import { VisitorCounter } from './VisitorCounter';
+import {
+  AnalyticsConsentState,
+  getAnalyticsConsentState,
+  isBrowserPrivacyOptOut,
+  setAnalyticsConsent,
+  subscribeToAnalyticsConsent,
+  trackGa4PageView,
+} from '../utils/ga4';
 
 export const Footer: React.FC = () => {
+  const [consentState, setConsentState] = useState<AnalyticsConsentState>(() =>
+    getAnalyticsConsentState()
+  );
+  const browserOptOut = isBrowserPrivacyOptOut();
+
+  useEffect(() => {
+    return subscribeToAnalyticsConsent((next) => setConsentState(next));
+  }, []);
+
+  const handleToggleConsent = () => {
+    if (browserOptOut) return;
+    const nextGranted = consentState !== 'granted';
+    setAnalyticsConsent(nextGranted);
+    if (nextGranted && typeof window !== 'undefined') {
+      trackGa4PageView(window.location.pathname || '/', document.title);
+    }
+  };
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -68,10 +94,34 @@ export const Footer: React.FC = () => {
           <div>
             &copy; {new Date().getFullYear()} Yogananth J. Designed &amp; engineered with intent.
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-2">
             <span>Built with React &amp; TypeScript</span>
             <span>·</span>
             <span>Zero-slop architectural craft</span>
+            <span>·</span>
+            <button
+              type="button"
+              onClick={handleToggleConsent}
+              disabled={browserOptOut}
+              aria-pressed={consentState === 'granted'}
+              title={
+                browserOptOut
+                  ? 'Browser Do Not Track / Global Privacy Control is active (analytics disabled)'
+                  : consentState === 'granted'
+                    ? 'Privacy-safe GA4 analytics active (zero PII). Click to opt out.'
+                    : 'GA4 analytics opted out. Click to re-enable.'
+              }
+              className="inline-flex items-center gap-1 px-2 py-0.5 border border-white/15 bg-white/5 hover:border-white/30 text-[11px] text-white/70 hover:text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <Shield className="w-3 h-3 text-[#E11D48]" />
+              <span>
+                {browserOptOut
+                  ? 'Privacy: DNT Active'
+                  : consentState === 'granted'
+                    ? 'Analytics: Enabled'
+                    : 'Analytics: Opted Out'}
+              </span>
+            </button>
           </div>
         </div>
       </div>
