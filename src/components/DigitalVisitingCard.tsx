@@ -373,7 +373,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
           <div style="width: 360px; display: flex; flex-direction: column; justify-content: center; gap: 12px;">
             <div style="display: flex; align-items: center; gap: 14px;">
               <div style="width: 88px; height: 88px; border-radius: 8px; border: 2.5px solid #F43F5E; background: #ffffff; padding: 3px; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
-                <img src="${avatarSrc}" crossOrigin="anonymous" alt="Avatar" style="width: 100%; height: 100%; object-fit: contain; object-position: bottom; display: block;" />
+                <img src="${avatarSrc}" crossOrigin="anonymous" alt="Yogananth J portrait illustration" style="width: 100%; height: 100%; object-fit: contain; object-position: bottom; display: block;" />
               </div>
               <div style="min-width: 0; flex: 1;">
                 <div style="font-size: 24px; font-weight: 900; color: #ffffff; letter-spacing: -0.02em; line-height: 1.15; font-family: system-ui, -apple-system, sans-serif;">
@@ -424,7 +424,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
             <!-- QR Code Block -->
             <div style="display: flex; align-items: center; gap: 10px; margin-top: 6px; padding: 4px 8px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; width: fit-content;">
               <div style="padding: 2.5px; background: #ffffff; border-radius: 3px; display: flex; align-items: center; justify-content: center;">
-                ${qr ? `<img src="${qr}" crossOrigin="anonymous" alt="QR" style="width: 38px; height: 38px; display: block;" />` : ''}
+                ${qr ? `<img src="${qr}" crossOrigin="anonymous" alt="Portfolio QR Code" style="width: 38px; height: 38px; display: block;" />` : ''}
               </div>
               <div style="display: flex; flex-direction: column;">
                 <span style="font-size: 8px; font-weight: bold; color: #ffffff; letter-spacing: 0.05em;">SCAN PORTFOLIO</span>

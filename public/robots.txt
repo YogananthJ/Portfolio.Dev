@@ -1,4 +1,14 @@
 User-agent: *
 Allow: /
+Disallow: /404
+Disallow: /offline
+Disallow: /500
+Disallow: /403
+Disallow: /408
+Disallow: /502
+Disallow: /503
+Disallow: /504
+Disallow: /app-error
+Disallow: /error/
 
 Sitemap: https://iam-mjyogananth.pages.dev/sitemap.xml

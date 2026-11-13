@@ -17,9 +17,9 @@ export const MotionExplanation: React.FC<MotionExplanationProps> = ({ points, ti
       <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
         <div className="flex items-center gap-2">
           <BookOpen className="w-4 h-4 text-[var(--accent)]" />
-          <h3 className="font-display text-base sm:text-lg font-black uppercase text-[var(--text-main)]">
+          <h2 className="font-display text-base sm:text-lg font-black uppercase text-[var(--text-main)]">
             HOW IT WORKS // ARCHITECTURE &amp; MECHANICS
-          </h3>
+          </h2>
         </div>
         <span className="text-[10px] text-[var(--text-muted)] font-bold uppercase">
           {points.length} Technical Directives
@@ -36,9 +36,9 @@ export const MotionExplanation: React.FC<MotionExplanationProps> = ({ points, ti
               <span className="w-5 h-5 rounded bg-[var(--accent)] text-white text-[10px] font-bold flex items-center justify-center shrink-0">
                 0{idx + 1}
               </span>
-              <h4 className="font-bold text-xs text-[var(--text-main)]">
+              <h3 className="font-bold text-xs text-[var(--text-main)]">
                 {point.title}
-              </h4>
+              </h3>
             </div>
             <p className="text-xs text-[var(--text-muted)] leading-relaxed pl-7">
               {point.description}

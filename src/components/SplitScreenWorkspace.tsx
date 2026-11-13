@@ -44,6 +44,7 @@ export const SplitScreenWorkspace: React.FC<SplitScreenWorkspaceProps> = ({ onOp
 
   return (
     <div className="min-h-screen bg-[var(--bg-canvas)] flex flex-col font-sans">
+      <h1 className="sr-only">Yogananth J — AI/ML Engineer &amp; Full-Stack Developer Split Workbench</h1>
       {/* Top Workspace Header */}
       <div className="bg-[var(--bg-surface)] text-[var(--text-main)] px-4 sm:px-6 py-3 border-b border-[var(--border-color)] flex items-center justify-between gap-4 font-mono text-xs">
         <div className="flex items-center gap-3">
@@ -91,9 +92,9 @@ export const SplitScreenWorkspace: React.FC<SplitScreenWorkspaceProps> = ({ onOp
           {/* Explorer Header */}
           <div className="p-4 border-b border-[var(--border-color)] bg-[var(--bg-card)] space-y-3 font-mono">
             <div className="flex items-center justify-between">
-              <span className="text-base font-bold uppercase text-[var(--text-main)]">
+              <h2 className="text-base font-bold uppercase text-[var(--text-main)]">
                 Projects Directory
-              </span>
+              </h2>
               <span className="text-xs text-[var(--accent)] font-bold">
                 {filteredProjects.length} Verified
               </span>
@@ -182,9 +183,9 @@ export const SplitScreenWorkspace: React.FC<SplitScreenWorkspaceProps> = ({ onOp
                 <span className="text-[10px] text-[var(--accent)] font-bold uppercase tracking-widest block">
                   Active Sandbox &amp; Neural Evaluation
                 </span>
-                <h3 className="text-xl font-bold uppercase text-[var(--text-main)] mt-0.5">
+                <h2 className="text-xl font-bold uppercase text-[var(--text-main)] mt-0.5">
                   {selectedProject.title}
-                </h3>
+                </h2>
               </div>
 
               <div className="flex items-center gap-2">
@@ -248,9 +249,9 @@ export const SplitScreenWorkspace: React.FC<SplitScreenWorkspaceProps> = ({ onOp
 
             {/* Technical Highlights & Architecture Accordion */}
             <div className="bg-[var(--bg-card)] border border-[var(--border-color)] p-5">
-              <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--accent)] mb-2">
+              <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-[var(--accent)] mb-2">
                 System Engineering &amp; Methodology
-              </h4>
+              </h3>
               <p className="text-xs text-[var(--text-muted)] leading-relaxed font-mono mb-4">
                 {selectedProject.architectureOverview}
               </p>

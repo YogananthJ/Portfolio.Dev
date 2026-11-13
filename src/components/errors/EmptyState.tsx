@@ -23,9 +23,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       <EmptySearchIllustration />
 
       <div className="space-y-1.5 max-w-sm">
-        <h4 className="text-base sm:text-lg font-bold text-white uppercase tracking-tight">
+        <h3 className="text-base sm:text-lg font-bold text-white uppercase tracking-tight">
           {title}
-        </h4>
+        </h3>
         <p className="text-xs text-zinc-400 leading-relaxed font-sans">
           {description}
         </p>

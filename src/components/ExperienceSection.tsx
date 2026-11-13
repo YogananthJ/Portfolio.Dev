@@ -121,9 +121,9 @@ export const ExperienceSection: React.FC = () => {
                       <span className="text-xs font-mono font-bold uppercase tracking-wider text-[var(--accent)] block">
                         {item.typeLabel}
                       </span>
-                      <h3 className="text-lg sm:text-xl font-bold text-[var(--text-main)] uppercase tracking-tight mt-0.5">
+                      <h4 className="text-lg sm:text-xl font-bold text-[var(--text-main)] uppercase tracking-tight mt-0.5">
                         {item.title}
-                      </h3>
+                      </h4>
                       <div className="text-xs font-mono text-[var(--text-muted)]">
                         {item.subtitle}
                       </div>
