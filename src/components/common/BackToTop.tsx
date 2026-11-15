@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { ArrowUp } from 'lucide-react';
+import { ExpandableLabel, useTouchExpandPreview } from './ExpandableIconButton';
 
 export const BackToTop: React.FC = () => {
   const [isActive, setIsActive] = useState<boolean>(false);
   const shouldReduceMotion = useReducedMotion();
+  const touchPreviewProps = useTouchExpandPreview();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -57,16 +59,19 @@ export const BackToTop: React.FC = () => {
           type="button"
           aria-label="Scroll to top of page"
           title="Return to top"
+          {...touchPreviewProps}
           style={{
             position: 'fixed',
             left: '50%',
             bottom: '24px',
             zIndex: 50,
           }}
-          className="fixed z-50 left-1/2 bottom-6 -translate-x-1/2 p-2.5 bg-[#0e0e0e]/90 hover:bg-[#181818] text-white border border-white/20 hover:border-[var(--accent)] transition-colors rounded-xs shadow-xl backdrop-blur-md font-mono text-xs flex items-center gap-1.5 group cursor-pointer select-none"
+          className="expandable-icon-btn expandable-icon-btn--floating fixed z-50 left-1/2 bottom-6 -translate-x-1/2 bg-[#0e0e0e]/90 hover:bg-[#181818] text-white border border-white/20 hover:border-[var(--accent)] rounded-xs shadow-xl backdrop-blur-md font-mono text-xs inline-flex group cursor-pointer select-none"
         >
-          <ArrowUp className="w-3.5 h-3.5 text-[var(--accent)] group-hover:-translate-y-0.5 transition-transform" />
-          <span className="hidden sm:inline text-[10px] uppercase font-bold tracking-wider">Top</span>
+          <ArrowUp className="w-3.5 h-3.5 shrink-0 text-[var(--accent)] group-hover:-translate-y-0.5 transition-transform" />
+          <ExpandableLabel className="text-[10px] uppercase font-bold tracking-wider">
+            Top
+          </ExpandableLabel>
         </motion.button>
       )}
     </AnimatePresence>

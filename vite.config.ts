@@ -113,6 +113,27 @@ export default defineConfig(() => {
       alias: {
         '@': path.resolve(import.meta.dirname, '.'),
       },
+      dedupe: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime'],
+    },
+    optimizeDeps: {
+      include: [
+        'react',
+        'react-dom',
+        'react-dom/client',
+        'react/jsx-runtime',
+        'react/jsx-dev-runtime',
+        'framer-motion',
+        'lucide-react',
+        'gsap',
+        'gsap/ScrollTrigger',
+        'd3',
+        'firebase/app',
+        'firebase/auth',
+        'firebase/firestore/lite',
+        'qrcode',
+        'html2canvas',
+        'jspdf',
+      ],
     },
     build: {
       rolldownOptions: {

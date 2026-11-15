@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useLayout } from '../../context/LayoutContext';
 import { soundFX } from '../../utils/soundEffects';
+import { ExpandableIconButton } from './ExpandableIconButton';
 
 interface QuickActionsMenuProps {
   onOpenTerminal?: () => void;
@@ -295,26 +296,39 @@ export const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({ onOpenTermin
       </AnimatePresence>
 
       {/* Main Trigger Button */}
-      <button
+      <ExpandableIconButton
+        variant="floating"
         onClick={() => {
           soundFX.playClick(isOpen ? 650 : 850);
           setIsOpen(!isOpen);
         }}
-        type="button"
         aria-expanded={isOpen}
         aria-haspopup="dialog"
         aria-label="Toggle Quick Actions menu"
-        className={`flex items-center gap-2 px-3 py-2 text-xs font-mono font-bold uppercase tracking-wider bg-[var(--bg-surface)] text-[var(--text-main)] border-2 transition-all shadow-md cursor-pointer ${
+        title="Quick Actions"
+        className={`inline-flex text-xs font-mono font-bold uppercase tracking-wider bg-[var(--bg-surface)] text-[var(--text-main)] border-2 shadow-md cursor-pointer ${
           isOpen
             ? 'border-[var(--accent)] ring-1 ring-[var(--accent)] text-[var(--accent)]'
             : 'border-[var(--border-color)] hover:border-[var(--accent)]'
         }`}
-      >
-        <Zap className={`w-3.5 h-3.5 text-[var(--accent)] transition-transform duration-200 ${isOpen ? 'scale-110' : ''}`} />
-        <span className="hidden sm:inline">Quick Actions</span>
-        <span className="sm:hidden">Actions</span>
-        <ChevronUp className={`w-3.5 h-3.5 text-[var(--text-muted)] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
+        icon={
+          <Zap
+            className={`w-3.5 h-3.5 shrink-0 text-[var(--accent)] transition-transform duration-200 ${
+              isOpen ? 'scale-110' : ''
+            }`}
+          />
+        }
+        label={
+          <>
+            <span>Quick Actions</span>
+            <ChevronUp
+              className={`w-3.5 h-3.5 shrink-0 text-[var(--text-muted)] transition-transform duration-200 ${
+                isOpen ? 'rotate-180' : ''
+              }`}
+            />
+          </>
+        }
+      />
     </aside>
   );
 };

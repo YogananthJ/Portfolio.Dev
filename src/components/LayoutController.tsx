@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { AccentTheme } from '../types/layout';
 import { soundFX } from '../utils/soundEffects';
+import { ExpandableIconButton } from './common/ExpandableIconButton';
 
 export const LayoutController: React.FC = () => {
   const {
@@ -274,31 +275,55 @@ export const LayoutController: React.FC = () => {
       {/* Floating Trigger Bar */}
       <div className="flex items-center gap-2">
         {/* Quick layout toggle button */}
-        <button
+        <ExpandableIconButton
+          variant="floating"
           onClick={() => setLayoutMode(layoutMode === 'split' ? 'standard' : 'split')}
-          type="button"
-          className="flex items-center gap-1.5 px-3 py-2 text-xs font-mono font-bold uppercase bg-[var(--bg-card)] text-[var(--text-main)] hover:bg-[var(--bg-surface)] border-2 border-[var(--border-color)] shadow-md transition-all"
+          aria-pressed={layoutMode === 'split'}
+          aria-label={
+            layoutMode === 'split'
+              ? 'Exit Split-Screen Workspace Mode'
+              : 'Toggle Split-Screen Workspace Mode'
+          }
           title="Toggle Split-Screen Workspace Mode"
-        >
-          <Columns2 className="w-3.5 h-3.5 text-[var(--accent)]" />
-          <span className="hidden sm:inline">
-            {layoutMode === 'split' ? 'Exit Split View' : 'Split-Screen'}
-          </span>
-        </button>
+          className={`inline-flex text-xs font-mono font-bold uppercase border-2 shadow-md cursor-pointer ${
+            layoutMode === 'split'
+              ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
+              : 'bg-[var(--bg-card)] text-[var(--text-main)] hover:bg-[var(--bg-surface)] hover:border-[var(--accent)] border-[var(--border-color)]'
+          }`}
+          icon={
+            <Columns2
+              className={`w-3.5 h-3.5 shrink-0 ${
+                layoutMode === 'split' ? 'text-white' : 'text-[var(--accent)]'
+              }`}
+            />
+          }
+          label={<span>{layoutMode === 'split' ? 'Exit Split View' : 'Split-Screen'}</span>}
+        />
 
         {/* Master Options Toggle */}
-        <button
+        <ExpandableIconButton
+          variant="floating"
           onClick={() => setExpanded(!expanded)}
-          type="button"
           aria-expanded={expanded}
           aria-label="Toggle Layout Options Panel"
-          className="flex items-center gap-2 px-3.5 py-2 text-xs font-mono font-bold uppercase bg-[var(--bg-surface)] text-[var(--text-main)] hover:border-[var(--accent)] border-2 border-[var(--border-color)] shadow-md transition-all"
-        >
-          <Sliders className="w-3.5 h-3.5 text-[var(--accent)]" />
-          <span className="hidden sm:inline">Layout Options</span>
-          <span className="sm:hidden">Layout</span>
-          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
-        </button>
+          title="Layout Options"
+          className={`inline-flex text-xs font-mono font-bold uppercase border-2 shadow-md cursor-pointer ${
+            expanded
+              ? 'bg-[var(--bg-surface)] border-[var(--accent)] ring-1 ring-[var(--accent)] text-[var(--accent)]'
+              : 'bg-[var(--bg-surface)] text-[var(--text-main)] hover:border-[var(--accent)] border-[var(--border-color)]'
+          }`}
+          icon={<Sliders className="w-3.5 h-3.5 shrink-0 text-[var(--accent)]" />}
+          label={
+            <>
+              <span>Layout Options</span>
+              <ChevronDown
+                className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${
+                  expanded ? 'rotate-180' : ''
+                }`}
+              />
+            </>
+          }
+        />
       </div>
     </aside>
   );

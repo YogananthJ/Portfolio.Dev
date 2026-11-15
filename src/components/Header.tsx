@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Terminal, Send, Menu, X, Columns2, PanelLeft, Volume2, VolumeX, FileText, Sun, Moon } from 'lucide-react';
 import { useLayout } from '../context/LayoutContext';
 import { soundFX } from '../utils/soundEffects';
+import { ExpandableIconButton, ExpandableIconLink } from './common/ExpandableIconButton';
 
 interface HeaderProps {
   onOpenTerminal: () => void;
@@ -67,7 +68,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
             onClick={toggleSidebar}
             type="button"
             aria-expanded={sidebarOpen}
-            className={`p-1.5 border transition-colors cursor-pointer ${
+            className={`h-8 w-8 flex items-center justify-center border transition-colors cursor-pointer shrink-0 ${
               sidebarOpen
                 ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
                 : 'bg-[var(--bg-surface)] text-[var(--text-main)] border-[var(--border-color)] hover:border-[var(--text-main)]'
@@ -80,7 +81,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
 
           <a
             href="#overview"
-            className="group flex items-center gap-1.5 sm:gap-2 font-display text-lg sm:text-xl lg:text-2xl font-black tracking-tight text-[var(--text-main)] whitespace-nowrap hover:text-[var(--accent)] transition-colors"
+            className="group flex items-center gap-1.5 sm:gap-2 font-display text-base sm:text-xl lg:text-2xl font-black tracking-tight text-[var(--text-main)] whitespace-nowrap hover:text-[var(--accent)] transition-colors"
           >
             <span>YOGANANTH</span>
             <span className="w-2 h-2 bg-[var(--accent)] group-hover:scale-125 transition-transform"></span>
@@ -171,94 +172,131 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
           </div>
         </nav>
 
-        {/* Zone 3: Action Controls (Responsive cluster: Never clips!) */}
+        {/* Zone 3: Compact Expandable Icon Toolbar */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Split Screen Workbench Toggle (Icon on laptop/tablet, Text on wide screens) */}
-          <button
+          {/* 1. Split Screen Workbench Toggle */}
+          <ExpandableIconButton
+            variant="header"
             onClick={() => setLayoutMode(layoutMode === 'split' ? 'standard' : 'split')}
-            type="button"
             aria-pressed={layoutMode === 'split'}
-            aria-label="Toggle Dual-Pane Split Screen Workbench"
-            className={`hidden sm:flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 text-xs font-mono font-bold uppercase border transition-colors whitespace-nowrap cursor-pointer ${
+            aria-label={
+              layoutMode === 'split'
+                ? 'Exit Dual-Pane Split Screen Workbench'
+                : 'Toggle Dual-Pane Split Screen Workbench'
+            }
+            title="Toggle Dual-Pane Split Screen Workbench"
+            className={`hidden sm:inline-flex text-xs font-mono font-bold uppercase border cursor-pointer ${
               layoutMode === 'split'
                 ? 'bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm'
                 : 'bg-[var(--bg-surface)] text-[var(--text-main)] border-[var(--border-color)] hover:border-[var(--accent)]'
             }`}
-            title="Toggle Dual-Pane Split Screen Workbench"
-          >
-            <Columns2 className="w-3.5 h-3.5 text-[var(--accent)]" />
-            <span className="hidden xl:inline">{layoutMode === 'split' ? 'Exit Split' : 'Split View'}</span>
-          </button>
+            icon={
+              <Columns2
+                className={`w-3.5 h-3.5 shrink-0 ${
+                  layoutMode === 'split' ? 'text-white' : 'text-[var(--accent)]'
+                }`}
+              />
+            }
+            label={<span>{layoutMode === 'split' ? 'Exit Split' : 'Split View'}</span>}
+          />
 
-          {/* Audio Synthesis Feedback Toggle */}
-          <button
+          {/* 2. Audio Synthesis Feedback Toggle */}
+          <ExpandableIconButton
+            variant="header"
             onClick={handleToggleSound}
-            type="button"
             aria-pressed={soundActive}
-            className={`p-1.5 border transition-colors cursor-pointer ${
+            title={
+              soundActive
+                ? 'Procedural Sound: ACTIVE (Click to mute)'
+                : 'Procedural Sound: MUTED (Click to activate audio)'
+            }
+            aria-label={
+              soundActive
+                ? 'Mute procedural sound synthesis'
+                : 'Enable procedural sound synthesis'
+            }
+            className={`inline-flex text-xs font-mono font-bold uppercase border cursor-pointer ${
               soundActive
                 ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
-                : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-main)]'
+                : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-main)] hover:border-[var(--accent)]'
             }`}
-            title={soundActive ? 'Procedural Sound: ACTIVE (Click to mute)' : 'Procedural Sound: MUTED (Click to activate audio)'}
-            aria-label="Toggle procedural sound synthesis"
-          >
-            {soundActive ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
-          </button>
+            icon={
+              soundActive ? (
+                <Volume2 className="w-3.5 h-3.5 shrink-0" />
+              ) : (
+                <VolumeX className="w-3.5 h-3.5 shrink-0" />
+              )
+            }
+            label={<span>{soundActive ? 'Sound On' : 'Muted'}</span>}
+          />
 
-          {/* Light / Dark Mode Toggle with Framer Motion Glassmorphism Cross-Fade */}
-          <button
+          {/* 3. Light / Dark Mode Toggle */}
+          <ExpandableIconButton
+            variant="header"
             onClick={() => {
               soundFX.playClick();
               toggleTheme();
             }}
-            type="button"
-            className="p-1.5 border transition-colors cursor-pointer bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-main)] hover:border-[var(--accent)]"
             title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          >
-            {isDark ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-zinc-700 dark:text-zinc-300" />}
-          </button>
+            className="inline-flex text-xs font-mono font-bold uppercase border cursor-pointer bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-main)] hover:border-[var(--accent)]"
+            icon={
+              isDark ? (
+                <Sun className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+              ) : (
+                <Moon className="w-3.5 h-3.5 shrink-0 text-[var(--text-main)]" />
+              )
+            }
+            label={<span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>}
+          />
 
-          {/* Terminal CLI Launcher */}
-          <button
+          {/* 4. Terminal CLI Launcher */}
+          <ExpandableIconButton
+            variant="header"
             onClick={() => {
               soundFX.playClick();
               onOpenTerminal();
             }}
-            type="button"
-            className="hidden sm:flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 text-xs font-mono font-medium text-[var(--text-main)] bg-[var(--bg-surface)] hover:bg-[var(--bg-card)] border border-[var(--border-color)] transition-colors whitespace-nowrap cursor-pointer"
+            aria-label="Open Developer Terminal Console (Cmd+K)"
             title="Open Developer Console (Cmd+K)"
-          >
-            <Terminal className="w-3.5 h-3.5 text-[var(--accent)]" />
-            <span className="hidden xl:inline">CLI</span>
-            <kbd className="hidden 2xl:inline-block px-1 py-0.5 text-[10px] bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)]">⌘K</kbd>
-          </button>
+            className="hidden sm:inline-flex text-xs font-mono font-bold uppercase text-[var(--text-main)] bg-[var(--bg-surface)] hover:bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-[var(--accent)] cursor-pointer"
+            icon={<Terminal className="w-3.5 h-3.5 shrink-0 text-[var(--accent)]" />}
+            label={
+              <>
+                <span>Terminal</span>
+                <kbd className="hidden xl:inline-block px-1 py-0.5 text-[9px] leading-none bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)]">
+                  ⌘K
+                </kbd>
+              </>
+            }
+          />
 
-          {/* Resume Dossier Launcher (Always visible) */}
+          {/* 5. Resume Dossier Launcher */}
           {onOpenResume && (
-            <button
+            <ExpandableIconButton
+              variant="header"
               onClick={() => {
                 soundFX.playClick();
                 onOpenResume();
               }}
-              type="button"
-              className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 text-xs font-mono font-bold uppercase text-[var(--text-main)] bg-[var(--bg-surface)] hover:bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-amber-400 transition-colors whitespace-nowrap cursor-pointer"
+              aria-label="View & Download Official Engineering Resume"
               title="View & Download Official Engineering Resume"
-            >
-              <FileText className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden xs:inline">Resume</span>
-            </button>
+              className="inline-flex text-xs font-mono font-bold uppercase text-[var(--text-main)] bg-[var(--bg-surface)] hover:bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-amber-400 cursor-pointer"
+              icon={<FileText className="w-3.5 h-3.5 shrink-0 text-amber-400" />}
+              label={<span>Resume</span>}
+            />
           )}
 
-          {/* Contact Button (Always visible) */}
-          <a
+          {/* 6. Contact Button */}
+          <ExpandableIconLink
+            variant="header"
             href="#contact"
-            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white bg-[var(--accent)] hover:opacity-90 transition-all whitespace-nowrap shadow-sm font-mono shrink-0 cursor-pointer"
-          >
-            <span>Contact</span>
-            <Send className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-          </a>
+            aria-label="Contact Yogananth J"
+            title="Jump to Contact Section"
+            className="inline-flex text-xs font-bold uppercase tracking-wider text-white bg-[var(--accent)] border border-[var(--accent)] hover:opacity-90 shadow-sm font-mono cursor-pointer"
+            icon={<Send className="w-3.5 h-3.5 shrink-0" />}
+            label={<span>Contact</span>}
+          />
 
           {/* Mobile/Tablet Menu Hamburger Button (< 1024px) */}
           <button
@@ -266,10 +304,10 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
             type="button"
             aria-expanded={mobileMenuOpen}
             aria-controls="mobile-nav-drawer"
-            className="flex lg:hidden p-1.5 sm:p-2 text-[var(--text-main)] hover:bg-[var(--bg-surface)] border border-[var(--border-color)] cursor-pointer"
+            className="flex lg:hidden h-8 w-8 items-center justify-center text-[var(--text-main)] hover:bg-[var(--bg-surface)] border border-[var(--border-color)] cursor-pointer shrink-0"
             aria-label="Toggle navigation menu"
           >
-            {mobileMenuOpen ? <X className="w-4 h-4 sm:w-5 sm:h-5" /> : <Menu className="w-4 h-4 sm:w-5 sm:h-5" />}
+            {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
         </div>
       </div>
