@@ -11,7 +11,8 @@
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit && tsx scripts/check-img-alt.ts && tsx scripts/validate-structured-data.ts",
     "validate:sitemap": "node scripts/validate-sitemap.js",
-    "validate:structured-data": "tsx scripts/validate-structured-data.ts"
+    "validate:structured-data": "tsx scripts/validate-structured-data.ts",
+    "debug:sitemap": "node scripts/debug-sitemap-fetch.js"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
