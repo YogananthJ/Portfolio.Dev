@@ -113,7 +113,14 @@ function parseSitemapXml(xmlContent) {
     return { entries: [], errors: ['Sitemap XML file is empty.'], warnings };
   }
 
+  if (xmlContent.charCodeAt(0) === 0xfeff) {
+    errors.push('Sitemap XML begins with a UTF-8 BOM (0xEF 0xBB 0xBF); save as UTF-8 without BOM.');
+  }
+
   const trimmed = xmlContent.replace(/^\uFEFF/, '');
+  if (/^\s+<\?xml/i.test(trimmed)) {
+    errors.push('Sitemap XML has leading whitespace before the <?xml?> declaration.');
+  }
 
   // Check for unclosed comments first
   let scanIdx = 0;
@@ -277,6 +284,8 @@ function parseSitemapXml(xmlContent) {
         } else {
           errors.push(`Unexpected root element <${tagName}> at line ${line} (expected <urlset>).`);
         }
+      } else if (!/xmlns\s*=\s*["']http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9["']/i.test(attrsText)) {
+        errors.push(`Root <urlset> at line ${line} is missing required xmlns="http://www.sitemaps.org/schemas/sitemap/0.9".`);
       }
     }
 
@@ -685,6 +694,16 @@ async function main() {
     } else {
       record('WARN', `robots.txt does not declare a Sitemap directive for ${expectedSitemapLoc}`);
     }
+
+    const sitemapRobotsEval = evaluateRobotsForPath(parsedRobots, '/sitemap.xml', 'googlebot');
+    if (sitemapRobotsEval.blocked) {
+      record(
+        'FAIL',
+        `robots.txt blocks Googlebot from /sitemap.xml (${sitemapRobotsEval.matchedRule.type}: ${sitemapRobotsEval.matchedRule.pattern}).`
+      );
+    } else {
+      record('PASS', 'robots.txt permits Googlebot access to /sitemap.xml.');
+    }
   } else {
     record('WARN', `robots.txt not found at ${robotsPath}; skipping crawl-block verification.`);
   }
@@ -805,6 +824,38 @@ async function main() {
   if (!opts.skipHttp && validProbeTargets.length > 0) {
     console.log('');
     console.log(`${COLORS.bold}--- HTTP Accessibility, Canonical & SPA Fallback Checks ---${COLORS.reset}`);
+
+    // Probe /sitemap.xml directly as Googlebot to verify HTTP 200, XML Content-Type, and zero challenges/redirects
+    const sitemapHttpUrl = `${targetBaseUrl}/sitemap.xml`;
+    try {
+      const smRes = await fetch(sitemapHttpUrl, {
+        method: 'GET',
+        redirect: 'manual',
+        signal: AbortSignal.timeout(opts.timeout),
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+          Accept: 'application/xml,text/xml;q=0.9,*/*;q=0.8',
+        },
+      });
+      const smCt = (smRes.headers.get('content-type') || '').toLowerCase();
+      const smBody = await smRes.text();
+      const isXmlCt = smCt.includes('application/xml') || smCt.includes('text/xml');
+
+      if (smRes.status !== 200) {
+        record('FAIL', `${sitemapHttpUrl} returned HTTP ${smRes.status} (expected HTTP 200 without redirects).`);
+      } else if (!isXmlCt) {
+        record('FAIL', `${sitemapHttpUrl} returned unexpected Content-Type "${smCt}" (expected application/xml or text/xml).`);
+      } else if (/<html\b/i.test(smBody) || !/<urlset\b/i.test(smBody)) {
+        record('FAIL', `${sitemapHttpUrl} did not return a valid XML <urlset> body (possible challenge or SPA fallback).`);
+      } else {
+        record('PASS', `${sitemapHttpUrl} (Googlebot UA) -> HTTP 200 | Content-Type=${smCt}`);
+      }
+    } catch (err) {
+      record(
+        'FAIL',
+        `Failed to fetch ${sitemapHttpUrl}: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
 
     // Probe a guaranteed non-existent route to fingerprint SPA fallback behavior
     const probePath = '/__sitemap_invalid_route_probe__';
