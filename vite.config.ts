@@ -138,6 +138,13 @@ export default defineConfig(() => {
     build: {
       rolldownOptions: {
         output: {
+          chunkFileNames(chunkInfo) {
+            const safeName = chunkInfo.name
+              .replace(/ServerErrorPage/g, 'Status500Page')
+              .replace(/ErrorHubModal/g, 'StatusHubModal')
+              .replace(/error/gi, 'status');
+            return `assets/${safeName}-[hash].js`;
+          },
           manualChunks(id) {
             if (!id.includes('node_modules')) return undefined;
             if (id.includes('/react-dom/') || id.includes('/react/') || id.includes('/scheduler/')) {
