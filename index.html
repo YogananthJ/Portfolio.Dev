@@ -40,7 +40,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
-    <!-- Schema.org JSON-LD Structured Data -->
+    <!-- Schema.org JSON-LD Structured Data (Single Source of Truth)
+         Contract: Keep exactly one ld+json block; ProfilePage.mainEntity and .about
+         must reference the #person @id using the exact canonical origin https://iam-mjyogananth.pages.dev/ -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -95,6 +97,9 @@
             "url": "https://iam-mjyogananth.pages.dev/"
           },
           "about": {
+            "@id": "https://iam-mjyogananth.pages.dev/#person"
+          },
+          "mainEntity": {
             "@id": "https://iam-mjyogananth.pages.dev/#person"
           }
         }

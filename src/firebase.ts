@@ -2,35 +2,17 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import {
   getFirestore,
-  initializeFirestore,
   type Firestore,
-} from 'firebase/firestore';
+} from 'firebase/firestore/lite';
 import firebaseConfig from '../firebase-applet-config.json';
 
 // Initialize Firebase app singleton
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// Use long-polling in browser environments to avoid WebChannel streaming hangs
-// behind proxies, CDNs, or sandboxed iframes that trigger 10s backend timeouts.
-function createFirestoreClient(): Firestore {
-  if (typeof window !== 'undefined') {
-    try {
-      return initializeFirestore(
-        app,
-        {
-          experimentalForceLongPolling: true,
-        },
-        firebaseConfig.firestoreDatabaseId
-      );
-    } catch {
-      // Fallback if Firestore instance was already initialized (e.g. during HMR)
-    }
-  }
-  return getFirestore(app, firebaseConfig.firestoreDatabaseId);
-}
-
-// Initialize Firestore with specific database ID from config
-export const db = createFirestoreClient();
+// Use Firestore Lite's stateless HTTPS REST client for analytics reads/writes
+// instead of persistent WebChannel Listen streams that can stall behind proxies
+// or sandboxed iframes and trigger 10s backend timeout errors.
+export const db: Firestore = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
 
 export enum OperationType {

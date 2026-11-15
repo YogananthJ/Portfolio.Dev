@@ -7,8 +7,7 @@ import {
   setDoc,
   updateDoc,
   increment,
-  onSnapshot,
-} from 'firebase/firestore';
+} from 'firebase/firestore/lite';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 
 interface VisitorCounterProps {
@@ -18,11 +17,19 @@ interface VisitorCounterProps {
 // Persistent keys stored in localStorage so visits are counted strictly once per browser
 const VISITOR_ID_KEY = 'portfolio_unique_visitor_id';
 const VISITOR_RECORDED_KEY = 'portfolio_visitor_recorded_v1';
+const CACHED_VISITORS_KEY = 'portfolio_cached_visitors';
 const ANALYTICS_DOC_ID = 'visitors';
 const BASELINE_COUNT = 1428;
+const REQUEST_TIMEOUT_MS = 5500;
 
-// Module-level lock ensuring strict single-flight execution across concurrent renders
-let isSyncingGlobally = false;
+interface SyncResult {
+  count: number;
+  isNewVisitor: boolean;
+  fromFallback: boolean;
+}
+
+// Module-level promise ensuring single-flight execution across StrictMode or concurrent mounts
+let activeSyncPromise: Promise<SyncResult> | null = null;
 
 function isTransientNetworkError(error: unknown): boolean {
   if (!error) return false;
@@ -33,21 +40,52 @@ function isTransientNetworkError(error: unknown): boolean {
       : '';
   return (
     code === 'unavailable' ||
+    code === 'deadline-exceeded' ||
     msg.includes('client is offline') ||
     msg.includes('could not reach cloud firestore') ||
     msg.includes('network') ||
-    msg.includes('failed to fetch')
+    msg.includes('failed to fetch') ||
+    msg.includes('request failed with error') ||
+    msg.includes('timed out') ||
+    msg.includes('timeout')
   );
 }
 
 function getCachedCount(): number {
   try {
-    const cached = localStorage.getItem('portfolio_cached_visitors');
+    const cached = localStorage.getItem(CACHED_VISITORS_KEY);
     const parsed = cached ? parseInt(cached, 10) : NaN;
     return Number.isFinite(parsed) && parsed > 0 ? parsed : BASELINE_COUNT;
   } catch {
     return BASELINE_COUNT;
   }
+}
+
+function saveCachedCount(count: number): void {
+  try {
+    localStorage.setItem(CACHED_VISITORS_KEY, count.toString());
+  } catch {
+    // Ignore storage quota errors
+  }
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs = REQUEST_TIMEOUT_MS): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = window.setTimeout(() => {
+      reject(new Error(`Firestore request timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    promise.then(
+      (value) => {
+        window.clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        window.clearTimeout(timer);
+        reject(err);
+      }
+    );
+  });
 }
 
 export const VisitorCounter: React.FC<VisitorCounterProps> = ({ className = '' }) => {
@@ -64,7 +102,6 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({ className = '' }
   useEffect(() => {
     let isMounted = true;
     let hasResolved = false;
-    let unsubscribeSnapshot: (() => void) | null = null;
     let loadingTimeoutId: number | null = null;
 
     const docRef = doc(db, 'analytics', ANALYTICS_DOC_ID);
@@ -88,50 +125,33 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({ className = '' }
       markLoaded();
     };
 
-    const detachSnapshot = () => {
-      if (unsubscribeSnapshot) {
-        unsubscribeSnapshot();
-        unsubscribeSnapshot = null;
+    const fetchLiveCount = async (): Promise<SyncResult> => {
+      try {
+        const docSnap = await withTimeout(getDoc(docRef));
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (typeof data?.count === 'number') {
+            saveCachedCount(data.count);
+            return { count: data.count, isNewVisitor: false, fromFallback: false };
+          }
+        }
+        return { count: getCachedCount(), isNewVisitor: false, fromFallback: true };
+      } catch (err) {
+        if (isTransientNetworkError(err)) {
+          return { count: getCachedCount(), isNewVisitor: false, fromFallback: true };
+        }
+        try {
+          handleFirestoreError(err, OperationType.GET, `analytics/${ANALYTICS_DOC_ID}`);
+        } catch (handledErr) {
+          console.warn('Firestore read error, falling back to cached baseline:', handledErr);
+        }
+        return { count: getCachedCount(), isNewVisitor: false, fromFallback: true };
       }
     };
 
-    const attachSnapshot = () => {
-      if (unsubscribeSnapshot || !isMounted) return;
-      if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
-
-      unsubscribeSnapshot = onSnapshot(
-        docRef,
-        (snapshot) => {
-          if (!isMounted) return;
-          if (snapshot.exists()) {
-            const data = snapshot.data();
-            if (typeof data?.count === 'number') {
-              setVisitorCount(data.count);
-              setIsOfflineFallback(snapshot.metadata.fromCache);
-              try {
-                localStorage.setItem('portfolio_cached_visitors', data.count.toString());
-              } catch {
-                // Ignore storage quota errors
-              }
-              markLoaded();
-            }
-          }
-        },
-        (error) => {
-          if (!isMounted) return;
-          if (isTransientNetworkError(error)) {
-            applyCachedFallback(false);
-          } else {
-            console.warn('Firestore snapshot listener info:', error.message);
-          }
-        }
-      );
-    };
-
-    async function syncVisitorCount() {
+    const runInitialSync = async (): Promise<SyncResult> => {
       if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-        applyCachedFallback(false);
-        return;
+        return { count: getCachedCount(), isNewVisitor: false, fromFallback: true };
       }
 
       let hasBeenCounted = false;
@@ -154,21 +174,12 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({ className = '' }
       }
 
       // Case A: This browser has ALREADY been counted previously.
-      // Let onSnapshot fetch and maintain live synchronization without duplicate getDoc calls.
       if (hasBeenCounted) {
-        attachSnapshot();
-        return;
+        return fetchLiveCount();
       }
 
       // Case B: Brand new browser visit.
-      // Guard against race conditions (e.g. concurrent renders or multiple tabs)
-      if (isSyncingGlobally) {
-        attachSnapshot();
-        return;
-      }
-      isSyncingGlobally = true;
-
-      // Mark as counted IMMEDIATELY so any subsequent refresh or concurrent tab never increments again
+      // Mark as counted IMMEDIATELY so any subsequent refresh or concurrent tab never increments again.
       try {
         localStorage.setItem(VISITOR_RECORDED_KEY, 'true');
       } catch {
@@ -178,78 +189,77 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({ className = '' }
       try {
         let docSnap;
         try {
-          docSnap = await getDoc(docRef);
+          docSnap = await withTimeout(getDoc(docRef));
         } catch (err) {
           if (isTransientNetworkError(err)) {
-            applyCachedFallback(true);
-            setIsNewVisitor(true);
-            return;
+            return { count: getCachedCount() + 1, isNewVisitor: true, fromFallback: true };
           }
           handleFirestoreError(err, OperationType.GET, `analytics/${ANALYTICS_DOC_ID}`);
-          return;
+          return { count: getCachedCount(), isNewVisitor: false, fromFallback: true };
         }
 
         if (!docSnap.exists()) {
-          // Initialize baseline document
           const initialCount = BASELINE_COUNT + 1;
           try {
-            await setDoc(docRef, {
-              count: initialCount,
-              lastUpdated: new Date().toISOString(),
-            });
+            await withTimeout(
+              setDoc(docRef, {
+                count: initialCount,
+                lastUpdated: new Date().toISOString(),
+              })
+            );
           } catch (err) {
             if (isTransientNetworkError(err)) {
-              applyCachedFallback(true);
-              setIsNewVisitor(true);
-              return;
+              return { count: getCachedCount() + 1, isNewVisitor: true, fromFallback: true };
             }
             handleFirestoreError(err, OperationType.CREATE, `analytics/${ANALYTICS_DOC_ID}`);
           }
 
-          if (isMounted) {
-            setVisitorCount(initialCount);
-            setIsOfflineFallback(false);
-            setIsNewVisitor(true);
-            markLoaded();
-          }
-        } else {
-          // Document exists: atomically increment visitor count in Firestore
-          const data = docSnap.data();
-          const existingCount = typeof data?.count === 'number' ? data.count : BASELINE_COUNT;
-          const nextCount = existingCount + 1;
+          saveCachedCount(initialCount);
+          return { count: initialCount, isNewVisitor: true, fromFallback: false };
+        }
 
-          try {
-            await updateDoc(docRef, {
+        const data = docSnap.data();
+        const existingCount = typeof data?.count === 'number' ? data.count : BASELINE_COUNT;
+        const nextCount = existingCount + 1;
+
+        try {
+          await withTimeout(
+            updateDoc(docRef, {
               count: increment(1),
               lastUpdated: new Date().toISOString(),
-            });
-          } catch (err) {
-            if (isTransientNetworkError(err)) {
-              applyCachedFallback(true);
-              setIsNewVisitor(true);
-              return;
-            }
-            handleFirestoreError(err, OperationType.UPDATE, `analytics/${ANALYTICS_DOC_ID}`);
+            })
+          );
+        } catch (err) {
+          if (isTransientNetworkError(err)) {
+            return { count: getCachedCount() + 1, isNewVisitor: true, fromFallback: true };
           }
-
-          if (isMounted) {
-            setVisitorCount(nextCount);
-            setIsOfflineFallback(false);
-            setIsNewVisitor(true);
-            markLoaded();
-          }
+          handleFirestoreError(err, OperationType.UPDATE, `analytics/${ANALYTICS_DOC_ID}`);
         }
 
-        attachSnapshot();
+        saveCachedCount(nextCount);
+        return { count: nextCount, isNewVisitor: true, fromFallback: false };
       } catch (err) {
         console.warn('Firestore write error, falling back to cached baseline:', err);
-        if (isMounted) {
-          applyCachedFallback(true);
-          setIsNewVisitor(true);
-        }
-      } finally {
-        isSyncingGlobally = false;
+        return { count: getCachedCount() + 1, isNewVisitor: true, fromFallback: true };
       }
+    };
+
+    async function syncVisitorCount() {
+      const syncPromise =
+        activeSyncPromise ??
+        (activeSyncPromise = runInitialSync().finally(() => {
+          activeSyncPromise = null;
+        }));
+
+      const result = await syncPromise;
+      if (!isMounted) return;
+
+      setVisitorCount(result.count);
+      setIsOfflineFallback(result.fromFallback);
+      if (result.isNewVisitor) {
+        setIsNewVisitor(true);
+      }
+      markLoaded();
     }
 
     // Ensure loading indicator never stalls indefinitely if network is blocked
@@ -261,15 +271,17 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({ className = '' }
 
     syncVisitorCount();
 
-    const handleOnline = () => {
+    const handleOnline = async () => {
       if (!isMounted) return;
-      setIsOfflineFallback(false);
-      attachSnapshot();
+      const result = await fetchLiveCount();
+      if (!isMounted) return;
+      setVisitorCount(result.count);
+      setIsOfflineFallback(result.fromFallback);
+      markLoaded();
     };
 
     const handleOffline = () => {
       if (!isMounted) return;
-      detachSnapshot();
       applyCachedFallback(false);
     };
 
@@ -281,7 +293,6 @@ export const VisitorCounter: React.FC<VisitorCounterProps> = ({ className = '' }
       if (loadingTimeoutId !== null) {
         clearTimeout(loadingTimeoutId);
       }
-      detachSnapshot();
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };

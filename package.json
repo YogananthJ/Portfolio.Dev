@@ -9,7 +9,9 @@
     "start": "node server.ts",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit && tsx scripts/check-img-alt.ts"
+    "lint": "tsc --noEmit && tsx scripts/check-img-alt.ts && tsx scripts/validate-structured-data.ts",
+    "validate:sitemap": "node scripts/validate-sitemap.js",
+    "validate:structured-data": "tsx scripts/validate-structured-data.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
