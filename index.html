@@ -12,7 +12,7 @@
 
     <!-- OpenGraph Social Sharing -->
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Yogananth J Portfolio" />
+    <meta property="og:site_name" content="Yogananth J" />
     <meta property="og:title" content="Yogananth J | AI/ML Engineer &amp; Full-Stack Developer" />
     <meta property="og:description" content="Portfolio of Yogananth J: AI/ML Engineer &amp; Full-Stack Developer building RAG pipelines, CrewAI agents, PyTorch vision models, and React web apps." />
     <meta property="og:url" content="https://iam-mjyogananth.pages.dev/" />
@@ -41,12 +41,27 @@
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
     <!-- Schema.org JSON-LD Structured Data (Single Source of Truth)
-         Contract: Keep exactly one ld+json block; ProfilePage.mainEntity and .about
-         must reference the #person @id using the exact canonical origin https://iam-mjyogananth.pages.dev/ -->
+         Contract: Keep exactly one ld+json block; WebSite establishes site branding,
+         and ProfilePage.mainEntity and .about must reference #person using
+         https://iam-mjyogananth.pages.dev/ -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://iam-mjyogananth.pages.dev/#website",
+          "name": "Yogananth J",
+          "alternateName": [
+            "Yogananth J Portfolio",
+            "Yogananth J Official Portfolio",
+            "iam-mjyogananth"
+          ],
+          "url": "https://iam-mjyogananth.pages.dev/",
+          "publisher": {
+            "@id": "https://iam-mjyogananth.pages.dev/#person"
+          }
+        },
         {
           "@type": "Person",
           "@id": "https://iam-mjyogananth.pages.dev/#person",
@@ -92,9 +107,7 @@
             "height": 630
           },
           "isPartOf": {
-            "@type": "WebSite",
-            "name": "Yogananth J Official Portfolio",
-            "url": "https://iam-mjyogananth.pages.dev/"
+            "@id": "https://iam-mjyogananth.pages.dev/#website"
           },
           "about": {
             "@id": "https://iam-mjyogananth.pages.dev/#person"

@@ -121,9 +121,15 @@ function validateHtmlStructuredData(htmlPath: string, errors: string[]): void {
     }
   }
 
+  const websites = graph.filter((n) => hasType(n, 'WebSite'));
   const persons = graph.filter((n) => hasType(n, 'Person'));
   const profilePages = graph.filter((n) => hasType(n, 'ProfilePage'));
 
+  assert(
+    websites.length === 1,
+    `${relPath}: Expected exactly 1 WebSite entity in @graph, found ${websites.length}.`,
+    errors
+  );
   assert(
     persons.length === 1,
     `${relPath}: Expected exactly 1 Person entity in @graph, found ${persons.length}.`,
@@ -135,8 +141,50 @@ function validateHtmlStructuredData(htmlPath: string, errors: string[]): void {
     errors
   );
 
+  const website = websites[0];
   const person = persons[0];
   const profilePage = profilePages[0];
+
+  const ogSiteNameMatch =
+    html.match(/<meta\b[^>]*\bproperty=["']og:site_name["'][^>]*\bcontent=["']([^"']+)["'][^>]*>/i) ||
+    html.match(/<meta\b[^>]*\bcontent=["']([^"']+)["'][^>]*\bproperty=["']og:site_name["'][^>]*>/i);
+  assert(Boolean(ogSiteNameMatch?.[1]), `${relPath}: Missing <meta property="og:site_name"> tag.`, errors);
+
+  if (website) {
+    assert(isNonEmptyString(website.name), `${relPath}: WebSite entity is missing valid "name".`, errors);
+    assert(isValidHttpUrl(website.url), `${relPath}: WebSite entity "url" must be an absolute URL.`, errors);
+    if (canonicalMatch?.[1] && isValidHttpUrl(website.url)) {
+      assert(
+        String(website.url) === canonicalMatch[1],
+        `${relPath}: WebSite.url "${website.url}" must match canonical URL "${canonicalMatch[1]}".`,
+        errors
+      );
+    }
+    const altNames = website.alternateName;
+    const validAltNames =
+      isNonEmptyString(altNames) ||
+      (Array.isArray(altNames) && altNames.length > 0 && altNames.every((item) => isNonEmptyString(item)));
+    assert(
+      validAltNames,
+      `${relPath}: WebSite entity must include a non-empty "alternateName" string or array.`,
+      errors
+    );
+    const publisher = website.publisher as Record<string, unknown> | undefined;
+    if (publisher && isNonEmptyString(publisher['@id'])) {
+      assert(
+        nodesById.has(publisher['@id']),
+        `${relPath}: WebSite.publisher "${publisher['@id']}" does not resolve in @graph.`,
+        errors
+      );
+    }
+    if (ogSiteNameMatch?.[1] && isNonEmptyString(website.name)) {
+      assert(
+        ogSiteNameMatch[1].trim() === website.name.trim(),
+        `${relPath}: og:site_name "${ogSiteNameMatch[1]}" must match WebSite.name "${website.name}".`,
+        errors
+      );
+    }
+  }
 
   if (person) {
     assert(isNonEmptyString(person.name), `${relPath}: Person entity is missing valid "name".`, errors);
@@ -234,14 +282,16 @@ function validateHtmlStructuredData(htmlPath: string, errors: string[]): void {
     }
 
     const isPartOf = profilePage.isPartOf as Record<string, unknown> | undefined;
+    const isPartOfId = isPartOf?.['@id'];
+    const resolvedWebsite = isNonEmptyString(isPartOfId) ? nodesById.get(isPartOfId) : isPartOf;
     assert(
       Boolean(
-        isPartOf &&
-          isPartOf['@type'] === 'WebSite' &&
-          isNonEmptyString(isPartOf.name) &&
-          isValidHttpUrl(isPartOf.url)
+        resolvedWebsite &&
+          hasType(resolvedWebsite, 'WebSite') &&
+          isNonEmptyString(resolvedWebsite.name) &&
+          isValidHttpUrl(resolvedWebsite.url)
       ),
-      `${relPath}: ProfilePage.isPartOf must reference a valid WebSite with name and url.`,
+      `${relPath}: ProfilePage.isPartOf must resolve to a valid WebSite with name and url.`,
       errors
     );
 
@@ -296,4 +346,6 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-console.log('[seo-jsonld] Verified index.html JSON-LD (ProfilePage.mainEntity -> #person): 0 errors.');
+console.log(
+  '[seo-jsonld] Verified index.html JSON-LD (WebSite, Person, ProfilePage.mainEntity -> #person): 0 errors.'
+);
