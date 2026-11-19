@@ -7,8 +7,6 @@ import { useLayout } from '../context/LayoutContext';
 import {
   clearSearchParam,
   getCurrentUrlParam,
-  trackFilterApplied,
-  trackSearchActivated,
   trackSearchQuery,
 } from '../utils/urlActivityTracker';
 import { 
@@ -28,37 +26,15 @@ interface ProjectShowcaseProps {
   onOpenModal: (project: ProjectItem) => void;
 }
 
-const VALID_CATEGORIES: ProjectCategory[] = [
-  'all',
-  'genai-agent',
-  'academic',
-  'hackathon',
-  'full-stack',
-  'computer-vision',
-];
-
-function resolveInitialCategory(): ProjectCategory {
-  const raw = getCurrentUrlParam('filter');
-  if (!raw) return 'all';
-  const normalized = raw.trim().toLowerCase();
-  if (normalized === 'ai-ml' || normalized === 'ai' || normalized === 'genai') return 'genai-agent';
-  if (normalized === 'cv' || normalized === 'vision') return 'computer-vision';
-  if (normalized === 'fullstack') return 'full-stack';
-  if ((VALID_CATEGORIES as string[]).includes(normalized)) {
-    return normalized as ProjectCategory;
-  }
-  return 'all';
-}
-
 function resolveInitialSearch(): string {
   const raw = getCurrentUrlParam('search');
-  if (!raw || raw === 'true') return '';
+  if (!raw) return '';
   return raw;
 }
 
 export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal }) => {
   const { viewMode, setViewMode, density } = useLayout();
-  const [selectedCategory, setSelectedCategory] = useState<ProjectCategory>(resolveInitialCategory);
+  const [selectedCategory, setSelectedCategory] = useState<ProjectCategory>('all');
   const shouldReduceMotion = Boolean(useReducedMotion());
   const [searchQuery, setSearchQuery] = useState<string>(resolveInitialSearch);
   const searchDebounceRef = useRef<number | null>(null);
@@ -166,10 +142,7 @@ export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal })
             {categories.map((cat) => (
               <button
                 key={cat.id}
-                onClick={() => {
-                  setSelectedCategory(cat.id);
-                  trackFilterApplied(cat.id);
-                }}
+                onClick={() => setSelectedCategory(cat.id)}
                 type="button"
                 className={`px-3 py-1.5 text-xs font-mono font-bold uppercase transition-colors whitespace-nowrap ${
                   selectedCategory === cat.id
@@ -188,11 +161,6 @@ export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal })
             <input
               type="text"
               value={searchQuery}
-              onFocus={() => {
-                if (!searchQuery.trim()) {
-                  trackSearchActivated();
-                }
-              }}
               onChange={(e) => {
                 const nextVal = e.target.value;
                 setSearchQuery(nextVal);

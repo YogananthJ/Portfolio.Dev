@@ -17,7 +17,6 @@ import {
 import { ProjectItem } from '../types/portfolio';
 import { ARCHITECTURE_DATA } from '../data/architectureData';
 import { soundFX } from '../utils/soundEffects';
-import { trackCardFlip } from '../utils/urlActivityTracker';
 
 interface ProjectCardProps {
   project: ProjectItem;
@@ -401,7 +400,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onOpenModal, 
             e.stopPropagation();
             soundFX.playPulse();
             setIsSchematicMode((prev) => !prev);
-            trackCardFlip(project.id);
           }}
           type="button"
           className="absolute top-2.5 right-2.5 z-20 px-2 py-0.5 bg-black/80 hover:bg-black text-[10px] font-mono text-zinc-200 border border-white/20 hover:border-[var(--accent)] flex items-center gap-1 transition-all cursor-pointer shadow-md rounded-xs"

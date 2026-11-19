@@ -3,7 +3,7 @@ import { Terminal, Send, Menu, X, Columns2, PanelLeft, Volume2, VolumeX, FileTex
 import { useLayout } from '../context/LayoutContext';
 import { soundFX } from '../utils/soundEffects';
 import { ExpandableIconButton, ExpandableIconLink } from './common/ExpandableIconButton';
-import { trackMenuState, trackSectionNavigation } from '../utils/urlActivityTracker';
+import { trackSectionNavigation } from '../utils/urlActivityTracker';
 
 interface HeaderProps {
   onOpenTerminal: () => void;
@@ -14,7 +14,6 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, activeSection }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { layoutMode, setLayoutMode, toggleSidebar, sidebarOpen, isDark, toggleTheme } = useLayout();
-  const prevMobileMenuOpenRef = useRef<boolean>(false);
 
   const [soundActive, setSoundActive] = useState<boolean>(() => soundFX.getStatus());
 
@@ -59,13 +58,6 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
       document.removeEventListener('mousedown', handleMouseDown);
     };
   }, []);
-
-  useEffect(() => {
-    if (prevMobileMenuOpenRef.current !== mobileMenuOpen) {
-      prevMobileMenuOpenRef.current = mobileMenuOpen;
-      trackMenuState(mobileMenuOpen ? 'open' : 'closed');
-    }
-  }, [mobileMenuOpen]);
 
   return (
     <header className="sticky top-0 z-40 bg-[var(--bg-canvas)]/95 backdrop-blur-md border-b border-[var(--border-color)] transition-colors w-full">

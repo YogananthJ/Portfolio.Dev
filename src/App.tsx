@@ -28,10 +28,10 @@ import { useErrorMonitoring } from './hooks/useErrorMonitoring';
 import { useUrlActivityTracking } from './hooks/useUrlActivityTracking';
 import { trackGa4PageView, trackProjectModalOpen } from './utils/ga4';
 import {
+  clearProjectParam,
   getCurrentUrlParam,
   hasAnyActivityParams,
-  trackModalState,
-  trackProjectOpen,
+  trackProjectParam,
   trackSectionNavigation,
 } from './utils/urlActivityTracker';
 import { ErrorBoundary } from './components/errors/ErrorBoundary';
@@ -252,16 +252,13 @@ function PortfolioMainContent() {
     }
 
     if (!hasAnyActivityParams() && !window.location.hash) {
-      trackSectionNavigation('home', { markSpecific: false });
+      trackSectionNavigation('home');
     }
   }, [route.page, layoutMode]);
 
   // Listen for Error Experience Hub launch events from Terminal or Workspace Controls
   useEffect(() => {
-    const handleOpenHub = () => {
-      setIsErrorHubOpen(true);
-      trackModalState('open');
-    };
+    const handleOpenHub = () => setIsErrorHubOpen(true);
     window.addEventListener('open-error-hub', handleOpenHub);
     return () => window.removeEventListener('open-error-hub', handleOpenHub);
   }, []);
@@ -322,7 +319,7 @@ function PortfolioMainContent() {
           setActiveSection(nextId);
           if (!isAnyModalOpen && lastSpiedSectionRef.current !== nextId) {
             lastSpiedSectionRef.current = nextId;
-            trackSectionNavigation(nextId, { preserveScroll: true, markSpecific: false });
+            trackSectionNavigation(nextId, { preserveScroll: true });
           }
           break;
         }
@@ -338,15 +335,10 @@ function PortfolioMainContent() {
       if (typeof window === 'undefined') return;
       const params = new URLSearchParams(window.location.search);
       const projectId = params.get('project');
-      const eventParam = params.get('event');
-      const modalParam = params.get('modal');
       const hash = window.location.hash;
       const hashProjectId = hash.startsWith('#project-') ? hash.replace('#project-', '') : null;
       const targetId = projectId || hashProjectId;
-      const shouldOpenProject = Boolean(
-        targetId && (eventParam !== 'live_demo' || modalParam === 'open' || hashProjectId)
-      );
-      if (shouldOpenProject && targetId) {
+      if (targetId) {
         const found = PROJECTS.find((p) => p.id === targetId);
         if (found) {
           setActiveProject(found);
@@ -366,22 +358,20 @@ function PortfolioMainContent() {
   const handleOpenProjectModal = (project: ProjectItem) => {
     setActiveProject(project);
     trackProjectModalOpen(project.id, project.category);
-    trackProjectOpen(project.id);
+    trackProjectParam(project.id);
   };
 
   const handleCloseProjectModal = () => {
     setActiveProject(null);
-    trackModalState('closed', { clearProject: true });
+    clearProjectParam();
   };
 
   const handleOpenResumeModal = () => {
     setIsResumeModalOpen(true);
-    trackModalState('open');
   };
 
   const handleCloseResumeModal = () => {
     setIsResumeModalOpen(false);
-    trackModalState('closed');
   };
 
   const handleLaunchSimulator = (projectId: string) => {
@@ -600,10 +590,7 @@ function PortfolioMainContent() {
           {isErrorHubOpen && (
             <ErrorHubModal
               isOpen={isErrorHubOpen}
-              onClose={() => {
-                setIsErrorHubOpen(false);
-                trackModalState('closed');
-              }}
+              onClose={() => setIsErrorHubOpen(false)}
               onSelectErrorRoute={(path) => {
                 window.history.pushState({}, '', path);
                 setRoute(getRouteFromUrl());

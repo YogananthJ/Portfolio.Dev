@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import QRCode from 'qrcode';
 import { PERSONAL_INFO } from '../data/portfolioData';
-import { Send, Mail, Github, Linkedin, Copy, CheckCircle2, MessageSquare, ArrowUpRight, FileText } from 'lucide-react';
-import { trackFormProgress } from '../utils/urlActivityTracker';
+import { Send, Github, Linkedin, Copy, CheckCircle2, ArrowUpRight, FileText, QrCode, Download, Smartphone } from 'lucide-react';
 
 interface ContactSectionProps {
   onOpenResume?: () => void;
@@ -15,14 +15,46 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
   const [submitted, setSubmitted] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [copiedEmail, setCopiedEmail] = useState(false);
-  const formStartedRef = useRef<boolean>(false);
+  const [vcardQrDataUrl, setVcardQrDataUrl] = useState<string>('');
+  const [savedVcardNotice, setSavedVcardNotice] = useState<boolean>(false);
 
-  const markFormStarted = () => {
-    if (!formStartedRef.current) {
-      formStartedRef.current = true;
-      trackFormProgress('started');
-    }
-  };
+  const vcardPayload = [
+    'BEGIN:VCARD',
+    'VERSION:3.0',
+    'N:J;Yogananth;;;',
+    `FN:${PERSONAL_INFO.name}`,
+    'ORG:AI & Full-Stack Engineering',
+    `TITLE:${PERSONAL_INFO.role}`,
+    `EMAIL;TYPE=INTERNET,PREF:${PERSONAL_INFO.email}`,
+    'URL:https://iam-mjyogananth.pages.dev',
+    `URL;TYPE=LINKEDIN:${PERSONAL_INFO.linkedin}`,
+    `URL;TYPE=GITHUB:${PERSONAL_INFO.github}`,
+    `ADR;TYPE=WORK:;;;${PERSONAL_INFO.location};;;`,
+    'END:VCARD',
+  ].join('\r\n');
+
+  useEffect(() => {
+    let isMounted = true;
+    QRCode.toDataURL(vcardPayload, {
+      width: 240,
+      margin: 2,
+      color: {
+        dark: '#121212',
+        light: '#FFFFFF',
+      },
+      errorCorrectionLevel: 'M',
+    })
+      .then((url) => {
+        if (isMounted) setVcardQrDataUrl(url);
+      })
+      .catch(() => {
+        // Keep vCard download fallback active if canvas generation fails
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [vcardPayload]);
 
   const templateIntents = [
     { label: 'Hiring for Team', subject: 'Opportunity / Job Inquiry for Yogananth', template: "Hi Yogananth,\n\nWe came across your portfolio and would love to speak with you regarding an engineering opportunity on our team." },
@@ -31,7 +63,6 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
   ];
 
   const handleApplyTemplate = (tmpl: { subject: string; template: string }) => {
-    markFormStarted();
     setSubject(tmpl.subject);
     setMessage(tmpl.template);
   };
@@ -42,9 +73,36 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
     setTimeout(() => setCopiedEmail(false), 2400);
   };
 
+  const handleDownloadVCard = () => {
+    const blob = new Blob([vcardPayload], { type: 'text/vcard;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'Yogananth_J.vcf';
+    document.body.appendChild(link);
+    link.click();
+    window.setTimeout(() => {
+      if (link.parentNode) link.parentNode.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, 1500);
+    setSavedVcardNotice(true);
+    window.setTimeout(() => setSavedVcardNotice(false), 2400);
+  };
+
+  const handleDownloadQrPng = () => {
+    if (!vcardQrDataUrl) return;
+    const link = document.createElement('a');
+    link.href = vcardQrDataUrl;
+    link.download = 'Yogananth_J_Contact_QR.png';
+    document.body.appendChild(link);
+    link.click();
+    window.setTimeout(() => {
+      if (link.parentNode) link.parentNode.removeChild(link);
+    }, 500);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    trackFormProgress('submitted');
     if (!name.trim() || !email.trim() || !message.trim()) {
       setFormError('Please enter your name, email address, and message before sending.');
       return;
@@ -62,7 +120,6 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
     // Open user's default email client
     window.location.href = `mailto:${PERSONAL_INFO.email}?subject=${mailSubject}&body=${mailBody}`;
 
-    trackFormProgress('success');
     setSubmitted(true);
     setTimeout(() => setSubmitted(false), 6000);
   };
@@ -162,6 +219,75 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
               </div>
             </div>
 
+            {/* Mobile Address Book QR Code Card */}
+            <div className="p-5 bg-[#1A1A1C] border border-white/10 space-y-4">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-wider text-white">
+                  <QrCode className="w-4 h-4 text-[#E11D48]" />
+                  <span>Quick Save to Address Book</span>
+                </div>
+                <span className="text-[10px] font-mono uppercase px-2 py-0.5 bg-white/5 border border-white/15 text-white/70">
+                  vCard 3.0
+                </span>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+                <div className="p-2 bg-white border-2 border-white/20 shrink-0 shadow-[3px_3px_0px_0px_#E11D48]">
+                  {vcardQrDataUrl ? (
+                    <img
+                      src={vcardQrDataUrl}
+                      alt="QR code to save Yogananth J contact details to your mobile address book"
+                      width={120}
+                      height={120}
+                      className="w-28 h-28 sm:w-[120px] sm:h-[120px] block"
+                    />
+                  ) : (
+                    <div className="w-28 h-28 sm:w-[120px] sm:h-[120px] bg-zinc-200 flex items-center justify-center text-[10px] font-mono text-zinc-700 text-center p-2">
+                      Generating QR...
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 space-y-3 text-center sm:text-left">
+                  <p className="text-xs text-white/75 leading-relaxed">
+                    <Smartphone className="w-3.5 h-3.5 inline-block mr-1 text-[#E11D48] align-text-bottom" />
+                    Scan with your phone camera to add <strong className="text-white">{PERSONAL_INFO.name}</strong> (email, portfolio, GitHub &amp; LinkedIn) straight to your contacts.
+                  </p>
+
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 font-mono text-[11px]">
+                    <button
+                      type="button"
+                      onClick={handleDownloadVCard}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#E11D48] hover:bg-[#F20D26] text-white font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                    >
+                      {savedVcardNotice ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Saved .vcf</span>
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Save Contact (.vcf)</span>
+                        </>
+                      )}
+                    </button>
+
+                    {vcardQrDataUrl && (
+                      <button
+                        type="button"
+                        onClick={handleDownloadQrPng}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/15 text-white/85 hover:text-white border border-white/15 font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>QR PNG</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Availability Box */}
             <div className="p-4 bg-emerald-950/30 border border-emerald-500/40 text-xs font-mono text-emerald-300 space-y-1">
               <div className="flex items-center gap-2 font-bold text-white uppercase">
@@ -219,16 +345,9 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
                     required
                     aria-invalid={Boolean(formError && !name.trim())}
                     value={name}
-                    onFocus={markFormStarted}
                     onChange={(e) => {
-                      markFormStarted();
                       setName(e.target.value);
                       if (formError) setFormError(null);
-                    }}
-                    onBlur={() => {
-                      if (name.trim().length > 0) {
-                        trackFormProgress('name_completed');
-                      }
                     }}
                     placeholder="e.g. Maya Chen"
                     className="w-full px-3 py-2.5 bg-[#121212] border border-white/20 text-white focus:outline-[#E11D48]"
@@ -242,16 +361,9 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
                     required
                     aria-invalid={Boolean(formError && (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())))}
                     value={email}
-                    onFocus={markFormStarted}
                     onChange={(e) => {
-                      markFormStarted();
                       setEmail(e.target.value);
                       if (formError) setFormError(null);
-                    }}
-                    onBlur={() => {
-                      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-                        trackFormProgress('email_completed');
-                      }
                     }}
                     placeholder="e.g. maya@company.com"
                     className="w-full px-3 py-2.5 bg-[#121212] border border-white/20 text-white focus:outline-[#E11D48]"
@@ -266,11 +378,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
                   type="text"
                   required
                   value={subject}
-                  onFocus={markFormStarted}
-                  onChange={(e) => {
-                    markFormStarted();
-                    setSubject(e.target.value);
-                  }}
+                  onChange={(e) => setSubject(e.target.value)}
                   placeholder="Subject of message..."
                   className="w-full px-3 py-2.5 bg-[#121212] border border-white/20 text-white focus:outline-[#E11D48]"
                 />
@@ -284,9 +392,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
                   aria-invalid={Boolean(formError && !message.trim())}
                   rows={5}
                   value={message}
-                  onFocus={markFormStarted}
                   onChange={(e) => {
-                    markFormStarted();
                     setMessage(e.target.value);
                     if (formError) setFormError(null);
                   }}
