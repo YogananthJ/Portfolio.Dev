@@ -41,10 +41,13 @@ function isTransientNetworkError(error: unknown): boolean {
   return (
     code === 'unavailable' ||
     code === 'deadline-exceeded' ||
+    code === 'aborted' ||
     msg.includes('client is offline') ||
     msg.includes('could not reach cloud firestore') ||
     msg.includes('network') ||
     msg.includes('failed to fetch') ||
+    msg.includes('load failed') ||
+    msg.includes('aborted') ||
     msg.includes('request failed with error') ||
     msg.includes('timed out') ||
     msg.includes('timeout')

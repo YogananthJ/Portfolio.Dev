@@ -325,7 +325,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
 
           {/* Modal Footer Actions */}
           <div className="pt-6 border-t border-[var(--border-color)] flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <a
                 href={project.githubUrl}
                 target="_blank"

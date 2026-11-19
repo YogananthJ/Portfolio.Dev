@@ -176,6 +176,7 @@ export const PROJECTS: ProjectItem[] = [
       { label: 'Citation Mode', value: 'Strict Grounding', context: 'Prevents hallucination outside PDF' },
     ],
     githubUrl: 'https://github.com/YogananthJ',
+    demoUrl: 'https://yogananth-pdf-rag-chatbot.hf.space',
     year: '2025',
     highlights: [
       'Recursive table and character-aware document chunking to prevent fragmented contextual bounds',
@@ -190,6 +191,8 @@ export const PROJECTS: ProjectItem[] = [
       title: 'Interactive RAG Retrieval Sandbox',
       description: 'Simulate vector chunking, cosine similarity scoring, and strict citation extraction from technical documents.',
       isIllustrative: true,
+      externalLiveUrl: 'https://yogananth-pdf-rag-chatbot.hf.space',
+      externalLabel: 'Live Demo',
     },
     gradientTheme: 'from-purple-500/20 via-violet-500/10 to-transparent',
     accentColor: '#8B5CF6',

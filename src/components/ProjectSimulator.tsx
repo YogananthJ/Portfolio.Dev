@@ -340,12 +340,27 @@ export const ProjectSimulator: React.FC<ProjectSimulatorProps> = ({ project }) =
     case 'pdf-rag':
       return (
         <div className="space-y-6">
-          <div className="p-3 bg-purple-500/10 border border-purple-500/30 text-xs font-mono flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-purple-500/10 border border-purple-500/30 text-xs font-mono">
             <span className="text-purple-600 dark:text-purple-400 font-bold flex items-center gap-1.5">
               <FileText className="w-4 h-4" />
-              Hybrid Vector Search & Citation Retrieval Simulator (Client-Side Demo)
+              Hybrid Vector Search &amp; Citation Retrieval Simulator (Client-Side Demo)
             </span>
-            <span className="text-[10px] text-[var(--text-muted)] font-mono">BGE-Large + BM25</span>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-[10px] text-[var(--text-muted)] font-mono">BGE-Large + BM25</span>
+              {project.simulatorConfig.externalLiveUrl && (
+                <a
+                  href={project.simulatorConfig.externalLiveUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-project-id={project.id}
+                  data-link-role="project_demo"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white font-bold transition-colors"
+                >
+                  <span>{project.simulatorConfig.externalLabel || 'Live Demo'}</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">

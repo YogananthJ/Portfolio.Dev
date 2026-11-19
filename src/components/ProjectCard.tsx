@@ -467,8 +467,8 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onOpenModal, 
         </div>
 
         {/* Footer Actions */}
-        <div className="pt-3 border-t border-[var(--border-color)] flex items-center justify-between gap-2 font-mono text-xs">
-          <div className="flex items-center gap-2">
+        <div className="pt-3 border-t border-[var(--border-color)] flex flex-wrap items-center justify-between gap-2 font-mono text-xs">
+          <div className="flex flex-wrap items-center gap-2">
             <a
               href={project.githubUrl}
               target="_blank"
@@ -487,9 +487,10 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onOpenModal, 
                 rel="noopener noreferrer"
                 data-project-id={project.id}
                 data-link-role="project_demo"
-                className="flex items-center gap-1 px-2 py-1 text-[11px] bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/30 font-bold hover:bg-[var(--accent)] hover:text-white transition-colors"
+                title="Open Live Demo"
+                className="flex items-center gap-1 px-2.5 py-1 text-[11px] bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/30 font-bold hover:bg-[var(--accent)] hover:text-white transition-colors active:scale-95"
               >
-                <span>Live</span>
+                <span>Live Demo</span>
                 <ExternalLink className="w-3 h-3" />
               </a>
             )}
