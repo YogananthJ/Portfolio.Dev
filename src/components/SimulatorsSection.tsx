@@ -78,6 +78,8 @@ export const SimulatorsSection: React.FC = () => {
                   href={selectedProject.demoUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  data-project-id={selectedProject.id}
+                  data-link-role="project_demo"
                   className="text-[var(--accent)] hover:underline font-bold flex items-center gap-1"
                 >
                   <span>Live App / Bot</span>

@@ -1,6 +1,11 @@
 import { useEffect } from 'react';
 import { applyUtmToAnchor, processExternalLinksInRoot } from '../utils/utmTracker';
-import { trackExternalLinkClick } from '../utils/linkAnalytics';
+import { classifyExternalLink, trackExternalLinkClick } from '../utils/linkAnalytics';
+import {
+  trackGitHubClick,
+  trackLinkedInClick,
+  trackLiveDemoClick,
+} from '../utils/urlActivityTracker';
 
 /**
  * Global React hook that attaches `utm_source=<window.location.hostname>`
@@ -61,6 +66,23 @@ export function useGlobalUtmTracking(): void {
         applyUtmToAnchor(anchor);
         if (event.type === 'click' || event.type === 'auxclick') {
           trackExternalLinkClick(anchor);
+
+          const linkRole = anchor.getAttribute('data-link-role');
+          const projectId = anchor.getAttribute('data-project-id') || undefined;
+          const rawHref = anchor.getAttribute('href') || '';
+          try {
+            const parsed = new URL(rawHref, window.location.origin);
+            const category = classifyExternalLink(parsed.hostname);
+            if (linkRole === 'project_demo' || category === 'demo') {
+              trackLiveDemoClick(projectId);
+            } else if (category === 'github') {
+              trackGitHubClick();
+            } else if (category === 'linkedin') {
+              trackLinkedInClick();
+            }
+          } catch {
+            // Ignore malformed URLs
+          }
         }
       }
     };

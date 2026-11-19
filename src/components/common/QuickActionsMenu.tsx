@@ -23,6 +23,7 @@ import {
 import { useLayout } from '../../context/LayoutContext';
 import { soundFX } from '../../utils/soundEffects';
 import { ExpandableIconButton } from './ExpandableIconButton';
+import { trackSectionNavigation } from '../../utils/urlActivityTracker';
 
 interface QuickActionsMenuProps {
   onOpenTerminal?: () => void;
@@ -78,6 +79,7 @@ export const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({ onOpenTermin
 
   const handleJumpToSection = (sectionId: string) => {
     soundFX.playClick(880);
+    trackSectionNavigation(sectionId);
     // If user is currently in split workbench mode, switch to standard layout so section scrolling works properly
     if (layoutMode === 'split') {
       setLayoutMode('standard');
@@ -97,6 +99,7 @@ export const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({ onOpenTermin
 
   const handleScrollTop = () => {
     soundFX.playClick(900);
+    trackSectionNavigation('home');
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setIsOpen(false);
   };

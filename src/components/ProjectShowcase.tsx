@@ -1,9 +1,16 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ProjectItem, ProjectCategory } from '../types/portfolio';
 import { PROJECTS } from '../data/portfolioData';
 import { ProjectCard } from './ProjectCard';
 import { useLayout } from '../context/LayoutContext';
+import {
+  clearSearchParam,
+  getCurrentUrlParam,
+  trackFilterApplied,
+  trackSearchActivated,
+  trackSearchQuery,
+} from '../utils/urlActivityTracker';
 import { 
   Search, 
   LayoutGrid, 
@@ -21,11 +28,48 @@ interface ProjectShowcaseProps {
   onOpenModal: (project: ProjectItem) => void;
 }
 
+const VALID_CATEGORIES: ProjectCategory[] = [
+  'all',
+  'genai-agent',
+  'academic',
+  'hackathon',
+  'full-stack',
+  'computer-vision',
+];
+
+function resolveInitialCategory(): ProjectCategory {
+  const raw = getCurrentUrlParam('filter');
+  if (!raw) return 'all';
+  const normalized = raw.trim().toLowerCase();
+  if (normalized === 'ai-ml' || normalized === 'ai' || normalized === 'genai') return 'genai-agent';
+  if (normalized === 'cv' || normalized === 'vision') return 'computer-vision';
+  if (normalized === 'fullstack') return 'full-stack';
+  if ((VALID_CATEGORIES as string[]).includes(normalized)) {
+    return normalized as ProjectCategory;
+  }
+  return 'all';
+}
+
+function resolveInitialSearch(): string {
+  const raw = getCurrentUrlParam('search');
+  if (!raw || raw === 'true') return '';
+  return raw;
+}
+
 export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal }) => {
   const { viewMode, setViewMode, density } = useLayout();
-  const [selectedCategory, setSelectedCategory] = useState<ProjectCategory>('all');
+  const [selectedCategory, setSelectedCategory] = useState<ProjectCategory>(resolveInitialCategory);
   const shouldReduceMotion = Boolean(useReducedMotion());
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>(resolveInitialSearch);
+  const searchDebounceRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) {
+        window.clearTimeout(searchDebounceRef.current);
+      }
+    };
+  }, []);
 
   const categories: { id: ProjectCategory; label: string }[] = [
     { id: 'all', label: 'All Projects (10)' },
@@ -122,7 +166,10 @@ export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal })
             {categories.map((cat) => (
               <button
                 key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
+                onClick={() => {
+                  setSelectedCategory(cat.id);
+                  trackFilterApplied(cat.id);
+                }}
                 type="button"
                 className={`px-3 py-1.5 text-xs font-mono font-bold uppercase transition-colors whitespace-nowrap ${
                   selectedCategory === cat.id
@@ -141,13 +188,37 @@ export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal })
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => {
+                if (!searchQuery.trim()) {
+                  trackSearchActivated();
+                }
+              }}
+              onChange={(e) => {
+                const nextVal = e.target.value;
+                setSearchQuery(nextVal);
+                if (searchDebounceRef.current) {
+                  window.clearTimeout(searchDebounceRef.current);
+                }
+                if (!nextVal.trim()) {
+                  clearSearchParam();
+                } else {
+                  searchDebounceRef.current = window.setTimeout(() => {
+                    trackSearchQuery(nextVal);
+                  }, 200);
+                }
+              }}
               placeholder="Filter by tech (e.g. CrewAI, Llama, PyTorch)..."
               className="w-full pl-9 pr-4 py-2 text-xs font-mono bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]"
             />
             {searchQuery && (
               <button
-                onClick={() => setSearchQuery('')}
+                onClick={() => {
+                  if (searchDebounceRef.current) {
+                    window.clearTimeout(searchDebounceRef.current);
+                  }
+                  setSearchQuery('');
+                  clearSearchParam();
+                }}
                 type="button"
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-mono text-[var(--text-muted)] hover:text-[var(--text-main)]"
               >
@@ -234,8 +305,10 @@ export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal })
                             href={proj.demoUrl}
                             target="_blank"
                             rel="noopener noreferrer"
+                            data-project-id={proj.id}
+                            data-link-role="project_demo"
                             className="p-1.5 text-[var(--accent)] hover:underline font-bold"
-                            title="Open Live App"
+                            title="Open Live Demo"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
                           </a>

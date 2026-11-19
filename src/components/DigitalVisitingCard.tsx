@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { soundFX } from '../utils/soundEffects';
 import { trackVisitingCardExport } from '../utils/ga4';
+import { trackCardFlip } from '../utils/urlActivityTracker';
 
 interface DigitalVisitingCardProps {
   className?: string;
@@ -155,6 +156,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
   const handleToggleFlip = () => {
     setIsFlipped((prev) => !prev);
     setDownloadMenuOpen(false);
+    trackCardFlip();
     try {
       soundFX?.playClick?.(650, 0.04);
     } catch {

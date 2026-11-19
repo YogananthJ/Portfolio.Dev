@@ -3,6 +3,7 @@ import { Terminal, Send, Menu, X, Columns2, PanelLeft, Volume2, VolumeX, FileTex
 import { useLayout } from '../context/LayoutContext';
 import { soundFX } from '../utils/soundEffects';
 import { ExpandableIconButton, ExpandableIconLink } from './common/ExpandableIconButton';
+import { trackMenuState, trackSectionNavigation } from '../utils/urlActivityTracker';
 
 interface HeaderProps {
   onOpenTerminal: () => void;
@@ -13,6 +14,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, activeSection }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { layoutMode, setLayoutMode, toggleSidebar, sidebarOpen, isDark, toggleTheme } = useLayout();
+  const prevMobileMenuOpenRef = useRef<boolean>(false);
 
   const [soundActive, setSoundActive] = useState<boolean>(() => soundFX.getStatus());
 
@@ -58,6 +60,13 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
     };
   }, []);
 
+  useEffect(() => {
+    if (prevMobileMenuOpenRef.current !== mobileMenuOpen) {
+      prevMobileMenuOpenRef.current = mobileMenuOpen;
+      trackMenuState(mobileMenuOpen ? 'open' : 'closed');
+    }
+  }, [mobileMenuOpen]);
+
   return (
     <header className="sticky top-0 z-40 bg-[var(--bg-canvas)]/95 backdrop-blur-md border-b border-[var(--border-color)] transition-colors w-full">
       <div className="max-w-[1720px] w-full mx-auto px-3 sm:px-6 lg:px-8 xl:px-10 h-16 flex items-center justify-between gap-2 sm:gap-4 lg:gap-6">
@@ -81,6 +90,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
 
           <a
             href="#overview"
+            onClick={() => trackSectionNavigation('home')}
             className="group flex items-center gap-1.5 sm:gap-2 font-display text-base sm:text-xl lg:text-2xl font-black tracking-tight text-[var(--text-main)] whitespace-nowrap hover:text-[var(--accent)] transition-colors"
           >
             <span>YOGANANTH</span>
@@ -97,6 +107,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
               <a
                 key={link.id}
                 href={link.href}
+                onClick={() => trackSectionNavigation(link.id)}
                 aria-current={isActive ? 'location' : undefined}
                 className={`whitespace-nowrap transition-colors py-1 relative ${
                   isActive
@@ -121,6 +132,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
               <a
                 key={link.id}
                 href={link.href}
+                onClick={() => trackSectionNavigation(link.id)}
                 aria-current={isActive ? 'location' : undefined}
                 className={`whitespace-nowrap transition-colors py-1 relative ${
                   isActive
@@ -161,7 +173,10 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
                     key={link.id}
                     href={link.href}
                     role="menuitem"
-                    onClick={() => setMoreMenuOpen(false)}
+                    onClick={() => {
+                      trackSectionNavigation(link.id);
+                      setMoreMenuOpen(false);
+                    }}
                     className="block px-3 py-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-colors"
                   >
                     {link.label}
@@ -291,6 +306,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
           <ExpandableIconLink
             variant="header"
             href="#contact"
+            onClick={() => trackSectionNavigation('contact')}
             aria-label="Contact Yogananth J"
             title="Jump to Contact Section"
             className="inline-flex text-xs font-bold uppercase tracking-wider text-white bg-[var(--accent)] border border-[var(--accent)] hover:opacity-90 shadow-sm font-mono cursor-pointer"
@@ -327,6 +343,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
                   key={link.id}
                   href={link.href}
                   onClick={() => {
+                    trackSectionNavigation(link.id);
                     setLayoutMode('standard');
                     setMobileMenuOpen(false);
                   }}

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { PERSONAL_INFO } from '../data/portfolioData';
 import { Send, Mail, Github, Linkedin, Copy, CheckCircle2, MessageSquare, ArrowUpRight, FileText } from 'lucide-react';
+import { trackFormProgress } from '../utils/urlActivityTracker';
 
 interface ContactSectionProps {
   onOpenResume?: () => void;
@@ -14,6 +15,14 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
   const [submitted, setSubmitted] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [copiedEmail, setCopiedEmail] = useState(false);
+  const formStartedRef = useRef<boolean>(false);
+
+  const markFormStarted = () => {
+    if (!formStartedRef.current) {
+      formStartedRef.current = true;
+      trackFormProgress('started');
+    }
+  };
 
   const templateIntents = [
     { label: 'Hiring for Team', subject: 'Opportunity / Job Inquiry for Yogananth', template: "Hi Yogananth,\n\nWe came across your portfolio and would love to speak with you regarding an engineering opportunity on our team." },
@@ -22,6 +31,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
   ];
 
   const handleApplyTemplate = (tmpl: { subject: string; template: string }) => {
+    markFormStarted();
     setSubject(tmpl.subject);
     setMessage(tmpl.template);
   };
@@ -34,6 +44,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    trackFormProgress('submitted');
     if (!name.trim() || !email.trim() || !message.trim()) {
       setFormError('Please enter your name, email address, and message before sending.');
       return;
@@ -51,6 +62,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
     // Open user's default email client
     window.location.href = `mailto:${PERSONAL_INFO.email}?subject=${mailSubject}&body=${mailBody}`;
 
+    trackFormProgress('success');
     setSubmitted(true);
     setTimeout(() => setSubmitted(false), 6000);
   };
@@ -207,9 +219,16 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
                     required
                     aria-invalid={Boolean(formError && !name.trim())}
                     value={name}
+                    onFocus={markFormStarted}
                     onChange={(e) => {
+                      markFormStarted();
                       setName(e.target.value);
                       if (formError) setFormError(null);
+                    }}
+                    onBlur={() => {
+                      if (name.trim().length > 0) {
+                        trackFormProgress('name_completed');
+                      }
                     }}
                     placeholder="e.g. Maya Chen"
                     className="w-full px-3 py-2.5 bg-[#121212] border border-white/20 text-white focus:outline-[#E11D48]"
@@ -223,9 +242,16 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
                     required
                     aria-invalid={Boolean(formError && (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())))}
                     value={email}
+                    onFocus={markFormStarted}
                     onChange={(e) => {
+                      markFormStarted();
                       setEmail(e.target.value);
                       if (formError) setFormError(null);
+                    }}
+                    onBlur={() => {
+                      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+                        trackFormProgress('email_completed');
+                      }
                     }}
                     placeholder="e.g. maya@company.com"
                     className="w-full px-3 py-2.5 bg-[#121212] border border-white/20 text-white focus:outline-[#E11D48]"
@@ -240,7 +266,11 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
                   type="text"
                   required
                   value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
+                  onFocus={markFormStarted}
+                  onChange={(e) => {
+                    markFormStarted();
+                    setSubject(e.target.value);
+                  }}
                   placeholder="Subject of message..."
                   className="w-full px-3 py-2.5 bg-[#121212] border border-white/20 text-white focus:outline-[#E11D48]"
                 />
@@ -254,7 +284,9 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
                   aria-invalid={Boolean(formError && !message.trim())}
                   rows={5}
                   value={message}
+                  onFocus={markFormStarted}
                   onChange={(e) => {
+                    markFormStarted();
                     setMessage(e.target.value);
                     if (formError) setFormError(null);
                   }}

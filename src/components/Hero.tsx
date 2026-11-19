@@ -23,6 +23,7 @@ import { useLayout } from '../context/LayoutContext';
 import { DigitalVisitingCard } from './DigitalVisitingCard';
 import { NeuralPipelineVisualizer } from './hero/NeuralPipelineVisualizer';
 import { soundFX } from '../utils/soundEffects';
+import { trackSectionNavigation } from '../utils/urlActivityTracker';
 
 interface HeroProps {
   onOpenTerminal: () => void;
@@ -515,6 +516,7 @@ def adapt_system_prompt(user_text: str, cadence_pause_ms: int):
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 xl:gap-10 2xl:gap-12 items-stretch mt-4 sm:mt-6">
           {/* Left Column: Biography & Action Cluster */}
           <motion.div
+            id="about"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.3 }}
@@ -537,7 +539,10 @@ def adapt_system_prompt(user_text: str, cadence_pause_ms: int):
             <div className="space-y-4 pt-4 border-t border-[var(--border-color)]">
               <div className="flex flex-wrap items-center gap-3">
                 <button
-                  onClick={onExploreWork}
+                  onClick={() => {
+                    trackSectionNavigation('projects');
+                    onExploreWork();
+                  }}
                   type="button"
                   className="flex items-center gap-2 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white bg-[var(--accent)] hover:opacity-90 transition-all shadow-md active:scale-95 cursor-pointer font-mono"
                 >
@@ -562,6 +567,7 @@ def adapt_system_prompt(user_text: str, cadence_pause_ms: int):
 
                 <a
                   href="#architecture"
+                  onClick={() => trackSectionNavigation('architecture')}
                   className="flex items-center gap-1.5 px-4 py-3 text-xs font-mono font-bold uppercase tracking-wider text-[var(--text-main)] bg-[var(--bg-surface)] hover:border-[var(--accent)] border border-[var(--border-color)] transition-all active:scale-95 cursor-pointer"
                 >
                   <Cpu className="w-3.5 h-3.5 text-[var(--accent)]" />

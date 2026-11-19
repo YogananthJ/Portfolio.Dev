@@ -7,6 +7,7 @@ import {
   AccentTheme, 
   LayoutSettings 
 } from '../types/layout';
+import { getCurrentUrlParam, trackThemeChange } from '../utils/urlActivityTracker';
 
 interface LayoutContextType extends LayoutSettings {
   setLayoutMode: (mode: LayoutMode) => void;
@@ -33,9 +34,11 @@ export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [splitRatio, setSplitRatio] = useState<number>(50);
   const [activeSimulatorId, setActiveSimulatorId] = useState<string>('pdf-rag');
 
-  // Appearance (Light, Dark, System) with localStorage persistence
+  // Appearance (Light, Dark, System) with URL query override and localStorage persistence
   const [appearance, setAppearanceState] = useState<AppearanceMode>(() => {
     if (typeof window !== 'undefined') {
+      const urlTheme = getCurrentUrlParam('theme');
+      if (urlTheme === 'dark' || urlTheme === 'light') return urlTheme;
       const saved = localStorage.getItem('yogananth_appearance');
       if (saved === 'light' || saved === 'dark' || saved === 'system') return saved;
     }
@@ -98,6 +101,7 @@ export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setAppearanceState(mode);
     if (typeof window !== 'undefined') {
       localStorage.setItem('yogananth_appearance', mode);
+      trackThemeChange(nextIsDark ? 'dark' : 'light');
     }
   };
 
@@ -148,6 +152,7 @@ export const LayoutProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const listener = (e: MediaQueryListEvent) => {
         if (isMountedRef.current) {
           triggerThemeTransition();
+          trackThemeChange(e.matches ? 'dark' : 'light');
         }
         if (e.matches) {
           root.classList.add('dark');

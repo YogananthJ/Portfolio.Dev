@@ -33,7 +33,7 @@ export function classifyExternalLink(hostname: string): ExternalLinkCategory {
   if (host === 'linkedin.com' || host.endsWith('.linkedin.com')) return 'linkedin';
   if (host === 't.me' || host.endsWith('.telegram.org')) return 'telegram';
   if (host.includes('anthropic.com') || host.includes('mongodb.com')) return 'certification';
-  if (host.includes('streamlit.app') || host.includes('pages.dev')) return 'demo';
+  if (host.includes('streamlit.app') || host.includes('pages.dev') || host === 'hf.space' || host.endsWith('.hf.space')) return 'demo';
   return 'external';
 }
 

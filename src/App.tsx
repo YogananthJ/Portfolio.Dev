@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { ProjectShowcase } from './components/ProjectShowcase';
@@ -25,7 +25,15 @@ import { ScrollSectionReveal } from './components/common/ScrollSectionReveal';
 import { ThemeTransitionOverlay } from './components/common/ThemeTransitionOverlay';
 import { useGlobalUtmTracking } from './hooks/useGlobalUtmTracking';
 import { useErrorMonitoring } from './hooks/useErrorMonitoring';
+import { useUrlActivityTracking } from './hooks/useUrlActivityTracking';
 import { trackGa4PageView, trackProjectModalOpen } from './utils/ga4';
+import {
+  getCurrentUrlParam,
+  hasAnyActivityParams,
+  trackModalState,
+  trackProjectOpen,
+  trackSectionNavigation,
+} from './utils/urlActivityTracker';
 import { ErrorBoundary } from './components/errors/ErrorBoundary';
 import { SectionErrorBoundary } from './components/errors/SectionErrorBoundary';
 import { OfflineBanner } from './components/errors/OfflineBanner';
@@ -84,6 +92,7 @@ function PortfolioMainContent() {
   const [isErrorHubOpen, setIsErrorHubOpen] = useState<boolean>(false);
   const [isSimulatedCrash, setIsSimulatedCrash] = useState<boolean>(false);
   const { friendlyNotice, dismissNotice } = useErrorMonitoring();
+  const lastSpiedSectionRef = useRef<string>('overview');
 
   // Client-side route detection for Motion Lab (/motion-lab/:id) and Error Pages (/404, /offline, etc.)
   const getRouteFromUrl = () => {
@@ -133,6 +142,14 @@ function PortfolioMainContent() {
   };
 
   const [route, setRoute] = useState<{ page: string; experimentId: string }>(getRouteFromUrl);
+  const isAnyModalOpen = Boolean(
+    activeProject || isResumeModalOpen || isErrorHubOpen || isTerminalOpen
+  );
+
+  useUrlActivityTracking({
+    isScrollTrackingEnabled: route.page === 'home' && layoutMode === 'standard',
+    isModalOpen: isAnyModalOpen,
+  });
 
   useEffect(() => {
     const handleRouteChange = () => {
@@ -213,9 +230,38 @@ function PortfolioMainContent() {
     trackGa4PageView('/', DEFAULT_TITLE);
   }, [route]);
 
+  // Initial URL activity hydration (?section=... or default ?section=home)
+  useEffect(() => {
+    if (route.page !== 'home' || layoutMode !== 'standard' || typeof window === 'undefined') {
+      return;
+    }
+
+    const sectionParam = getCurrentUrlParam('section');
+    if (sectionParam) {
+      const targetId = sectionParam === 'home' ? 'overview' : sectionParam;
+      lastSpiedSectionRef.current = targetId;
+      setActiveSection(targetId === 'about' ? 'overview' : targetId);
+      if (sectionParam !== 'home' && !window.location.hash && !getCurrentUrlParam('project')) {
+        const timer = window.setTimeout(() => {
+          const el = document.getElementById(targetId);
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }, 120);
+        return () => window.clearTimeout(timer);
+      }
+      return;
+    }
+
+    if (!hasAnyActivityParams() && !window.location.hash) {
+      trackSectionNavigation('home', { markSpecific: false });
+    }
+  }, [route.page, layoutMode]);
+
   // Listen for Error Experience Hub launch events from Terminal or Workspace Controls
   useEffect(() => {
-    const handleOpenHub = () => setIsErrorHubOpen(true);
+    const handleOpenHub = () => {
+      setIsErrorHubOpen(true);
+      trackModalState('open');
+    };
     window.addEventListener('open-error-hub', handleOpenHub);
     return () => window.removeEventListener('open-error-hub', handleOpenHub);
   }, []);
@@ -223,6 +269,7 @@ function PortfolioMainContent() {
   const handleReturnHome = () => {
     window.history.pushState({}, '', '/');
     setRoute({ page: 'home', experimentId: '' });
+    trackSectionNavigation('home');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -264,21 +311,26 @@ function PortfolioMainContent() {
 
   // Active section scroll spy (standard layout)
   useEffect(() => {
-    if (layoutMode !== 'standard') return;
+    if (layoutMode !== 'standard' || route.page !== 'home') return;
     const sectionIds = ['overview', 'projects', 'architecture', 'simulators', 'motion-playground', 'skills', 'github-activity', 'experience', 'contact'];
     const handleScroll = () => {
       const scrollPosition = window.scrollY + 200;
       for (let i = sectionIds.length - 1; i >= 0; i--) {
         const el = document.getElementById(sectionIds[i]);
         if (el && el.offsetTop <= scrollPosition) {
-          setActiveSection(sectionIds[i]);
+          const nextId = sectionIds[i];
+          setActiveSection(nextId);
+          if (!isAnyModalOpen && lastSpiedSectionRef.current !== nextId) {
+            lastSpiedSectionRef.current = nextId;
+            trackSectionNavigation(nextId, { preserveScroll: true, markSpecific: false });
+          }
           break;
         }
       }
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [layoutMode]);
+  }, [layoutMode, route.page, isAnyModalOpen]);
 
   // Check for project deep-link in URL search params (?project=...) or hash (#project-...)
   useEffect(() => {
@@ -286,10 +338,15 @@ function PortfolioMainContent() {
       if (typeof window === 'undefined') return;
       const params = new URLSearchParams(window.location.search);
       const projectId = params.get('project');
+      const eventParam = params.get('event');
+      const modalParam = params.get('modal');
       const hash = window.location.hash;
       const hashProjectId = hash.startsWith('#project-') ? hash.replace('#project-', '') : null;
       const targetId = projectId || hashProjectId;
-      if (targetId) {
+      const shouldOpenProject = Boolean(
+        targetId && (eventParam !== 'live_demo' || modalParam === 'open' || hashProjectId)
+      );
+      if (shouldOpenProject && targetId) {
         const found = PROJECTS.find((p) => p.id === targetId);
         if (found) {
           setActiveProject(found);
@@ -309,26 +366,22 @@ function PortfolioMainContent() {
   const handleOpenProjectModal = (project: ProjectItem) => {
     setActiveProject(project);
     trackProjectModalOpen(project.id, project.category);
-    try {
-      const url = new URL(window.location.href);
-      url.searchParams.set('project', project.id);
-      window.history.replaceState({}, '', url.toString());
-    } catch {
-      // Fallback if URL mutation fails
-    }
+    trackProjectOpen(project.id);
   };
 
   const handleCloseProjectModal = () => {
     setActiveProject(null);
-    try {
-      const url = new URL(window.location.href);
-      if (url.searchParams.has('project')) {
-        url.searchParams.delete('project');
-        window.history.replaceState({}, '', url.pathname + (url.search ? url.search : '') + url.hash);
-      }
-    } catch {
-      // Fallback
-    }
+    trackModalState('closed', { clearProject: true });
+  };
+
+  const handleOpenResumeModal = () => {
+    setIsResumeModalOpen(true);
+    trackModalState('open');
+  };
+
+  const handleCloseResumeModal = () => {
+    setIsResumeModalOpen(false);
+    trackModalState('closed');
   };
 
   const handleLaunchSimulator = (projectId: string) => {
@@ -384,7 +437,7 @@ function PortfolioMainContent() {
       <Header
         activeSection={activeSection}
         onOpenTerminal={() => setIsTerminalOpen(true)}
-        onOpenResume={() => setIsResumeModalOpen(true)}
+        onOpenResume={handleOpenResumeModal}
       />
 
       {/* Customizable Workspace Sidebar Drawer */}
@@ -452,7 +505,7 @@ function PortfolioMainContent() {
               onOpenTerminal={() => setIsTerminalOpen(true)}
               onExploreWork={handleExploreWork}
               onLaunchSimulator={handleLaunchSimulator}
-              onOpenResume={() => setIsResumeModalOpen(true)}
+              onOpenResume={handleOpenResumeModal}
             />
           </SectionErrorBoundary>
 
@@ -508,7 +561,7 @@ function PortfolioMainContent() {
           {/* Contact & Inquiries */}
           <SectionErrorBoundary sectionName="Contact Section">
             <ScrollSectionReveal>
-              <ContactSection onOpenResume={() => setIsResumeModalOpen(true)} />
+              <ContactSection onOpenResume={handleOpenResumeModal} />
             </ScrollSectionReveal>
           </SectionErrorBoundary>
         </main>
@@ -535,7 +588,7 @@ function PortfolioMainContent() {
           {isResumeModalOpen && (
             <ResumeModal
               isOpen={isResumeModalOpen}
-              onClose={() => setIsResumeModalOpen(false)}
+              onClose={handleCloseResumeModal}
             />
           )}
         </Suspense>
@@ -547,7 +600,10 @@ function PortfolioMainContent() {
           {isErrorHubOpen && (
             <ErrorHubModal
               isOpen={isErrorHubOpen}
-              onClose={() => setIsErrorHubOpen(false)}
+              onClose={() => {
+                setIsErrorHubOpen(false);
+                trackModalState('closed');
+              }}
               onSelectErrorRoute={(path) => {
                 window.history.pushState({}, '', path);
                 setRoute(getRouteFromUrl());
@@ -566,8 +622,9 @@ function PortfolioMainContent() {
             <TerminalDrawer
               isOpen={isTerminalOpen}
               onClose={() => setIsTerminalOpen(false)}
-              onOpenResume={() => setIsResumeModalOpen(true)}
+              onOpenResume={handleOpenResumeModal}
               onNavigateSection={(sectionId) => {
+                trackSectionNavigation(sectionId);
                 if (layoutMode === 'split') {
                   setLayoutMode('standard');
                 }
