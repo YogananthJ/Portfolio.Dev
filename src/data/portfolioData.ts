@@ -175,7 +175,7 @@ export const PROJECTS: ProjectItem[] = [
       { label: 'Retrieval Latency', value: '< 180ms', context: 'Top-5 cosine search on FAISS' },
       { label: 'Citation Mode', value: 'Strict Grounding', context: 'Prevents hallucination outside PDF' },
     ],
-    githubUrl: 'https://github.com/YogananthJ',
+    githubUrl: 'https://github.com/YogananthJ/PDF-RAG-Chatbot',
     demoUrl: 'https://yogananth-pdf-rag-chatbot.hf.space',
     year: '2025',
     highlights: [
