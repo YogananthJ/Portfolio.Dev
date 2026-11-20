@@ -25,9 +25,6 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
   const navLinks = [
     { href: '#overview', label: 'Overview', id: 'overview' },
     { href: '#projects', label: 'Projects', id: 'projects' },
-    { href: '#architecture', label: 'Architecture', id: 'architecture' },
-    { href: '#simulators', label: 'AI Labs', id: 'simulators' },
-    { href: '#motion-playground', label: 'Motion Lab', id: 'motion-playground' },
     { href: '#skills', label: 'Skills', id: 'skills' },
     { href: '#github-activity', label: 'GitHub', id: 'github-activity' },
     { href: '#experience', label: 'Milestones', id: 'experience' },
@@ -140,43 +137,45 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
             );
           })}
 
-          {/* "More" dropdown for secondary links */}
-          <div className="relative" ref={moreMenuRef}>
-            <button
-              onClick={() => setMoreMenuOpen((prev) => !prev)}
-              type="button"
-              aria-expanded={moreMenuOpen}
-              aria-haspopup="menu"
-              aria-controls="header-more-menu"
-              className="px-2 py-1 flex items-center gap-1 hover:text-[var(--text-main)] transition-colors cursor-pointer"
-            >
-              <span>More</span>
-              <span className="text-[10px]" aria-hidden="true">▾</span>
-            </button>
-            {moreMenuOpen && (
-              <div 
-                id="header-more-menu"
-                role="menu"
-                className="absolute top-full right-0 mt-1.5 w-36 bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-xl py-1 z-50 rounded-xs"
-                onMouseLeave={() => setMoreMenuOpen(false)}
+          {/* "More" dropdown for secondary links when present */}
+          {secondaryNavLinks.length > 0 && (
+            <div className="relative" ref={moreMenuRef}>
+              <button
+                onClick={() => setMoreMenuOpen((prev) => !prev)}
+                type="button"
+                aria-expanded={moreMenuOpen}
+                aria-haspopup="menu"
+                aria-controls="header-more-menu"
+                className="px-2 py-1 flex items-center gap-1 hover:text-[var(--text-main)] transition-colors cursor-pointer"
               >
-                {secondaryNavLinks.map((link) => (
-                  <a
-                    key={link.id}
-                    href={link.href}
-                    role="menuitem"
-                    onClick={() => {
-                      trackSectionNavigation(link.id);
-                      setMoreMenuOpen(false);
-                    }}
-                    className="block px-3 py-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-colors"
-                  >
-                    {link.label}
-                  </a>
-                ))}
-              </div>
-            )}
-          </div>
+                <span>More</span>
+                <span className="text-[10px]" aria-hidden="true">▾</span>
+              </button>
+              {moreMenuOpen && (
+                <div 
+                  id="header-more-menu"
+                  role="menu"
+                  className="absolute top-full right-0 mt-1.5 w-36 bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-xl py-1 z-50 rounded-xs"
+                  onMouseLeave={() => setMoreMenuOpen(false)}
+                >
+                  {secondaryNavLinks.map((link) => (
+                    <a
+                      key={link.id}
+                      href={link.href}
+                      role="menuitem"
+                      onClick={() => {
+                        trackSectionNavigation(link.id);
+                        setMoreMenuOpen(false);
+                      }}
+                      className="block px-3 py-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-colors"
+                    >
+                      {link.label}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </nav>
 
         {/* Zone 3: Compact Expandable Icon Toolbar */}

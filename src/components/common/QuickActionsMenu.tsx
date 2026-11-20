@@ -12,13 +12,10 @@ import {
   Volume2, 
   VolumeX, 
   Layers, 
-  Cpu, 
   Code2, 
-  GitBranch, 
   Award, 
   Mail, 
-  Compass,
-  Play
+  Compass
 } from 'lucide-react';
 import { useLayout } from '../../context/LayoutContext';
 import { soundFX } from '../../utils/soundEffects';
@@ -107,9 +104,6 @@ export const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({ onOpenTermin
   const SECTIONS = [
     { id: 'overview', label: 'Overview', icon: Compass },
     { id: 'projects', label: 'Projects', icon: Layers },
-    { id: 'architecture', label: 'Architecture', icon: GitBranch },
-    { id: 'simulators', label: 'AI Labs', icon: Cpu },
-    { id: 'motion-playground', label: 'Motion Lab', icon: Play },
     { id: 'skills', label: 'Skills', icon: Code2 },
     { id: 'experience', label: 'Milestones', icon: Award },
     { id: 'contact', label: 'Contact', icon: Mail },

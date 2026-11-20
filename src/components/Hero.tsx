@@ -4,48 +4,31 @@ import {
   ArrowDown,
   Github,
   Linkedin,
-  Mail,
-  Play,
   Terminal,
   Sparkles,
-  CheckCircle2,
   Copy,
   Check,
-  Cpu,
-  Layers,
-  Bot,
-  Activity,
-  Code2,
   FileText,
 } from 'lucide-react';
 import { PERSONAL_INFO } from '../data/portfolioData';
-import { useLayout } from '../context/LayoutContext';
 import { DigitalVisitingCard } from './DigitalVisitingCard';
-import { NeuralPipelineVisualizer } from './hero/NeuralPipelineVisualizer';
 import { soundFX } from '../utils/soundEffects';
 import { trackSectionNavigation } from '../utils/urlActivityTracker';
 
 interface HeroProps {
   onOpenTerminal: () => void;
   onExploreWork: () => void;
-  onLaunchSimulator: (projectId: string) => void;
   onOpenResume?: () => void;
 }
 
 export const Hero: React.FC<HeroProps> = ({
   onOpenTerminal,
   onExploreWork,
-  onLaunchSimulator,
   onOpenResume,
 }) => {
-  const { setLayoutMode } = useLayout();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const [copiedEmail, setCopiedEmail] = useState(false);
-  const [heroConsoleMode, setHeroConsoleMode] = useState<'pipeline' | 'code'>('pipeline');
-  const [activeSnippetTab, setActiveSnippetTab] = useState<'agent' | 'rag' | 'cognitive'>('agent');
-  const [isSimulating, setIsSimulating] = useState<boolean>(false);
-  const [simOutput, setSimOutput] = useState<string | null>(null);
 
   // Live IST Clock & Telemetry
   const [currentTime, setCurrentTime] = useState<string>('');
@@ -372,62 +355,6 @@ export const Hero: React.FC<HeroProps> = ({
     setTimeout(() => setCopiedEmail(false), 2400);
   };
 
-  const codeSnippets = {
-    agent: `# CrewAI Multi-Agent Task Orchestration
-from crewai import Agent, Task, Crew, Process
-
-extractor = Agent(
-    role="Resume Extractor",
-    goal="Parse structured competencies from candidate text",
-    backstory="Deterministic AST entity parser specialized in technical resumes"
-)
-matcher = Agent(
-    role="Semantic Role Matcher",
-    goal="Score candidate alignment against job requisitions",
-    backstory="Evaluates vector distances and foundational skillset bounds"
-)
-crew = Crew(agents=[extractor, matcher], process=Process.sequential)
-result = crew.kickoff()`,
-    rag: `# Hybrid Vector Retrieval (FAISS + BM25)
-from langchain_community.vectorstores import FAISS
-from langchain_huggingface import HuggingFaceEmbeddings
-
-embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-large-en-v1.5")
-vectorstore = FAISS.load_local("index_faiss", embeddings)
-
-def retrieve_grounded_chunks(query: str, top_k=3):
-    docs = vectorstore.similarity_search_with_score(query, k=top_k)
-    # Cosine threshold prevents hallucinations
-    return [d[0] for d in docs if d[1] >= 0.88]`,
-    cognitive: `# Adaptive Cadence & Sentiment Modulator
-from transformers import pipeline
-
-sentiment_pipe = pipeline("text-classification", model="roberta-base-go_emotions")
-
-def adapt_system_prompt(user_text: str, cadence_pause_ms: int):
-    emotion = sentiment_pipe(user_text)[0]["label"]
-    if cadence_pause_ms > 700 or emotion in ["confusion", "annoyance"]:
-        return "Tone: Step-by-step empathetic guidance with simplified analogies."
-    return "Tone: Concise senior engineering response."`,
-  };
-
-  const handleRunSimulator = () => {
-    soundFX.playPulse();
-    setIsSimulating(true);
-    setSimOutput('Initializing execution runtime...');
-    setTimeout(() => {
-      soundFX.playChime();
-      if (activeSnippetTab === 'agent') {
-        setSimOutput('✓ Agents [Extractor, Matcher] dispatched\n✓ AST Entities extracted: 14 skills\n✓ Role alignment score: 94.2% match');
-      } else if (activeSnippetTab === 'rag') {
-        setSimOutput('✓ Loaded BGE-Large embeddings (1024 dims)\n✓ Hybrid search: 3 chunks retrieved\n✓ Grounded semantic alignment: 94.2%');
-      } else {
-        setSimOutput('✓ RoBERTa pipeline active\n✓ Keystroke cadence: 850ms pause detected\n✓ Tone adapted: Empathetic clarification');
-      }
-      setIsSimulating(false);
-    }, 900);
-  };
-
   return (
     <section
       id="overview"
@@ -512,16 +439,14 @@ def adapt_system_prompt(user_text: str, cadence_pause_ms: int):
           </div>
         </div>
 
-        {/* Hero Split: Bio + Interactive Code Console */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 xl:gap-10 2xl:gap-12 items-stretch mt-4 sm:mt-6">
-          {/* Left Column: Biography & Action Cluster */}
-          <motion.div
-            id="about"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.3 }}
-            className="lg:col-span-6 flex flex-col justify-between bg-[var(--bg-card)] border-2 border-[var(--border-color)] p-6 sm:p-8 shadow-sm rounded-xs relative group"
-          >
+        {/* Hero Biography & Action Cluster */}
+        <motion.div
+          id="about"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, delay: 0.3 }}
+          className="mt-4 sm:mt-6 flex flex-col justify-between bg-[var(--bg-card)] border-2 border-[var(--border-color)] p-6 sm:p-8 shadow-sm rounded-xs relative group"
+        >
             <div>
               <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[var(--text-muted)] mb-3 font-semibold">
                 <Sparkles className="w-3.5 h-3.5 text-[var(--accent)]" />
@@ -564,15 +489,6 @@ def adapt_system_prompt(user_text: str, cadence_pause_ms: int):
                     <span>Resume / CV</span>
                   </button>
                 )}
-
-                <a
-                  href="#architecture"
-                  onClick={() => trackSectionNavigation('architecture')}
-                  className="flex items-center gap-1.5 px-4 py-3 text-xs font-mono font-bold uppercase tracking-wider text-[var(--text-main)] bg-[var(--bg-surface)] hover:border-[var(--accent)] border border-[var(--border-color)] transition-all active:scale-95 cursor-pointer"
-                >
-                  <Cpu className="w-3.5 h-3.5 text-[var(--accent)]" />
-                  <span>Architecture</span>
-                </a>
 
                 <button
                   onClick={onOpenTerminal}
@@ -626,154 +542,7 @@ def adapt_system_prompt(user_text: str, cadence_pause_ms: int):
                 </button>
               </div>
             </div>
-          </motion.div>
-
-          {/* Right Column: Interactive Neural Architecture & Code Laboratory */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.4 }}
-            className="lg:col-span-6 flex flex-col justify-between"
-          >
-            {/* Top Mode Selector Tabs */}
-            <div className="flex items-center gap-2 mb-2 font-mono text-xs">
-              <button
-                onClick={() => {
-                  soundFX.playClick();
-                  setHeroConsoleMode('pipeline');
-                }}
-                type="button"
-                className={`flex items-center gap-1.5 px-3 py-1.5 font-bold uppercase transition-colors cursor-pointer border ${
-                  heroConsoleMode === 'pipeline'
-                    ? 'bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm'
-                    : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-main)]'
-                }`}
-              >
-                <Cpu className="w-3.5 h-3.5" />
-                <span>Neural Pipeline</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  soundFX.playClick();
-                  setHeroConsoleMode('code');
-                }}
-                type="button"
-                className={`flex items-center gap-1.5 px-3 py-1.5 font-bold uppercase transition-colors cursor-pointer border ${
-                  heroConsoleMode === 'code'
-                    ? 'bg-[var(--accent)] text-white border-[var(--accent)] shadow-sm'
-                    : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-main)]'
-                }`}
-              >
-                <Code2 className="w-3.5 h-3.5" />
-                <span>Code Runtime</span>
-              </button>
-            </div>
-
-            {/* Mode Content */}
-            {heroConsoleMode === 'pipeline' ? (
-              <NeuralPipelineVisualizer />
-            ) : (
-              <div className="bg-[#0a0d14] text-white border-2 border-[var(--border-color)] p-5 sm:p-6 shadow-sm rounded-xs flex flex-col justify-between font-mono relative h-full">
-                <div>
-                  {/* Header Tab Switcher */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3 mb-4">
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => {
-                          setActiveSnippetTab('agent');
-                          setSimOutput(null);
-                        }}
-                        type="button"
-                        className={`px-2.5 py-1 text-xs font-bold transition-colors cursor-pointer ${
-                          activeSnippetTab === 'agent'
-                            ? 'bg-[var(--accent)] text-white shadow-xs'
-                            : 'bg-white/5 text-white/60 hover:text-white'
-                        }`}
-                      >
-                        CrewAI Agent
-                      </button>
-                      <button
-                        onClick={() => {
-                          setActiveSnippetTab('rag');
-                          setSimOutput(null);
-                        }}
-                        type="button"
-                        className={`px-2.5 py-1 text-xs font-bold transition-colors cursor-pointer ${
-                          activeSnippetTab === 'rag'
-                            ? 'bg-[var(--accent)] text-white shadow-xs'
-                            : 'bg-white/5 text-white/60 hover:text-white'
-                        }`}
-                      >
-                        Vector RAG
-                      </button>
-                      <button
-                        onClick={() => {
-                          setActiveSnippetTab('cognitive');
-                          setSimOutput(null);
-                        }}
-                        type="button"
-                        className={`px-2.5 py-1 text-xs font-bold transition-colors cursor-pointer ${
-                          activeSnippetTab === 'cognitive'
-                            ? 'bg-[var(--accent)] text-white shadow-xs'
-                            : 'bg-white/5 text-white/60 hover:text-white'
-                        }`}
-                      >
-                        Cognitive AI
-                      </button>
-                    </div>
-
-                    <span className="text-[10px] text-white/40 uppercase tracking-wider">
-                      Python 3.11 Runtime
-                    </span>
-                  </div>
-
-                  {/* Code Display Frame */}
-                  <pre className="text-[11px] sm:text-xs text-white/80 overflow-x-auto p-3 bg-black/60 border border-white/10 rounded-xs leading-relaxed max-h-56">
-                    <code>{codeSnippets[activeSnippetTab]}</code>
-                  </pre>
-
-                  {/* Execution Feedback Display */}
-                  {simOutput && (
-                    <div className="mt-3 p-2.5 bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-[10px] sm:text-[11px] whitespace-pre-line">
-                      {simOutput}
-                    </div>
-                  )}
-                </div>
-
-                {/* Run Simulation Toolbar */}
-                <div className="pt-4 mt-4 border-t border-white/10 flex items-center justify-between gap-3 text-xs">
-                  <button
-                    onClick={handleRunSimulator}
-                    disabled={isSimulating}
-                    type="button"
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-[var(--accent)] text-white transition-colors cursor-pointer text-xs font-bold uppercase tracking-wider"
-                  >
-                    <Play className={`w-3.5 h-3.5 text-[var(--accent)] ${isSimulating ? 'animate-spin' : ''}`} />
-                    <span>{isSimulating ? 'Evaluating...' : 'Simulate Runtime'}</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      const targetId =
-                        activeSnippetTab === 'agent'
-                          ? 'resume-parser'
-                          : activeSnippetTab === 'rag'
-                          ? 'pdf-rag'
-                          : 'cognitive-ai';
-                      onLaunchSimulator(targetId);
-                    }}
-                    type="button"
-                    className="text-[11px] text-[var(--accent)] hover:underline flex items-center gap-1 cursor-pointer font-bold"
-                  >
-                    <span>Open Full Lab Sandbox</span>
-                    <span>→</span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </motion.div>
-        </div>
+        </motion.div>
 
         {/* Scroll Explorer Indicator */}
         <motion.div
@@ -783,7 +552,7 @@ def adapt_system_prompt(user_text: str, cadence_pause_ms: int):
           className="mt-12 flex flex-col items-center justify-center text-center font-mono text-[11px] text-[var(--text-muted)]"
         >
           <span className="tracking-widest uppercase mb-1">
-            EXPLORE 10 ENGINEERED SYSTEMS &amp; SIMULATORS
+            EXPLORE 10 ENGINEERED SYSTEMS
           </span>
           <ArrowDown className="w-4 h-4 text-[var(--accent)] animate-bounce" />
         </motion.div>

@@ -653,17 +653,6 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
                 ))}
               </div>
 
-              <div className="flex items-center justify-between pt-1">
-                <button
-                  onClick={() => {
-                    onNavigateSection?.('architecture');
-                    document.getElementById('architecture')?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-white font-bold"
-                >
-                  Inspect in Visual Explorer &rarr;
-                </button>
-              </div>
             </div>
           );
         } else {
@@ -688,17 +677,6 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
                     <span className="text-cyan-400 font-bold">&rarr;</span>
                   </button>
                 ))}
-              </div>
-              <div className="pt-2 border-t border-white/10">
-                <button
-                  onClick={() => {
-                    onNavigateSection?.('architecture');
-                    document.getElementById('architecture')?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="text-cyan-400 underline font-bold"
-                >
-                  Open Visual Architecture Explorer section &darr;
-                </button>
               </div>
             </div>
           );
@@ -1309,7 +1287,6 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-white">
               <div><strong className="text-blue-400">overview/</strong></div>
               <div><strong className="text-blue-400">projects/</strong></div>
-              <div><strong className="text-blue-400">simulators/</strong></div>
               <div><strong className="text-blue-400">skills/</strong></div>
               <div><strong className="text-blue-400">experience/</strong></div>
               <div><strong className="text-blue-400">contact/</strong></div>
@@ -1351,25 +1328,11 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
         if (!arg) {
           outputNode = (
             <div className="text-xs text-amber-300">
-              Specify a section to navigate to: <code>overview</code>, <code>projects</code>, <code>architecture</code>, <code>simulators</code>, <code>motion-playground</code>, <code>skills</code>, <code>experience</code>, <code>contact</code>.
+              Specify a section to navigate to: <code>overview</code>, <code>projects</code>, <code>skills</code>, <code>experience</code>, <code>contact</code>.
             </div>
           );
         } else {
-          let sectionId = arg.trim();
-          if (sectionId.startsWith('motion-lab/')) {
-            const expId = sectionId.replace('motion-lab/', '');
-            window.history.pushState({}, '', `/motion-lab/${expId}`);
-            window.dispatchEvent(new PopStateEvent('popstate'));
-            outputNode = (
-              <div className="text-xs text-emerald-400 font-bold">
-                Navigated to Motion Lab Detail: <strong>/motion-lab/{expId}</strong>.
-              </div>
-            );
-            break;
-          }
-          if (sectionId === 'motion' || sectionId === 'playground' || sectionId === 'motionlab') {
-            sectionId = 'motion-playground';
-          }
+          const sectionId = arg.trim();
           onNavigateSection?.(sectionId);
           const el = document.getElementById(sectionId);
           if (el) {
@@ -1382,7 +1345,7 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
           } else {
             outputNode = (
               <div className="text-xs text-amber-300">
-                Section "#{sectionId}" not found. Available sections: overview, projects, architecture, simulators, motion-playground, skills, experience, contact.
+                Section "#{sectionId}" not found. Available sections: overview, projects, skills, experience, contact.
               </div>
             );
           }

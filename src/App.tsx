@@ -2,9 +2,6 @@ import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { ProjectShowcase } from './components/ProjectShowcase';
-import { ArchitectureExplorer } from './components/ArchitectureExplorer';
-import { SimulatorsSection } from './components/SimulatorsSection';
-import { MotionPlayground } from './components/motion-playground/MotionPlayground';
 import { SkillsSection } from './components/SkillsSection';
 import { GitHubActivitySection } from './components/GitHubActivitySection';
 import { ExperienceSection } from './components/ExperienceSection';
@@ -16,7 +13,6 @@ import { LayoutProvider, useLayout } from './context/LayoutContext';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ProjectItem } from './types/portfolio';
 import { PROJECTS } from './data/portfolioData';
-import { ALL_EXPERIMENT_DETAILS } from './components/motion-playground/detail-data';
 import { ScrollProgressBar } from './components/common/ScrollProgressBar';
 import { BackToTop } from './components/common/BackToTop';
 import { QuickActionsMenu } from './components/common/QuickActionsMenu';
@@ -39,9 +35,6 @@ import { SectionErrorBoundary } from './components/errors/SectionErrorBoundary';
 import { OfflineBanner } from './components/errors/OfflineBanner';
 import { AppExceptionPage } from './components/errors/pages/AppExceptionPage';
 
-const MotionExperimentPage = lazy(() =>
-  import('./components/motion-playground/detail/MotionExperimentPage').then((m) => ({ default: m.MotionExperimentPage }))
-);
 const ProjectModal = lazy(() =>
   import('./components/ProjectModal').then((m) => ({ default: m.ProjectModal }))
 );
@@ -94,27 +87,11 @@ function PortfolioMainContent() {
   const { friendlyNotice, dismissNotice } = useErrorMonitoring();
   const lastSpiedSectionRef = useRef<string>('overview');
 
-  // Client-side route detection for Motion Lab (/motion-lab/:id) and Error Pages (/404, /offline, etc.)
-  const getRouteFromUrl = () => {
-    if (typeof window === 'undefined') return { page: 'home', experimentId: '' };
+  // Client-side route detection for Error Pages (/404, /offline, etc.)
+  const getRouteFromUrl = (): { page: string } => {
+    if (typeof window === 'undefined') return { page: 'home' };
     const pathname = window.location.pathname;
     const hash = window.location.hash;
-
-    // Motion Lab detail pages
-    if (pathname.startsWith('/motion-lab/')) {
-      const expId = pathname.replace('/motion-lab/', '').split('/')[0];
-      if (expId && Object.prototype.hasOwnProperty.call(ALL_EXPERIMENT_DETAILS, expId)) {
-        return { page: 'motion-detail', experimentId: expId };
-      }
-      return { page: 'error-404', experimentId: '' };
-    }
-    if (hash.startsWith('#/motion-lab/') || hash.startsWith('#motion-lab/')) {
-      const expId = hash.replace(/^#\/?motion-lab\//, '').split('/')[0];
-      if (expId && Object.prototype.hasOwnProperty.call(ALL_EXPERIMENT_DETAILS, expId)) {
-        return { page: 'motion-detail', experimentId: expId };
-      }
-      return { page: 'error-404', experimentId: '' };
-    }
 
     // Specific custom error routes (e.g. /404, /offline, /500, /403, /408, /502, /503, /504, /app-error)
     const cleanPath = pathname.toLowerCase().replace(/\/$/, '');
@@ -123,25 +100,25 @@ function PortfolioMainContent() {
     const errorCodes = ['404', 'offline', '500', '403', '408', '502', '503', '504', 'app-error'];
     for (const code of errorCodes) {
       if (cleanPath === `/${code}` || cleanHash === code || cleanHash === `error/${code}`) {
-        return { page: `error-${code === 'app-error' ? 'app' : code}`, experimentId: '' };
+        return { page: `error-${code === 'app-error' ? 'app' : code}` };
       }
     }
 
     if (cleanPath.startsWith('/error/')) {
       const sub = cleanPath.replace('/error/', '').split('/')[0];
-      return { page: `error-${sub}`, experimentId: '' };
+      return { page: `error-${sub}` };
     }
 
     // Home or root path
     if (cleanPath === '' || cleanPath === '/' || cleanPath === '/index.html') {
-      return { page: 'home', experimentId: '' };
+      return { page: 'home' };
     }
 
     // Any other unrecognized route triggers 404 (Lost in Digital Void)
-    return { page: 'error-404', experimentId: '' };
+    return { page: 'error-404' };
   };
 
-  const [route, setRoute] = useState<{ page: string; experimentId: string }>(getRouteFromUrl);
+  const [route, setRoute] = useState<{ page: string }>(getRouteFromUrl);
   const isAnyModalOpen = Boolean(
     activeProject || isResumeModalOpen || isErrorHubOpen || isTerminalOpen
   );
@@ -195,28 +172,6 @@ function PortfolioMainContent() {
       return;
     }
 
-    if (route.page === 'motion-detail' && route.experimentId) {
-      const detail =
-        ALL_EXPERIMENT_DETAILS[route.experimentId as keyof typeof ALL_EXPERIMENT_DETAILS];
-      if (detail) {
-        const expUrl = `${BASE_URL}/motion-lab/${detail.id}`;
-        const expTitle = `${detail.title} — Motion Lab | Yogananth J`;
-        const expDesc = `${detail.subtitle}. ${detail.description}`.slice(0, 158);
-        document.title = expTitle;
-        setMeta('name', 'robots', 'index, follow');
-        setMeta('name', 'description', expDesc);
-        if (canonicalEl) canonicalEl.setAttribute('href', expUrl);
-        setMeta('property', 'og:title', expTitle);
-        setMeta('property', 'og:description', expDesc);
-        setMeta('property', 'og:url', expUrl);
-        setMeta('name', 'twitter:title', expTitle);
-        setMeta('name', 'twitter:description', expDesc);
-        setMeta('name', 'twitter:url', expUrl);
-        trackGa4PageView(`/motion-lab/${detail.id}`, expTitle);
-        return;
-      }
-    }
-
     document.title = DEFAULT_TITLE;
     setMeta('name', 'robots', 'index, follow');
     setMeta('name', 'description', DEFAULT_DESC);
@@ -265,7 +220,7 @@ function PortfolioMainContent() {
 
   const handleReturnHome = () => {
     window.history.pushState({}, '', '/');
-    setRoute({ page: 'home', experimentId: '' });
+    setRoute({ page: 'home' });
     trackSectionNavigation('home');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -276,21 +231,6 @@ function PortfolioMainContent() {
     } else {
       handleReturnHome();
     }
-  };
-
-  const handleOpenMotionDetail = (experimentId: string) => {
-    window.history.pushState({}, '', `/motion-lab/${experimentId}`);
-    setRoute({ page: 'motion-detail', experimentId });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleBackToMotionLab = () => {
-    window.history.pushState({}, '', '/#motion-playground');
-    setRoute({ page: 'home', experimentId: '' });
-    setTimeout(() => {
-      const el = document.getElementById('motion-playground');
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
   };
 
   // Global Keyboard Shortcuts (Cmd+K / Ctrl+K for Terminal)
@@ -309,7 +249,7 @@ function PortfolioMainContent() {
   // Active section scroll spy (standard layout)
   useEffect(() => {
     if (layoutMode !== 'standard' || route.page !== 'home') return;
-    const sectionIds = ['overview', 'projects', 'architecture', 'simulators', 'motion-playground', 'skills', 'github-activity', 'experience', 'contact'];
+    const sectionIds = ['overview', 'projects', 'skills', 'github-activity', 'experience', 'contact'];
     const handleScroll = () => {
       const scrollPosition = window.scrollY + 200;
       for (let i = sectionIds.length - 1; i >= 0; i--) {
@@ -374,12 +314,6 @@ function PortfolioMainContent() {
     setIsResumeModalOpen(false);
   };
 
-  const handleLaunchSimulator = (projectId: string) => {
-    const proj = PROJECTS.find((p) => p.id === projectId) || PROJECTS[0];
-    setActiveSimulatorId(projectId);
-    handleOpenProjectModal(proj);
-  };
-
   const handleExploreWork = () => {
     const projectsEl = document.getElementById('projects');
     if (projectsEl) {
@@ -412,7 +346,7 @@ function PortfolioMainContent() {
       <OfflineBanner
         onViewOfflinePage={() => {
           window.history.pushState({}, '', '/offline');
-          setRoute({ page: 'error-offline', experimentId: '' });
+          setRoute({ page: 'error-offline' });
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
       />
@@ -468,17 +402,6 @@ function PortfolioMainContent() {
             </Suspense>
           </SectionErrorBoundary>
         </main>
-      ) : route.page === 'motion-detail' && route.experimentId ? (
-        <main id="main-content" tabIndex={-1} className="flex-1 w-full max-w-full overflow-x-clip focus:outline-none">
-          <SectionErrorBoundary sectionName="Motion Experiment">
-            <Suspense fallback={<div className="min-h-[60vh] flex items-center justify-center font-mono text-xs text-[var(--text-muted)]">Loading motion experiment...</div>}>
-              <MotionExperimentPage
-                experimentId={route.experimentId}
-                onBack={handleBackToMotionLab}
-              />
-            </Suspense>
-          </SectionErrorBoundary>
-        </main>
       ) : layoutMode === 'split' ? (
         <main id="main-content" tabIndex={-1} className="flex-1 w-full max-w-full overflow-x-clip focus:outline-none">
           <SectionErrorBoundary sectionName="Split-Screen Workspace">
@@ -494,7 +417,6 @@ function PortfolioMainContent() {
             <Hero
               onOpenTerminal={() => setIsTerminalOpen(true)}
               onExploreWork={handleExploreWork}
-              onLaunchSimulator={handleLaunchSimulator}
               onOpenResume={handleOpenResumeModal}
             />
           </SectionErrorBoundary>
@@ -503,27 +425,6 @@ function PortfolioMainContent() {
           <SectionErrorBoundary sectionName="Selected Projects">
             <ScrollSectionReveal>
               <ProjectShowcase onOpenModal={handleOpenProjectModal} />
-            </ScrollSectionReveal>
-          </SectionErrorBoundary>
-
-          {/* Interactive Architecture Explorer (Node & Edge Schematics) */}
-          <SectionErrorBoundary sectionName="Architecture Explorer">
-            <ScrollSectionReveal>
-              <ArchitectureExplorer initialProjectId="cognitive-ai" />
-            </ScrollSectionReveal>
-          </SectionErrorBoundary>
-
-          {/* Dedicated Live Interactive Model Lab & Simulators (AI Projects Only) */}
-          <SectionErrorBoundary sectionName="AI Simulators">
-            <ScrollSectionReveal>
-              <SimulatorsSection />
-            </ScrollSectionReveal>
-          </SectionErrorBoundary>
-
-          {/* Motion Playground & Interactive Animation Code Lab */}
-          <SectionErrorBoundary sectionName="Motion Playground">
-            <ScrollSectionReveal>
-              <MotionPlayground onOpenDetail={handleOpenMotionDetail} />
             </ScrollSectionReveal>
           </SectionErrorBoundary>
 
@@ -557,8 +458,8 @@ function PortfolioMainContent() {
         </main>
       )}
 
-      {/* Footer (shown in standard mode or detail view, hidden during dedicated error page experiences) */}
-      {(layoutMode === 'standard' || route.page === 'motion-detail') && !route.page.startsWith('error-') && <Footer />}
+      {/* Footer (shown in standard mode, hidden during dedicated error page experiences) */}
+      {layoutMode === 'standard' && !route.page.startsWith('error-') && <Footer />}
 
       {/* Deep-Dive Project Modal with Interactive Simulator */}
       <SectionErrorBoundary sectionName="Project Details Modal">
