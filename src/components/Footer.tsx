@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { PERSONAL_INFO } from '../data/portfolioData';
 import { ArrowUp, Github, Linkedin, Shield } from 'lucide-react';
 import { VisitorCounter } from './VisitorCounter';
@@ -12,6 +13,7 @@ import {
 } from '../utils/ga4';
 
 export const Footer: React.FC = () => {
+  const shouldReduceMotion = Boolean(useReducedMotion());
   const [consentState, setConsentState] = useState<AnalyticsConsentState>(() =>
     getAnalyticsConsentState()
   );
@@ -37,7 +39,13 @@ export const Footer: React.FC = () => {
   return (
     <footer className="bg-[#090909] text-[#F5F2EB] py-12 border-t-2 border-[#121212] font-mono">
       <div className="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/10">
+        <motion.div
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
+          whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.1 }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/10"
+        >
           <div>
             <div className="font-display text-3xl sm:text-4xl font-black text-white uppercase tracking-tight">
               YOGANANTH
@@ -76,10 +84,16 @@ export const Footer: React.FC = () => {
               <ArrowUp className="w-3.5 h-3.5" />
             </button>
           </div>
-        </div>
+        </motion.div>
 
         {/* Dedicated Total Visitors Counter Section */}
-        <div className="py-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-white/10">
+        <motion.div
+          initial={shouldReduceMotion ? false : { opacity: 0, x: -18 }}
+          whileInView={shouldReduceMotion ? undefined : { opacity: 1, x: 0 }}
+          viewport={{ once: true, amount: 0.1 }}
+          transition={{ duration: 0.45, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+          className="py-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-white/10"
+        >
           <div className="text-xs text-white/70 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#E11D48]"></span>
             <span className="font-semibold text-white">PORTFOLIO TRAFFIC MONITOR</span>
@@ -88,9 +102,15 @@ export const Footer: React.FC = () => {
           <div>
             <VisitorCounter />
           </div>
-        </div>
+        </motion.div>
 
-        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/50">
+        <motion.div
+          initial={shouldReduceMotion ? false : { opacity: 0 }}
+          whileInView={shouldReduceMotion ? undefined : { opacity: 1 }}
+          viewport={{ once: true, amount: 0.1 }}
+          transition={{ duration: 0.45, delay: 0.14 }}
+          className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/50"
+        >
           <div>
             &copy; {new Date().getFullYear()} Yogananth J. Designed &amp; engineered with intent.
           </div>
@@ -123,7 +143,7 @@ export const Footer: React.FC = () => {
               </span>
             </button>
           </div>
-        </div>
+        </motion.div>
       </div>
     </footer>
   );

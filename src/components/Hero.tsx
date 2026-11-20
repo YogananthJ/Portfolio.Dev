@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
 import {
   ArrowDown,
   Github,
@@ -27,6 +27,15 @@ export const Hero: React.FC<HeroProps> = ({
   onOpenResume,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const heroRef = useRef<HTMLElement | null>(null);
+  const shouldReduceMotion = Boolean(useReducedMotion());
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ['start start', 'end start'],
+  });
+  const headlineY = useTransform(scrollYProgress, [0, 1], [0, shouldReduceMotion ? 0 : -42]);
+  const cardY = useTransform(scrollYProgress, [0, 1], [0, shouldReduceMotion ? 0 : 28]);
+  const bioScale = useTransform(scrollYProgress, [0, 1], [1, shouldReduceMotion ? 1 : 0.985]);
 
   const [copiedEmail, setCopiedEmail] = useState(false);
 
@@ -357,6 +366,7 @@ export const Hero: React.FC<HeroProps> = ({
 
   return (
     <section
+      ref={heroRef}
       id="overview"
       className="relative min-h-[calc(100vh-4rem)] flex flex-col justify-between overflow-hidden bg-[var(--bg-canvas)] pt-6 pb-12 select-none"
     >
@@ -401,10 +411,11 @@ export const Hero: React.FC<HeroProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 xl:gap-10 2xl:gap-12 items-center">
             {/* Left Column: Headline and Key Specializations */}
             <motion.div
+              style={{ y: headlineY }}
               initial={{ opacity: 0, x: -25 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.65, ease: 'easeOut' }}
-              className="lg:col-span-7 xl:col-span-7 2xl:col-span-7"
+              className="lg:col-span-7 xl:col-span-7 2xl:col-span-7 will-change-transform"
             >
               <div className="text-[11px] sm:text-xs font-mono tracking-widest text-[var(--accent)] uppercase font-bold mb-2 flex items-center gap-2">
                 <span className="inline-block w-4 h-px bg-[var(--accent)]"></span>
@@ -429,10 +440,11 @@ export const Hero: React.FC<HeroProps> = ({
 
             {/* Right Column: Digital Visiting Card */}
             <motion.div
+              style={{ y: cardY }}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="lg:col-span-5 xl:col-span-5 2xl:col-span-5 relative flex items-center justify-center lg:justify-end z-20 w-full"
+              className="lg:col-span-5 xl:col-span-5 2xl:col-span-5 relative flex items-center justify-center lg:justify-end z-20 w-full will-change-transform"
             >
               <DigitalVisitingCard />
             </motion.div>
@@ -442,10 +454,12 @@ export const Hero: React.FC<HeroProps> = ({
         {/* Hero Biography & Action Cluster */}
         <motion.div
           id="about"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.3 }}
-          className="mt-4 sm:mt-6 flex flex-col justify-between bg-[var(--bg-card)] border-2 border-[var(--border-color)] p-6 sm:p-8 shadow-sm rounded-xs relative group"
+          style={{ scale: bioScale }}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+          whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.05 }}
+          transition={{ duration: 0.55 }}
+          className="mt-4 sm:mt-6 flex flex-col justify-between bg-[var(--bg-card)] border-2 border-[var(--border-color)] p-6 sm:p-8 shadow-sm rounded-xs relative group will-change-transform"
         >
             <div>
               <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[var(--text-muted)] mb-3 font-semibold">

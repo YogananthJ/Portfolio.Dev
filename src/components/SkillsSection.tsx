@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { SKILL_CATEGORIES } from '../data/portfolioData';
 import { Cpu, Search, Code, Sparkles, CheckCircle2, Network, ArrowRight } from 'lucide-react';
 import { RevealItem, StaggerContainer } from './common/ScrollSectionReveal';
@@ -12,6 +12,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ onSelectProjectTag
   const [activeCategoryIndex, setActiveCategoryIndex] = useState<number>(0);
   const [skillSearch, setSkillSearch] = useState<string>('');
   const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
+  const shouldReduceMotion = Boolean(useReducedMotion());
 
   const activeCategory = SKILL_CATEGORIES[activeCategoryIndex] || SKILL_CATEGORIES[0];
 
@@ -64,10 +65,19 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ onSelectProjectTag
         </div>
 
         {/* Synergies Banner: AI + Full-Stack + Automation Relationships */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+        <StaggerContainer stagger={0.09} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
           {SYNERGIES.map((syn, idx) => (
             <RevealItem
               key={idx}
+              variants={{
+                hidden: { opacity: 0, scale: 0.92, y: 18 },
+                visible: {
+                  opacity: 1,
+                  scale: 1,
+                  y: 0,
+                  transition: { duration: 0.44, ease: [0.22, 1, 0.36, 1] },
+                },
+              }}
               className="p-4 bg-[var(--bg-card)] border border-[var(--border-color)] font-mono text-xs rounded-xs relative group hover:border-[var(--accent)] transition-colors"
             >
               <div className="text-[10px] text-[var(--accent)] font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5">
@@ -82,12 +92,18 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ onSelectProjectTag
               </p>
             </RevealItem>
           ))}
-        </div>
+        </StaggerContainer>
 
         {/* Skills Architecture Matrix */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Category Tabs (Left) */}
-          <div className="lg:col-span-4 space-y-2">
+          {/* Category Tabs (Left - Slide from Left) */}
+          <motion.div
+            initial={shouldReduceMotion ? false : { opacity: 0, x: -28 }}
+            whileInView={shouldReduceMotion ? undefined : { opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.08 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="lg:col-span-4 space-y-2"
+          >
             <div className="text-xs font-mono uppercase tracking-wider text-[var(--text-muted)] font-bold mb-3 px-1">
               Select Discipline (7 Domains)
             </div>
@@ -129,10 +145,16 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ onSelectProjectTag
                 </button>
               );
             })}
-          </div>
+          </motion.div>
 
-          {/* Active Skills Table & Tags (Right) */}
-          <div className="lg:col-span-8 bg-[var(--bg-card)] border border-[var(--border-color)] p-6 sm:p-7 shadow-sm rounded-xs">
+          {/* Active Skills Table & Tags (Right - Slide from Right) */}
+          <motion.div
+            initial={shouldReduceMotion ? false : { opacity: 0, x: 28 }}
+            whileInView={shouldReduceMotion ? undefined : { opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.08 }}
+            transition={{ duration: 0.5, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+            className="lg:col-span-8 bg-[var(--bg-card)] border border-[var(--border-color)] p-6 sm:p-7 shadow-sm rounded-xs"
+          >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--border-color)] mb-6">
               <div>
                 <h3 className="text-xl font-bold text-[var(--text-main)] uppercase tracking-tight">
@@ -216,7 +238,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ onSelectProjectTag
                 No matching technologies found for "{skillSearch}".
               </div>
             )}
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>

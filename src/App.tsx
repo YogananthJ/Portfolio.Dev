@@ -423,35 +423,35 @@ function PortfolioMainContent() {
 
           {/* Selected Works & Engineered Systems (Grid / List / Bento View) */}
           <SectionErrorBoundary sectionName="Selected Projects">
-            <ScrollSectionReveal>
+            <ScrollSectionReveal variant="curtain-rise" duration={0.62}>
               <ProjectShowcase onOpenModal={handleOpenProjectModal} />
             </ScrollSectionReveal>
           </SectionErrorBoundary>
 
           {/* Core Toolkit & Competencies */}
           <SectionErrorBoundary sectionName="Technical Skills">
-            <ScrollSectionReveal>
+            <ScrollSectionReveal variant="slide-left" duration={0.64}>
               <SkillsSection />
             </ScrollSectionReveal>
           </SectionErrorBoundary>
 
           {/* GitHub Activity & Open-Source Metrics */}
           <SectionErrorBoundary sectionName="GitHub Activity">
-            <ScrollSectionReveal>
+            <ScrollSectionReveal variant="zoom-emerge" duration={0.65}>
               <GitHubActivitySection />
             </ScrollSectionReveal>
           </SectionErrorBoundary>
 
           {/* Verified Milestones & Certifications */}
           <SectionErrorBoundary sectionName="Experience & Milestones">
-            <ScrollSectionReveal>
+            <ScrollSectionReveal variant="slide-right" duration={0.64}>
               <ExperienceSection />
             </ScrollSectionReveal>
           </SectionErrorBoundary>
 
           {/* Contact & Inquiries */}
           <SectionErrorBoundary sectionName="Contact Section">
-            <ScrollSectionReveal>
+            <ScrollSectionReveal variant="perspective-unfold" duration={0.68}>
               <ContactSection onOpenResume={handleOpenResumeModal} />
             </ScrollSectionReveal>
           </SectionErrorBoundary>
@@ -459,7 +459,11 @@ function PortfolioMainContent() {
       )}
 
       {/* Footer (shown in standard mode, hidden during dedicated error page experiences) */}
-      {layoutMode === 'standard' && !route.page.startsWith('error-') && <Footer />}
+      {layoutMode === 'standard' && !route.page.startsWith('error-') && (
+        <ScrollSectionReveal variant="dock-up" duration={0.55}>
+          <Footer />
+        </ScrollSectionReveal>
+      )}
 
       {/* Deep-Dive Project Modal with Interactive Simulator */}
       <SectionErrorBoundary sectionName="Project Details Modal">

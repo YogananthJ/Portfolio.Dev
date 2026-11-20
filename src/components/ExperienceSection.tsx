@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { TIMELINE, CERTIFICATIONS } from '../data/portfolioData';
 import { Calendar, CheckCircle2, Award, ExternalLink, BookOpen, Trophy, ChevronDown, ChevronUp, Sparkles, Terminal } from 'lucide-react';
 
 export const ExperienceSection: React.FC = () => {
   const [expandedTimelineIndex, setExpandedTimelineIndex] = useState<number | null>(0);
+  const shouldReduceMotion = Boolean(useReducedMotion());
 
   const toggleExpand = (index: number) => {
     setExpandedTimelineIndex(expandedTimelineIndex === index ? null : index);
@@ -42,11 +43,19 @@ export const ExperienceSection: React.FC = () => {
             {CERTIFICATIONS.map((cert, idx) => (
               <motion.div
                 key={cert.id}
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: idx * 0.1 }}
-                whileHover={{ y: -4 }}
+                initial={
+                  shouldReduceMotion
+                    ? false
+                    : { opacity: 0, y: 26, scale: 0.96, rotateX: 10, transformPerspective: 1000 }
+                }
+                whileInView={
+                  shouldReduceMotion
+                    ? undefined
+                    : { opacity: 1, y: 0, scale: 1, rotateX: 0, transformPerspective: 1000 }
+                }
+                viewport={{ once: true, amount: 0.08 }}
+                transition={{ duration: 0.5, delay: shouldReduceMotion ? 0 : idx * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                whileHover={shouldReduceMotion ? undefined : { y: -4 }}
                 className="p-5 bg-[var(--bg-card)] border border-[var(--border-color)] shadow-sm flex flex-col justify-between hover:border-[var(--accent)] transition-all rounded-xs relative group"
               >
                 <div>
@@ -105,10 +114,14 @@ export const ExperienceSection: React.FC = () => {
               return (
                 <motion.div
                   key={index}
-                  initial={{ opacity: 0, y: 15 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.35, delay: index * 0.05 }}
+                  initial={
+                    shouldReduceMotion
+                      ? false
+                      : { opacity: 0, x: index % 2 === 0 ? -24 : 24 }
+                  }
+                  whileInView={shouldReduceMotion ? undefined : { opacity: 1, x: 0 }}
+                  viewport={{ once: true, amount: 0.08 }}
+                  transition={{ duration: 0.45, delay: shouldReduceMotion ? 0 : index * 0.06, ease: [0.22, 1, 0.36, 1] }}
                   className={`bg-[var(--bg-card)] border transition-all rounded-xs overflow-hidden ${
                     isExpanded ? 'border-[var(--accent)] shadow-md' : 'border-[var(--border-color)] hover:border-[var(--text-main)]'
                   }`}
