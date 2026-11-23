@@ -249,6 +249,7 @@ export const PROJECTS: ProjectItem[] = [
       { label: 'False Alarm Rate', value: '2.1%', context: 'Reduced cloud-edge false positives' },
     ],
     githubUrl: 'https://github.com/YogananthJ/Wildfire_Detection',
+    demoUrl: 'https://wildfire-detection-5v20.onrender.com',
     year: '2025',
     highlights: [
       'Academic project completed as part of computer science coursework in deep learning',
@@ -263,6 +264,8 @@ export const PROJECTS: ProjectItem[] = [
       title: 'Satellite Multi-Band Thermal Inspector',
       description: 'Inspect multi-spectral band differences (Visible RGB vs Thermal Infrared) and view hotspot detection probability.',
       isIllustrative: true,
+      externalLiveUrl: 'https://wildfire-detection-5v20.onrender.com',
+      externalLabel: 'Open Live App',
     },
     gradientTheme: 'from-rose-500/20 via-red-500/10 to-transparent',
     accentColor: '#E11D48',

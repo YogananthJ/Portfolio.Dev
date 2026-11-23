@@ -556,12 +556,26 @@ export const ProjectSimulator: React.FC<ProjectSimulatorProps> = ({ project }) =
     case 'wildfire':
       return (
         <div className="space-y-6">
-          <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-xs font-mono flex items-center justify-between">
+          <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-xs font-mono flex flex-wrap items-center justify-between gap-2">
             <span className="text-rose-600 dark:text-rose-400 font-bold flex items-center gap-1.5">
               <Flame className="w-4 h-4" />
               Multi-Spectral Satellite Band Visualizer (Academic Research Demo)
             </span>
-            <span className="text-[10px] text-[var(--text-muted)] font-mono">DenseNet-121</span>
+            {project.simulatorConfig.externalLiveUrl ? (
+              <a
+                href={project.simulatorConfig.externalLiveUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-project-id={project.id}
+                data-link-role="project_demo"
+                className="flex items-center gap-1 px-2.5 py-1 bg-rose-600 text-white font-bold hover:opacity-90 transition-opacity"
+              >
+                <span>{project.simulatorConfig.externalLabel || 'Open Live App'}</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            ) : (
+              <span className="text-[10px] text-[var(--text-muted)] font-mono">DenseNet-121</span>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
