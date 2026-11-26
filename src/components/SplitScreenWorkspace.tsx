@@ -2,21 +2,23 @@ import React, { useState } from 'react';
 import { useLayout } from '../context/LayoutContext';
 import { PROJECTS } from '../data/portfolioData';
 import { ProjectSimulator } from './ProjectSimulator';
-import { 
-  ArrowLeft, 
-  Github, 
-  Play, 
-  Search, 
-  Layers, 
-  Sliders, 
-  CheckCircle2, 
+import {
+  ArrowLeft,
+  Github,
+  Play,
+  Search,
+  Layers,
+  Sliders,
+  CheckCircle2,
   ArrowUpRight,
   Maximize2,
   ExternalLink,
-  Cpu
+  Cpu,
+  Lock
 } from 'lucide-react';
 
 import { ProjectItem } from '../types/portfolio';
+import { extractGitHubRepoSlug } from '../utils/projectInsights';
 
 interface SplitScreenWorkspaceProps {
   onOpenModal: (project: ProjectItem) => void;
@@ -202,18 +204,28 @@ export const SplitScreenWorkspace: React.FC<SplitScreenWorkspaceProps> = ({ onOp
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 )}
-                <a
-                  href={selectedProject.githubUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-project-id={selectedProject.id}
-                  data-link-role="project_repo"
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-[var(--accent)] text-[var(--text-main)] transition-colors font-bold uppercase text-[11px]"
-                >
-                  <Github className="w-3.5 h-3.5" />
-                  <span>Repo</span>
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                </a>
+                {extractGitHubRepoSlug(selectedProject.githubUrl) ? (
+                  <a
+                    href={selectedProject.githubUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-project-id={selectedProject.id}
+                    data-link-role="project_repo"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-[var(--accent)] text-[var(--text-main)] transition-colors font-bold uppercase text-[11px]"
+                  >
+                    <Github className="w-3.5 h-3.5" />
+                    <span>Repo</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </a>
+                ) : (
+                  <span
+                    title="Project-specific source repository link unavailable"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-muted)] font-bold uppercase text-[11px]"
+                  >
+                    <Lock className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span>Source Unavailable</span>
+                  </span>
+                )}
 
                 <button
                   onClick={() => onOpenModal(selectedProject)}

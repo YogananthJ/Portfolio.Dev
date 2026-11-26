@@ -14,7 +14,6 @@ import { PERSONAL_INFO } from '../data/portfolioData';
 import { DigitalVisitingCard } from './DigitalVisitingCard';
 import { ParticleNetworkCanvas } from './common/ParticleNetworkCanvas';
 import { soundFX } from '../utils/soundEffects';
-import { trackSectionNavigation } from '../utils/urlActivityTracker';
 
 interface HeroProps {
   onOpenTerminal: () => void;
@@ -169,7 +168,7 @@ export const Hero: React.FC<HeroProps> = ({
               <p className="text-sm sm:text-base text-[var(--text-main)] leading-relaxed mb-4 font-medium">
                 {PERSONAL_INFO.bio}
               </p>
-              <div className="p-3 bg-amber-500/10 border border-amber-500/30 text-xs text-amber-600 dark:text-amber-400 mb-4 font-mono leading-relaxed">
+              <div className="p-3 bg-amber-50 border border-amber-700/35 text-xs text-amber-900 dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-300 mb-4 font-mono leading-relaxed">
                 {PERSONAL_INFO.statusNote}
               </div>
             </div>
@@ -178,10 +177,7 @@ export const Hero: React.FC<HeroProps> = ({
             <div className="space-y-4 pt-4 border-t border-[var(--border-color)]">
               <div className="flex flex-wrap items-center gap-3">
                 <button
-                  onClick={() => {
-                    trackSectionNavigation('projects');
-                    onExploreWork();
-                  }}
+                  onClick={onExploreWork}
                   type="button"
                   className="flex items-center gap-2 px-5 py-3 text-xs font-bold uppercase tracking-wider text-white bg-[var(--accent)] hover:opacity-90 transition-all shadow-md active:scale-95 cursor-pointer font-mono"
                 >

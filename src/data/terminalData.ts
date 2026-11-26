@@ -105,7 +105,7 @@ export const MANIFESTO_PRINCIPLES = [
     body: 'Whether using SHAP attribution in financial underwriting or attention attribution in vision models, engineers must explain WHY algorithms make decisions.',
   },
   {
-    title: '03. Zero-Slop Architectural Craft',
+    title: '03. Disciplined Modular Architecture',
     body: 'No lazy defaults, no placeholder stubs, and no unnecessary bloat. Interfaces should reflect intentional human discipline, typography math, and domain-native design.',
   },
   {
@@ -163,7 +163,7 @@ export const SERVICES_LIST = [
   },
   {
     name: 'Retrieval-Augmented Generation (RAG) & LLM Tooling',
-    desc: 'Building grounded document intelligence assistants with vector databases, semantic re-ranking, and zero hallucination.',
+    desc: 'Building grounded document intelligence assistants with vector databases, semantic re-ranking, and source citations.',
   },
   {
     name: 'Full-Stack Web Application Architecture',

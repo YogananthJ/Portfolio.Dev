@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { X, Github, ArrowUpRight, CheckCircle2, ExternalLink, Info, Cpu, Binary, GitBranch, Layers, ArrowRight, Link2, Check } from 'lucide-react';
+import { X, Github, ArrowUpRight, CheckCircle2, ExternalLink, Info, Cpu, Binary, GitBranch, Layers, ArrowRight, Link2, Check, Lock } from 'lucide-react';
 import { ProjectItem } from '../types/portfolio';
 import { ProjectSimulator } from './ProjectSimulator';
 import { ProjectInsightsPanel } from './ProjectInsightsPanel';
+import { extractGitHubRepoSlug } from '../utils/projectInsights';
 import { soundFX } from '../utils/soundEffects';
 import { useDialogA11y } from '../hooks/useDialogA11y';
 
@@ -159,7 +160,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
               {project.architectureOverview}
             </div>
             {project.methodologyNote && (
-              <div className="mt-2 p-3 bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-mono">
+              <div className="mt-2 p-3 bg-amber-50 border border-amber-700/35 text-amber-900 dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-300 text-xs font-mono">
                 <strong>Evaluation &amp; Methodology Note:</strong> {project.methodologyNote}
               </div>
             )}
@@ -326,18 +327,28 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
           {/* Modal Footer Actions */}
           <div className="pt-6 border-t border-[var(--border-color)] flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-2">
-              <a
-                href={project.githubUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                data-project-id={project.id}
-                data-link-role="project_repo"
-                className="flex items-center gap-2 px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider text-white bg-[var(--accent)] hover:opacity-90 transition-opacity"
-              >
-                <Github className="w-3.5 h-3.5" />
-                <span>Source Code</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </a>
+              {extractGitHubRepoSlug(project.githubUrl) ? (
+                <a
+                  href={project.githubUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-project-id={project.id}
+                  data-link-role="project_repo"
+                  className="flex items-center gap-2 px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider text-white bg-[var(--accent)] hover:opacity-90 transition-opacity"
+                >
+                  <Github className="w-3.5 h-3.5" />
+                  <span>Source Code</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </a>
+              ) : (
+                <span
+                  title="Project-specific public repository link is unavailable — review the case study details above"
+                  className="flex items-center gap-2 px-4 py-2 text-xs font-mono font-bold uppercase tracking-wider text-[var(--text-muted)] bg-[var(--bg-surface)] border border-[var(--border-color)]"
+                >
+                  <Lock className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span>Source Code Unavailable</span>
+                </span>
+              )}
 
               {project.demoUrl && (
                 <a

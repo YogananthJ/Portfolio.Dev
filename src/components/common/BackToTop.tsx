@@ -6,7 +6,11 @@ import { ExpandableLabel, useTouchExpandPreview } from './ExpandableIconButton';
 const SHOW_SCROLL_THRESHOLD_PX = 32;
 const HIDE_SCROLL_THRESHOLD_PX = 12;
 
-export const BackToTop: React.FC = () => {
+interface BackToTopProps {
+  onNavigateTop?: () => void;
+}
+
+export const BackToTop: React.FC<BackToTopProps> = ({ onNavigateTop }) => {
   const [isActive, setIsActive] = useState<boolean>(false);
   const isActiveRef = useRef<boolean>(false);
   const shouldReduceMotion = useReducedMotion();
@@ -49,6 +53,10 @@ export const BackToTop: React.FC = () => {
   }, []);
 
   const scrollToTop = () => {
+    if (onNavigateTop) {
+      onNavigateTop();
+      return;
+    }
     window.scrollTo({
       top: 0,
       behavior: shouldReduceMotion ? 'auto' : 'smooth',

@@ -8,10 +8,16 @@ import { trackSectionNavigation } from '../utils/urlActivityTracker';
 interface HeaderProps {
   onOpenTerminal: () => void;
   onOpenResume?: () => void;
+  onNavigateSection: (sectionId: string) => void;
   activeSection: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, activeSection }) => {
+export const Header: React.FC<HeaderProps> = ({
+  onOpenTerminal,
+  onOpenResume,
+  onNavigateSection,
+  activeSection,
+}) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { layoutMode, setLayoutMode, toggleSidebar, sidebarOpen, isDark, toggleTheme } = useLayout();
 
@@ -23,24 +29,34 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
   };
 
   const navLinks = [
-    { href: '#overview', label: 'Overview', id: 'overview' },
-    { href: '#projects', label: 'Projects', id: 'projects' },
-    { href: '#skills', label: 'Skills', id: 'skills' },
-    { href: '#github-activity', label: 'GitHub', id: 'github-activity' },
-    { href: '#experience', label: 'Milestones', id: 'experience' },
-    { href: '#contact', label: 'Contact', id: 'contact' },
+    { href: '?section=home', label: 'Overview', id: 'overview' },
+    { href: '?section=projects', label: 'Projects', id: 'projects' },
+    { href: '?section=skills', label: 'Skills', id: 'skills' },
+    { href: '?section=github-activity', label: 'GitHub', id: 'github-activity' },
+    { href: '?section=experience', label: 'Milestones', id: 'experience' },
+    { href: '?section=contact', label: 'Contact', id: 'contact' },
   ];
 
   const primaryNavLinks = navLinks.slice(0, 6);
   const secondaryNavLinks = navLinks.slice(6);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const moreMenuRef = useRef<HTMLDivElement | null>(null);
+  const mobileMenuBtnRef = useRef<HTMLButtonElement | null>(null);
+  const mobileDrawerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setMoreMenuOpen(false);
-        setMobileMenuOpen(false);
+        if (mobileMenuOpen) {
+          const focusWasInDrawer = mobileDrawerRef.current?.contains(document.activeElement);
+          setMobileMenuOpen(false);
+          if (focusWasInDrawer) {
+            window.requestAnimationFrame(() => {
+              mobileMenuBtnRef.current?.focus();
+            });
+          }
+        }
       }
     };
     const handleMouseDown = (e: MouseEvent) => {
@@ -54,15 +70,27 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
       window.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('mousedown', handleMouseDown);
     };
-  }, []);
+  }, [mobileMenuOpen]);
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string, closeMenus = false) => {
+    if (!e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && e.button === 0) {
+      e.preventDefault();
+      onNavigateSection(sectionId);
+      if (closeMenus) {
+        setMoreMenuOpen(false);
+        setMobileMenuOpen(false);
+      }
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-[var(--bg-canvas)]/95 backdrop-blur-md border-b border-[var(--border-color)] transition-colors w-full">
       <div className="max-w-[1720px] w-full mx-auto px-3 sm:px-6 lg:px-8 xl:px-10 h-16 flex items-center justify-between gap-2 sm:gap-4 lg:gap-6">
         
         {/* Zone 1: Brand wordmark & Sidebar Toggle */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0">
           <button
+            id="directory-sidebar-toggle"
             onClick={toggleSidebar}
             type="button"
             aria-expanded={sidebarOpen}
@@ -78,17 +106,16 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
           </button>
 
           <a
-            href="#overview"
-            onClick={() => trackSectionNavigation('home')}
+            href="?section=home"
+            onClick={(e) => handleNavClick(e, 'overview')}
             className="group flex items-center gap-1.5 sm:gap-2 font-display text-base sm:text-xl lg:text-2xl font-black tracking-tight text-[var(--text-main)] whitespace-nowrap hover:text-[var(--accent)] transition-colors"
           >
             <span>YOGANANTH</span>
-            <span className="w-2 h-2 bg-[var(--accent)] group-hover:scale-125 transition-transform"></span>
+            <span className="w-2 h-2 bg-[var(--accent)] group-hover:scale-125 transition-transform shrink-0"></span>
           </a>
         </div>
 
-        {/* Zone 2: Navigation Links (Wide screens: all 9; Laptops: 6 primary + More dropdown; Tablet/Mobile: Drawer) */}
-        {/* 2A. Wide desktop: full navigation strip (>= 1280px) */}
+        {/* Zone 2: Navigation Links (Wide desktop >= 1280px; Compact 1024px-1279px; Drawer < 1024px) */}
         <nav aria-label="Primary navigation" className="hidden xl:flex items-center gap-3.5 2xl:gap-5 text-xs xl:text-[13px] font-semibold text-[var(--text-muted)] font-mono">
           {navLinks.map((link) => {
             const isActive = activeSection === link.id && layoutMode === 'standard';
@@ -96,7 +123,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
               <a
                 key={link.id}
                 href={link.href}
-                onClick={() => trackSectionNavigation(link.id)}
+                onClick={(e) => handleNavClick(e, link.id)}
                 aria-current={isActive ? 'location' : undefined}
                 className={`whitespace-nowrap transition-colors py-1 relative ${
                   isActive
@@ -113,7 +140,6 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
           })}
         </nav>
 
-        {/* 2B. Laptop desktop (1024px - 1279px): 6 primary links + sleek "More" dropdown */}
         <nav aria-label="Compact navigation" className="hidden lg:flex xl:hidden items-center gap-2.5 text-xs font-semibold text-[var(--text-muted)] font-mono">
           {primaryNavLinks.map((link) => {
             const isActive = activeSection === link.id && layoutMode === 'standard';
@@ -121,7 +147,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
               <a
                 key={link.id}
                 href={link.href}
-                onClick={() => trackSectionNavigation(link.id)}
+                onClick={(e) => handleNavClick(e, link.id)}
                 aria-current={isActive ? 'location' : undefined}
                 className={`whitespace-nowrap transition-colors py-1 relative ${
                   isActive
@@ -137,7 +163,6 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
             );
           })}
 
-          {/* "More" dropdown for secondary links when present */}
           {secondaryNavLinks.length > 0 && (
             <div className="relative" ref={moreMenuRef}>
               <button
@@ -163,10 +188,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
                       key={link.id}
                       href={link.href}
                       role="menuitem"
-                      onClick={() => {
-                        trackSectionNavigation(link.id);
-                        setMoreMenuOpen(false);
-                      }}
+                      onClick={(e) => handleNavClick(e, link.id, true)}
                       className="block px-3 py-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-colors"
                     >
                       {link.label}
@@ -178,7 +200,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
           )}
         </nav>
 
-        {/* Zone 3: Compact Expandable Icon Toolbar */}
+        {/* Zone 3: Compact Expandable Icon Toolbar (Secondary tools collapse into mobile drawer on narrow widths) */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* 1. Split Screen Workbench Toggle */}
           <ExpandableIconButton
@@ -206,7 +228,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
             label={<span>{layoutMode === 'split' ? 'Exit Split' : 'Split View'}</span>}
           />
 
-          {/* 2. Audio Synthesis Feedback Toggle */}
+          {/* 2. Audio Synthesis Feedback Toggle (hidden < sm, available inside mobile drawer) */}
           <ExpandableIconButton
             variant="header"
             onClick={handleToggleSound}
@@ -221,7 +243,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
                 ? 'Mute procedural sound synthesis'
                 : 'Enable procedural sound synthesis'
             }
-            className={`inline-flex text-xs font-mono font-bold uppercase border cursor-pointer ${
+            className={`hidden sm:inline-flex text-xs font-mono font-bold uppercase border cursor-pointer ${
               soundActive
                 ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
                 : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-main)] hover:border-[var(--accent)]'
@@ -236,7 +258,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
             label={<span>{soundActive ? 'Sound On' : 'Muted'}</span>}
           />
 
-          {/* 3. Light / Dark Mode Toggle */}
+          {/* 3. Light / Dark Mode Toggle (hidden < sm, available inside mobile drawer) */}
           <ExpandableIconButton
             variant="header"
             onClick={() => {
@@ -245,7 +267,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
             }}
             title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            className="inline-flex text-xs font-mono font-bold uppercase border cursor-pointer bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-main)] hover:border-[var(--accent)]"
+            className="hidden sm:inline-flex text-xs font-mono font-bold uppercase border cursor-pointer bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-main)] hover:border-[var(--accent)]"
             icon={
               isDark ? (
                 <Sun className="w-3.5 h-3.5 shrink-0 text-amber-400" />
@@ -277,7 +299,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
             }
           />
 
-          {/* 5. Resume Dossier Launcher */}
+          {/* 5. Resume Dossier Launcher (shown >= 420px in top bar, always inside mobile drawer) */}
           {onOpenResume && (
             <ExpandableIconButton
               variant="header"
@@ -287,26 +309,28 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
               }}
               aria-label="View & Download Official Engineering Resume"
               title="View & Download Official Engineering Resume"
-              className="inline-flex text-xs font-mono font-bold uppercase text-[var(--text-main)] bg-[var(--bg-surface)] hover:bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-amber-400 cursor-pointer"
+              className="hidden min-[420px]:inline-flex text-xs font-mono font-bold uppercase text-[var(--text-main)] bg-[var(--bg-surface)] hover:bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-amber-400 cursor-pointer"
               icon={<FileText className="w-3.5 h-3.5 shrink-0 text-amber-400" />}
               label={<span>Resume</span>}
             />
           )}
 
-          {/* 6. Contact Button */}
+          {/* 6. Contact Button (shown >= 380px in top bar, always inside mobile drawer) */}
           <ExpandableIconLink
             variant="header"
-            href="#contact"
-            onClick={() => trackSectionNavigation('contact')}
+            href="?section=contact"
+            onClick={(e) => handleNavClick(e, 'contact')}
             aria-label="Contact Yogananth J"
             title="Jump to Contact Section"
-            className="inline-flex text-xs font-bold uppercase tracking-wider text-white bg-[var(--accent)] border border-[var(--accent)] hover:opacity-90 shadow-sm font-mono cursor-pointer"
+            className="hidden min-[380px]:inline-flex text-xs font-bold uppercase tracking-wider text-white bg-[var(--accent)] border border-[var(--accent)] hover:opacity-90 shadow-sm font-mono cursor-pointer"
             icon={<Send className="w-3.5 h-3.5 shrink-0" />}
             label={<span>Contact</span>}
           />
 
-          {/* Mobile/Tablet Menu Hamburger Button (< 1024px) */}
+          {/* Mobile/Tablet Menu Hamburger Button (< 1024px) — always visible with reserved space */}
           <button
+            ref={mobileMenuBtnRef}
+            id="mobile-menu-toggle"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             type="button"
             aria-expanded={mobileMenuOpen}
@@ -322,6 +346,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
       {/* Mobile/Tablet Full Drawer Navigation Menu (< 1024px) */}
       {mobileMenuOpen && (
         <nav
+          ref={mobileDrawerRef}
           id="mobile-nav-drawer"
           aria-label="Mobile navigation"
           className="lg:hidden border-b border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-4 space-y-3 shadow-2xl font-mono animate-in fade-in slide-in-from-top-2 duration-200"
@@ -333,11 +358,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
                 <a
                   key={link.id}
                   href={link.href}
-                  onClick={() => {
-                    trackSectionNavigation(link.id);
-                    setLayoutMode('standard');
-                    setMobileMenuOpen(false);
-                  }}
+                  onClick={(e) => handleNavClick(e, link.id, true)}
+                  aria-current={isActive ? 'location' : undefined}
                   className={`px-3 py-2 text-xs font-bold transition-colors rounded-xs ${
                     isActive
                       ? 'bg-[var(--accent)] text-white'
@@ -350,14 +372,29 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
             })}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-2 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+            {onOpenResume && (
+              <button
+                onClick={() => {
+                  soundFX.playClick();
+                  setMobileMenuOpen(false);
+                  onOpenResume();
+                }}
+                type="button"
+                className="py-2.5 px-3 text-xs font-bold uppercase bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] text-center flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <FileText className="w-4 h-4 text-amber-400" />
+                <span>Resume / CV</span>
+              </button>
+            )}
+
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
                 onOpenTerminal();
               }}
               type="button"
-              className="py-2.5 px-3 text-xs font-bold uppercase bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] text-center flex items-center justify-center gap-2 cursor-pointer flex-1"
+              className="py-2.5 px-3 text-xs font-bold uppercase bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] text-center flex items-center justify-center gap-2 cursor-pointer"
             >
               <Terminal className="w-4 h-4 text-[var(--accent)]" />
               <span>Open Terminal (CLI)</span>
@@ -369,24 +406,36 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTerminal, onOpenResume, ac
                 setMobileMenuOpen(false);
               }}
               type="button"
-              className="py-2.5 px-3 text-xs font-bold uppercase bg-[var(--accent)] text-white text-center flex items-center justify-center gap-2 cursor-pointer flex-1"
+              className="py-2.5 px-3 text-xs font-bold uppercase bg-[var(--accent)] text-white text-center flex items-center justify-center gap-2 cursor-pointer"
             >
               <Columns2 className="w-4 h-4" />
               <span>{layoutMode === 'split' ? 'Exit Split View' : 'Split-Screen Mode'}</span>
             </button>
 
-            <button
-              onClick={() => {
-                soundFX.playClick();
-                toggleTheme();
-                setMobileMenuOpen(false);
-              }}
-              type="button"
-              className="py-2.5 px-3 text-xs font-bold uppercase bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] text-center flex items-center justify-center gap-2 cursor-pointer flex-1"
-            >
-              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-zinc-700" />}
-              <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={handleToggleSound}
+                type="button"
+                aria-pressed={soundActive}
+                className="py-2.5 px-3 text-xs font-bold uppercase bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] text-center flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                {soundActive ? <Volume2 className="w-4 h-4 text-[var(--accent)]" /> : <VolumeX className="w-4 h-4 text-[var(--text-muted)]" />}
+                <span>{soundActive ? 'Sound On' : 'Muted'}</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  soundFX.playClick();
+                  toggleTheme();
+                  setMobileMenuOpen(false);
+                }}
+                type="button"
+                className="py-2.5 px-3 text-xs font-bold uppercase bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] text-center flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-zinc-700" />}
+                <span>{isDark ? 'Light' : 'Dark'}</span>
+              </button>
+            </div>
           </div>
         </nav>
       )}

@@ -27,6 +27,8 @@ import {
   clearProjectParam,
   getCurrentUrlParam,
   hasAnyActivityParams,
+  resolveSectionFromUrl,
+  toDomSectionId,
   trackProjectParam,
   trackSectionNavigation,
 } from './utils/urlActivityTracker';
@@ -86,6 +88,8 @@ function PortfolioMainContent() {
   const [isSimulatedCrash, setIsSimulatedCrash] = useState<boolean>(false);
   const { friendlyNotice, dismissNotice } = useErrorMonitoring();
   const lastSpiedSectionRef = useRef<string>('overview');
+  const programmaticScrollRef = useRef<{ targetId: string; until: number } | null>(null);
+  const hasRestoredInitialUrlRef = useRef<boolean>(false);
 
   // Client-side route detection for Error Pages (/404, /offline, etc.)
   const getRouteFromUrl = (): { page: string } => {
@@ -128,17 +132,80 @@ function PortfolioMainContent() {
     isModalOpen: isAnyModalOpen,
   });
 
+  const scrollToSectionId = (sectionId: string, behavior: ScrollBehavior = 'smooth') => {
+    if (typeof window === 'undefined') return;
+    const domId = toDomSectionId(sectionId);
+    const resolvedBehavior: ScrollBehavior = shouldReduceMotion ? 'auto' : behavior;
+    if (domId === 'overview') {
+      window.scrollTo({ top: 0, behavior: resolvedBehavior });
+      return;
+    }
+    const el = document.getElementById(domId);
+    if (el) {
+      const top = Math.max(0, el.getBoundingClientRect().top + window.scrollY - 64);
+      window.scrollTo({ top, behavior: resolvedBehavior });
+    }
+  };
+
+  const navigateToSection = (
+    sectionId: string,
+    options: { pushHistory?: boolean; behavior?: ScrollBehavior } = {}
+  ) => {
+    const domId = toDomSectionId(sectionId);
+    const prevLayout = layoutMode;
+    if (prevLayout === 'split') {
+      setLayoutMode('standard');
+    }
+    setActiveSection(domId);
+    lastSpiedSectionRef.current = domId;
+    programmaticScrollRef.current = {
+      targetId: domId,
+      until: Date.now() + 950,
+    };
+
+    trackSectionNavigation(domId, {
+      historyMode: options.pushHistory === false ? 'replace' : 'push',
+      clearSectionHash: true,
+    });
+
+    const delay = prevLayout === 'split' ? 80 : 0;
+    window.setTimeout(() => {
+      scrollToSectionId(domId, options.behavior ?? 'smooth');
+    }, delay);
+  };
+
   useEffect(() => {
-    const handleRouteChange = () => {
-      setRoute(getRouteFromUrl());
+    const handleHistoryNavigation = () => {
+      const nextRoute = getRouteFromUrl();
+      setRoute(nextRoute);
+      if (nextRoute.page !== 'home') return;
+
+      const { domId, hasExplicitSection } = resolveSectionFromUrl();
+      setActiveSection(domId);
+      lastSpiedSectionRef.current = domId;
+      programmaticScrollRef.current = {
+        targetId: domId,
+        until: Date.now() + 950,
+      };
+      if (hasExplicitSection) {
+        trackSectionNavigation(domId, {
+          preserveScroll: true,
+          historyMode: 'replace',
+          clearSectionHash: true,
+        });
+      }
+      window.requestAnimationFrame(() => {
+        scrollToSectionId(domId, 'smooth');
+      });
     };
-    window.addEventListener('popstate', handleRouteChange);
-    window.addEventListener('hashchange', handleRouteChange);
+
+    window.addEventListener('popstate', handleHistoryNavigation);
+    window.addEventListener('hashchange', handleHistoryNavigation);
     return () => {
-      window.removeEventListener('popstate', handleRouteChange);
-      window.removeEventListener('hashchange', handleRouteChange);
+      window.removeEventListener('popstate', handleHistoryNavigation);
+      window.removeEventListener('hashchange', handleHistoryNavigation);
     };
-  }, []);
+  }, [shouldReduceMotion]);
 
   // Synchronize document title, meta description, robots, canonical, and OG tags with active route
   useEffect(() => {
@@ -185,29 +252,47 @@ function PortfolioMainContent() {
     trackGa4PageView('/', DEFAULT_TITLE);
   }, [route]);
 
-  // Initial URL activity hydration (?section=... or default ?section=home)
+  // Initial URL activity hydration (?section=..., #section, or default ?section=home)
   useEffect(() => {
     if (route.page !== 'home' || layoutMode !== 'standard' || typeof window === 'undefined') {
       return;
     }
 
-    const sectionParam = getCurrentUrlParam('section');
-    if (sectionParam) {
-      const targetId = sectionParam === 'home' ? 'overview' : sectionParam;
-      lastSpiedSectionRef.current = targetId;
-      setActiveSection(targetId === 'about' ? 'overview' : targetId);
-      if (sectionParam !== 'home' && !window.location.hash && !getCurrentUrlParam('project')) {
-        const timer = window.setTimeout(() => {
-          const el = document.getElementById(targetId);
-          if (el) el.scrollIntoView({ behavior: 'smooth' });
-        }, 120);
-        return () => window.clearTimeout(timer);
+    const { domId, hasExplicitSection } = resolveSectionFromUrl();
+
+    if (hasExplicitSection) {
+      lastSpiedSectionRef.current = domId;
+      setActiveSection(domId);
+      trackSectionNavigation(domId, {
+        preserveScroll: true,
+        historyMode: 'replace',
+        clearSectionHash: true,
+      });
+
+      if (!hasRestoredInitialUrlRef.current && domId !== 'overview' && !getCurrentUrlParam('project')) {
+        hasRestoredInitialUrlRef.current = true;
+        programmaticScrollRef.current = {
+          targetId: domId,
+          until: Date.now() + 950,
+        };
+        const timer1 = window.setTimeout(() => {
+          scrollToSectionId(domId, 'auto');
+        }, 50);
+        const timer2 = window.setTimeout(() => {
+          scrollToSectionId(domId, 'auto');
+        }, 220);
+        return () => {
+          window.clearTimeout(timer1);
+          window.clearTimeout(timer2);
+        };
       }
+      hasRestoredInitialUrlRef.current = true;
       return;
     }
 
+    hasRestoredInitialUrlRef.current = true;
     if (!hasAnyActivityParams() && !window.location.hash) {
-      trackSectionNavigation('home');
+      trackSectionNavigation('home', { historyMode: 'replace', clearSectionHash: true });
     }
   }, [route.page, layoutMode]);
 
@@ -221,8 +306,7 @@ function PortfolioMainContent() {
   const handleReturnHome = () => {
     window.history.pushState({}, '', '/');
     setRoute({ page: 'home' });
-    trackSectionNavigation('home');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigateToSection('overview', { pushHistory: false });
   };
 
   const handleGoBack = () => {
@@ -250,21 +334,55 @@ function PortfolioMainContent() {
   useEffect(() => {
     if (layoutMode !== 'standard' || route.page !== 'home') return;
     const sectionIds = ['overview', 'projects', 'skills', 'github-activity', 'experience', 'contact'];
+
     const handleScroll = () => {
-      const scrollPosition = window.scrollY + 200;
-      for (let i = sectionIds.length - 1; i >= 0; i--) {
-        const el = document.getElementById(sectionIds[i]);
-        if (el && el.offsetTop <= scrollPosition) {
-          const nextId = sectionIds[i];
-          setActiveSection(nextId);
-          if (!isAnyModalOpen && lastSpiedSectionRef.current !== nextId) {
-            lastSpiedSectionRef.current = nextId;
-            trackSectionNavigation(nextId, { preserveScroll: true });
+      const lock = programmaticScrollRef.current;
+      if (lock && Date.now() < lock.until) {
+        if (lock.targetId === 'overview') {
+          if (window.scrollY > 36) return;
+        } else {
+          const targetEl = document.getElementById(lock.targetId);
+          if (targetEl) {
+            const targetTop = Math.max(0, targetEl.getBoundingClientRect().top + window.scrollY - 64);
+            if (Math.abs(window.scrollY - targetTop) > 48) {
+              return;
+            }
           }
-          break;
+        }
+        programmaticScrollRef.current = null;
+      }
+
+      let detectedId = 'overview';
+      const docEl = document.documentElement;
+      const nearBottom = window.innerHeight + window.scrollY >= docEl.scrollHeight - 40;
+
+      if (window.scrollY <= 40) {
+        detectedId = 'overview';
+      } else if (nearBottom && document.getElementById('contact')) {
+        detectedId = 'contact';
+      } else {
+        for (let i = sectionIds.length - 1; i >= 0; i--) {
+          const el = document.getElementById(sectionIds[i]);
+          if (el && el.getBoundingClientRect().top <= 160) {
+            detectedId = sectionIds[i];
+            break;
+          }
+        }
+      }
+
+      if (detectedId !== lastSpiedSectionRef.current) {
+        lastSpiedSectionRef.current = detectedId;
+        setActiveSection(detectedId);
+        if (!isAnyModalOpen) {
+          trackSectionNavigation(detectedId, {
+            preserveScroll: true,
+            historyMode: 'replace',
+            clearSectionHash: true,
+          });
         }
       }
     };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [layoutMode, route.page, isAnyModalOpen]);
@@ -315,10 +433,7 @@ function PortfolioMainContent() {
   };
 
   const handleExploreWork = () => {
-    const projectsEl = document.getElementById('projects');
-    if (projectsEl) {
-      projectsEl.scrollIntoView({ behavior: 'smooth' });
-    }
+    navigateToSection('projects');
   };
 
   function SimulatedCrashTrigger(): never {
@@ -360,6 +475,7 @@ function PortfolioMainContent() {
       {/* 3-Zone Sticky Navigation */}
       <Header
         activeSection={activeSection}
+        onNavigateSection={(sectionId) => navigateToSection(sectionId)}
         onOpenTerminal={() => setIsTerminalOpen(true)}
         onOpenResume={handleOpenResumeModal}
       />
@@ -461,7 +577,7 @@ function PortfolioMainContent() {
       {/* Footer (shown in standard mode, hidden during dedicated error page experiences) */}
       {layoutMode === 'standard' && !route.page.startsWith('error-') && (
         <ScrollSectionReveal variant="dock-up" duration={0.55}>
-          <Footer />
+          <Footer onNavigateTop={() => navigateToSection('overview')} />
         </ScrollSectionReveal>
       )}
 
@@ -516,14 +632,7 @@ function PortfolioMainContent() {
               onClose={() => setIsTerminalOpen(false)}
               onOpenResume={handleOpenResumeModal}
               onNavigateSection={(sectionId) => {
-                trackSectionNavigation(sectionId);
-                if (layoutMode === 'split') {
-                  setLayoutMode('standard');
-                }
-                setTimeout(() => {
-                  const el = document.getElementById(sectionId);
-                  if (el) el.scrollIntoView({ behavior: 'smooth' });
-                }, 100);
+                navigateToSection(sectionId);
               }}
               onSelectProject={(id) => {
                 const p = PROJECTS.find((item) => item.id === id);
@@ -560,10 +669,13 @@ function PortfolioMainContent() {
       <LayoutController />
 
       {/* Floating Back To Top Button */}
-      <BackToTop />
+      <BackToTop onNavigateTop={() => navigateToSection('overview')} />
 
       {/* Expandable Quick Actions Menu in Bottom-Left Corner */}
-      <QuickActionsMenu onOpenTerminal={() => setIsTerminalOpen(true)} />
+      <QuickActionsMenu
+        onOpenTerminal={() => setIsTerminalOpen(true)}
+        onNavigateSection={(sectionId) => navigateToSection(sectionId)}
+      />
 
       {/* Global Framer Motion Glassmorphism Theme Transition Overlay */}
       <ThemeTransitionOverlay />

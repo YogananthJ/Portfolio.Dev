@@ -24,9 +24,13 @@ import { trackSectionNavigation } from '../../utils/urlActivityTracker';
 
 interface QuickActionsMenuProps {
   onOpenTerminal?: () => void;
+  onNavigateSection?: (sectionId: string) => void;
 }
 
-export const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({ onOpenTerminal }) => {
+export const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
+  onOpenTerminal,
+  onNavigateSection,
+}) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const shouldReduceMotion = useReducedMotion();
@@ -76,12 +80,15 @@ export const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({ onOpenTermin
 
   const handleJumpToSection = (sectionId: string) => {
     soundFX.playClick(880);
-    trackSectionNavigation(sectionId);
-    // If user is currently in split workbench mode, switch to standard layout so section scrolling works properly
+    setIsOpen(false);
+    if (onNavigateSection) {
+      onNavigateSection(sectionId);
+      return;
+    }
+    trackSectionNavigation(sectionId, { historyMode: 'push' });
     if (layoutMode === 'split') {
       setLayoutMode('standard');
     }
-
     setTimeout(() => {
       const el = document.getElementById(sectionId);
       if (el) {
@@ -90,15 +97,17 @@ export const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({ onOpenTermin
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }, 50);
-
-    setIsOpen(false);
   };
 
   const handleScrollTop = () => {
     soundFX.playClick(900);
-    trackSectionNavigation('home');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
     setIsOpen(false);
+    if (onNavigateSection) {
+      onNavigateSection('overview');
+      return;
+    }
+    trackSectionNavigation('home', { historyMode: 'push' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const SECTIONS = [

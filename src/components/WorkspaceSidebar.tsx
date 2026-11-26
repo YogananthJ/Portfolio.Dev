@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useLayout } from '../context/LayoutContext';
 import { PROJECTS } from '../data/portfolioData';
-import { X, Play, Code2, Layers, Cpu, ArrowUpRight, CheckCircle2 } from 'lucide-react';
+import { X, Play } from 'lucide-react';
 
 interface WorkspaceSidebarProps {
   onSelectProject: (projectId: string) => void;
@@ -9,6 +9,25 @@ interface WorkspaceSidebarProps {
 
 export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ onSelectProject }) => {
   const { sidebarOpen, setSidebarOpen, activeSimulatorId, setActiveSimulatorId, setLayoutMode } = useLayout();
+
+  const closeSidebarAndRestoreFocus = () => {
+    setSidebarOpen(false);
+    window.requestAnimationFrame(() => {
+      document.getElementById('directory-sidebar-toggle')?.focus();
+    });
+  };
+
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeSidebarAndRestoreFocus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [sidebarOpen]);
 
   if (!sidebarOpen) return null;
 
@@ -25,9 +44,9 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ onSelectProj
             <span className="font-bold uppercase tracking-wider text-xs">Project Directory</span>
           </div>
           <button
-            onClick={() => setSidebarOpen(false)}
+            onClick={closeSidebarAndRestoreFocus}
             type="button"
-            className="text-[var(--text-muted)] hover:text-[var(--text-main)]"
+            className="text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer"
             aria-label="Close sidebar"
           >
             <X className="w-4 h-4" />
@@ -41,6 +60,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ onSelectProj
           </div>
           {PROJECTS.map((p, idx) => {
             const isSelected = activeSimulatorId === p.id;
+            const itemNumber = String(idx + 1).padStart(2, '0');
             return (
               <button
                 key={p.id}
@@ -49,7 +69,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ onSelectProj
                   onSelectProject(p.id);
                 }}
                 type="button"
-                className={`w-full text-left p-2.5 border transition-all flex items-start justify-between gap-2 ${
+                className={`w-full text-left p-2.5 border transition-all flex items-start justify-between gap-2 cursor-pointer ${
                   isSelected
                     ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
                     : 'bg-[var(--bg-card)] text-[var(--text-main)] border-[var(--border-color)] hover:border-[var(--text-main)]'
@@ -57,7 +77,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ onSelectProj
               >
                 <div>
                   <div className="font-bold text-[11px] uppercase tracking-tight flex items-center gap-1.5">
-                    <span className={isSelected ? 'text-white/80' : 'text-[var(--accent)]'}>0{idx + 1}.</span>
+                    <span className={isSelected ? 'text-white/80' : 'text-[var(--accent)]'}>{itemNumber}.</span>
                     <span>{p.title}</span>
                   </div>
                   <div className={`text-[10px] mt-0.5 ${isSelected ? 'text-white/80' : 'text-[var(--text-muted)]'}`}>

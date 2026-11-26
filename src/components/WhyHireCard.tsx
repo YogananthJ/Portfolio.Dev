@@ -354,7 +354,7 @@ export const WhyHireCard: React.FC<WhyHireCardProps> = ({
               >
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-emerald-400 font-bold text-[10px]">0{idx + 1}.</span>
+                    <span className="text-emerald-400 font-bold text-[10px]">{String(idx + 1).padStart(2, '0')}.</span>
                     <button
                       onClick={() => onRunCommand(`project ${proj.id}`)}
                       className="font-bold text-white hover:text-emerald-400 underline text-left cursor-pointer"

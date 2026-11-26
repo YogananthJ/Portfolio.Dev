@@ -31,7 +31,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ onSelectProjectTag
     {
       domain: 'Vector Databases & RAG',
       connectsWith: 'Document Knowledge Retrieval',
-      description: 'FAISS + Dense Embeddings powering grounded hallucination-free QA.',
+      description: 'FAISS + Dense Embeddings retrieving top-k chunks with page-level source citations.',
     },
   ];
 
@@ -132,7 +132,7 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ onSelectProjectTag
                         isActive ? 'text-white/80' : 'text-[var(--text-muted)]'
                       }`}
                     >
-                      0{i + 1}
+                      {String(i + 1).padStart(2, '0')}
                     </span>
                   </div>
                   <p

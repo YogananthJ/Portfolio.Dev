@@ -42,12 +42,42 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
 
   // 3D Tilt & Moving White Glow Hover State
   const cardContainerRef = useRef<HTMLDivElement | null>(null);
+  const frontFaceRef = useRef<HTMLDivElement | null>(null);
+  const backFaceRef = useRef<HTMLDivElement | null>(null);
+  const showPhotoButtonRef = useRef<HTMLButtonElement | null>(null);
+  const pendingFocusSideRef = useRef<'front' | 'back' | null>(null);
+  const isFlippedRef = useRef<boolean>(isFlipped);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const [tilt, setTilt] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [normalizedPos, setNormalizedPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState<boolean>(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(false);
   const [avatarError, setAvatarError] = useState<boolean>(false);
+
+  useEffect(() => {
+    isFlippedRef.current = isFlipped;
+    const frontEl = frontFaceRef.current as (HTMLDivElement & { inert: boolean }) | null;
+    const backEl = backFaceRef.current as (HTMLDivElement & { inert: boolean }) | null;
+    if (frontEl) {
+      frontEl.inert = isFlipped;
+    }
+    if (backEl) {
+      backEl.inert = !isFlipped;
+    }
+
+    const pendingSide = pendingFocusSideRef.current;
+    if (pendingSide) {
+      pendingFocusSideRef.current = null;
+      const raf = window.requestAnimationFrame(() => {
+        if (pendingSide === 'back') {
+          showPhotoButtonRef.current?.focus({ preventScroll: true });
+        } else {
+          frontFaceRef.current?.focus({ preventScroll: true });
+        }
+      });
+      return () => window.cancelAnimationFrame(raf);
+    }
+  }, [isFlipped]);
 
   // Respect user's reduced-motion preference
   useEffect(() => {
@@ -152,7 +182,10 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
   }, []);
 
   // Shared Flip Toggle Handler: Toggles state in both directions
-  const handleToggleFlip = () => {
+  const handleToggleFlip = (shouldMoveFocus = true) => {
+    if (shouldMoveFocus) {
+      pendingFocusSideRef.current = isFlippedRef.current ? 'front' : 'back';
+    }
     setIsFlipped((prev) => !prev);
     setDownloadMenuOpen(false);
     try {
@@ -168,7 +201,10 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
       if ((e.key === 'f' || e.key === 'F') && !e.ctrlKey && !e.metaKey && !e.altKey) {
         const activeTag = document.activeElement?.tagName.toLowerCase();
         if (activeTag === 'input' || activeTag === 'textarea') return;
-        handleToggleFlip();
+        const focusInsideCard = Boolean(
+          document.activeElement && cardContainerRef.current?.contains(document.activeElement)
+        );
+        handleToggleFlip(focusInsideCard);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -618,7 +654,8 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
           {/* Entire surface is clickable -> Flips smoothly to the rectangular card */}
           {/* ===================================================================== */}
           <div
-            onClick={handleToggleFlip}
+            ref={frontFaceRef}
+            onClick={() => handleToggleFlip(true)}
             className="absolute inset-0 w-full h-full flex items-center justify-center cursor-pointer group/front"
             style={{
               backfaceVisibility: 'hidden',
@@ -628,12 +665,13 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
             title="Click photo to flip and reveal the digital visiting card"
             role="button"
             aria-pressed={isFlipped}
+            aria-hidden={isFlipped}
             aria-label="Flip digital visiting card to view contact details"
-            tabIndex={0}
+            tabIndex={isFlipped ? -1 : 0}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                handleToggleFlip();
+                handleToggleFlip(true);
               }
             }}
           >
@@ -735,7 +773,8 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
           {/* All interactive controls use e.stopPropagation() to remain clickable  */}
           {/* ===================================================================== */}
           <div
-            onClick={handleToggleFlip}
+            ref={backFaceRef}
+            onClick={() => handleToggleFlip(true)}
             className="absolute inset-0 w-full h-full rounded-xl border-2 border-rose-500/85 bg-[#0B0E17] text-white p-3.5 sm:p-4 md:p-4.5 flex flex-col justify-between cursor-pointer group/back"
             style={{
               backfaceVisibility: 'hidden',
@@ -752,12 +791,13 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
             title="Click anywhere on card to flip back to photo cover [Shortcut: F]"
             role="button"
             aria-pressed={isFlipped}
+            aria-hidden={!isFlipped}
             aria-label="Flip digital visiting card back to portrait photo"
-            tabIndex={0}
+            tabIndex={!isFlipped ? -1 : 0}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                handleToggleFlip();
+                handleToggleFlip(true);
               }
             }}
           >
@@ -791,10 +831,12 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
               <div className="flex items-center gap-1.5">
                 {/* Visual Flip Indicator (also triggers flip on click) */}
                 <button
+                  ref={showPhotoButtonRef}
                   type="button"
+                  tabIndex={!isFlipped ? -1 : 0}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleToggleFlip();
+                    handleToggleFlip(true);
                   }}
                   className="flex items-center gap-1 px-2 py-1 bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white border border-rose-500/40 rounded-xs font-mono text-[8.5px] sm:text-[9.5px] font-bold uppercase transition-colors cursor-pointer"
                   title="Click to flip back to photo cover [Shortcut: F]"
@@ -811,6 +853,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                 >
                   <button
                     type="button"
+                    tabIndex={!isFlipped ? -1 : 0}
                     onClick={(e) => {
                       e.stopPropagation();
                       setDownloadMenuOpen((prev) => !prev);
@@ -938,6 +981,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                 {/* Share Icon Button */}
                 <button
                   type="button"
+                  tabIndex={!isFlipped ? -1 : 0}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleShareLink(e);
@@ -1043,6 +1087,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                     href="https://www.linkedin.com/in/yogananth-j-653400307/"
                     target="_blank"
                     rel="noopener noreferrer"
+                    tabIndex={!isFlipped ? -1 : 0}
                     onClick={(e) => e.stopPropagation()}
                     className="flex items-center justify-between px-2 py-0.5 bg-white/5 hover:bg-sky-500/15 border border-white/10 hover:border-sky-500/40 rounded-xs transition-colors cursor-pointer group/link"
                     title="Visit LinkedIn Profile"
@@ -1059,6 +1104,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                     href="https://github.com/YogananthJ"
                     target="_blank"
                     rel="noopener noreferrer"
+                    tabIndex={!isFlipped ? -1 : 0}
                     onClick={(e) => e.stopPropagation()}
                     className="flex items-center justify-between px-2 py-0.5 bg-white/5 hover:bg-white/15 border border-white/10 hover:border-white/30 rounded-xs transition-colors cursor-pointer group/link"
                     title="Visit GitHub Repositories"
@@ -1110,6 +1156,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                   {/* Quick Save vCard button */}
                   <button
                     type="button"
+                    tabIndex={!isFlipped ? -1 : 0}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDownloadVCard(e);
@@ -1133,6 +1180,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                 href="https://iam-mjyogananth.pages.dev"
                 target="_blank"
                 rel="noopener noreferrer"
+                tabIndex={!isFlipped ? -1 : 0}
                 onClick={(e) => e.stopPropagation()}
                 className="text-rose-400 hover:text-rose-300 font-bold tracking-wider uppercase transition-colors"
               >

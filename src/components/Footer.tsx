@@ -12,7 +12,11 @@ import {
   trackGa4PageView,
 } from '../utils/ga4';
 
-export const Footer: React.FC = () => {
+interface FooterProps {
+  onNavigateTop?: () => void;
+}
+
+export const Footer: React.FC<FooterProps> = ({ onNavigateTop }) => {
   const shouldReduceMotion = Boolean(useReducedMotion());
   const [consentState, setConsentState] = useState<AnalyticsConsentState>(() =>
     getAnalyticsConsentState()
@@ -33,6 +37,10 @@ export const Footer: React.FC = () => {
   };
 
   const scrollToTop = () => {
+    if (onNavigateTop) {
+      onNavigateTop();
+      return;
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -117,7 +125,7 @@ export const Footer: React.FC = () => {
           <div className="flex flex-wrap items-center justify-center gap-2">
             <span>Built with React &amp; TypeScript</span>
             <span>·</span>
-            <span>Zero-slop architectural craft</span>
+            <span>Modular UI &amp; Canvas Physics</span>
             <span>·</span>
             <button
               type="button"

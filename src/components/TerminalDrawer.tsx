@@ -37,6 +37,7 @@ import { TerminalTheme } from '../types/terminal';
 import { MatrixRainCanvas } from './MatrixRainCanvas';
 import { WhyHireCard } from './WhyHireCard';
 import { appendUtmSource } from '../utils/utmTracker';
+import { extractGitHubRepoSlug } from '../utils/projectInsights';
 
 interface TerminalDrawerProps {
   isOpen: boolean;
@@ -497,7 +498,7 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
                 <div key={p.id} className="p-2 bg-white/5 hover:bg-white/10 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-2 border border-white/5">
                   <div>
                     <div className="font-bold text-white flex items-center gap-2">
-                      <span className="text-[#E11D48]">0{i + 1}.</span>
+                      <span className="text-[#E11D48]">{String(i + 1).padStart(2, '0')}.</span>
                       <button onClick={() => runCommand(`project ${p.id}`)} className="underline cursor-pointer text-left">
                         {p.title}
                       </button>
@@ -583,10 +584,14 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
               </div>
 
               <div className="pt-2 border-t border-white/10 flex items-center justify-between">
-                <a href={found.githubUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline flex items-center gap-1">
-                  <span>GitHub Repository</span>
-                  <ArrowUpRight className="w-3 h-3" />
-                </a>
+                {extractGitHubRepoSlug(found.githubUrl) ? (
+                  <a href={found.githubUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline flex items-center gap-1">
+                    <span>GitHub Repository</span>
+                    <ArrowUpRight className="w-3 h-3" />
+                  </a>
+                ) : (
+                  <span className="text-white/50 text-[10px] uppercase">Source Code Unavailable</span>
+                )}
                 <button onClick={() => runCommand(`casestudy ${found.id}`)} className="text-[#E11D48] underline font-bold">
                   View Full Case Study &rarr;
                 </button>
@@ -616,9 +621,13 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
                   <button onClick={() => onSelectProject?.(p.id)} className="text-[#E11D48] underline font-bold text-[10px]">
                     [Run Simulator]
                   </button>
-                  <a href={p.githubUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-[10px]">
-                    [Inspect Source]
-                  </a>
+                  {extractGitHubRepoSlug(p.githubUrl) ? (
+                    <a href={p.githubUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline text-[10px]">
+                      [Inspect Source]
+                    </a>
+                  ) : (
+                    <span className="text-white/50 text-[10px]">[Source Unavailable]</span>
+                  )}
                 </div>
               </div>
             ))}

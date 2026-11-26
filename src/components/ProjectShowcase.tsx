@@ -9,6 +9,7 @@ import {
   getCurrentUrlParam,
   trackSearchQuery,
 } from '../utils/urlActivityTracker';
+import { extractGitHubRepoSlug } from '../utils/projectInsights';
 import {
   Search,
   LayoutGrid,
@@ -20,6 +21,7 @@ import {
   X,
   RotateCcw,
   Code,
+  Lock,
 } from 'lucide-react';
 
 interface ProjectShowcaseProps {
@@ -379,18 +381,28 @@ export const ProjectShowcase: React.FC<ProjectShowcaseProps> = ({ onOpenModal })
                         <ArrowUpRight className="w-3 h-3" />
                       </a>
                     )}
-                    <a
-                      href={proj.githubUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      data-project-id={proj.id}
-                      data-link-role="project_repo"
-                      aria-label={`View GitHub repository for ${proj.title}`}
-                      title="View source on GitHub"
-                      className="inline-flex items-center justify-center p-1.5 bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-main)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors rounded-xs shrink-0"
-                    >
-                      <Github className="w-3.5 h-3.5" />
-                    </a>
+                    {extractGitHubRepoSlug(proj.githubUrl) ? (
+                      <a
+                        href={proj.githubUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-project-id={proj.id}
+                        data-link-role="project_repo"
+                        aria-label={`View GitHub repository for ${proj.title}`}
+                        title="View source on GitHub"
+                        className="inline-flex items-center justify-center p-1.5 bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-main)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors rounded-xs shrink-0"
+                      >
+                        <Github className="w-3.5 h-3.5" />
+                      </a>
+                    ) : (
+                      <span
+                        title="Project-specific source repository link unavailable — open Details for case study"
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-muted)] text-[10px] font-mono rounded-xs shrink-0"
+                      >
+                        <Lock className="w-3 h-3" aria-hidden="true" />
+                        <span>Source Unavailable</span>
+                      </span>
+                    )}
                     <button
                       type="button"
                       onClick={() => onOpenModal(proj)}

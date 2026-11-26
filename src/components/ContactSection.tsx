@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import QRCode from 'qrcode';
 import { PERSONAL_INFO } from '../data/portfolioData';
@@ -8,6 +8,13 @@ interface ContactSectionProps {
   onOpenResume?: () => void;
 }
 
+type ContactFieldErrors = {
+  name?: string;
+  email?: string;
+  subject?: string;
+  message?: string;
+};
+
 export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) => {
   const shouldReduceMotion = Boolean(useReducedMotion());
   const [name, setName] = useState('');
@@ -16,9 +23,15 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
   const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<ContactFieldErrors>({});
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [vcardQrDataUrl, setVcardQrDataUrl] = useState<string>('');
   const [savedVcardNotice, setSavedVcardNotice] = useState<boolean>(false);
+
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
+  const emailInputRef = useRef<HTMLInputElement | null>(null);
+  const subjectInputRef = useRef<HTMLInputElement | null>(null);
+  const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
 
   const vcardPayload = [
     'BEGIN:VCARD',
@@ -105,19 +118,56 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim() || !message.trim()) {
-      setFormError('Please enter your name, email address, and message before sending.');
+
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    const trimmedSubject = subject.trim();
+    const trimmedMessage = message.trim();
+
+    const nextFieldErrors: ContactFieldErrors = {};
+    if (!trimmedName) {
+      nextFieldErrors.name = 'Please enter your name.';
+    }
+    if (!trimmedEmail) {
+      nextFieldErrors.email = 'Please enter your email address.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      nextFieldErrors.email = 'Please enter a valid email address.';
+    }
+    if (!trimmedSubject) {
+      nextFieldErrors.subject = 'Please enter a subject.';
+    }
+    if (!trimmedMessage) {
+      nextFieldErrors.message = 'Please enter your message.';
+    }
+
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setFieldErrors(nextFieldErrors);
+      if (!trimmedName || !trimmedEmail || !trimmedMessage) {
+        setFormError('Please enter your name, email address, and message before sending.');
+      } else if (nextFieldErrors.email) {
+        setFormError('Please enter a valid email address.');
+      } else {
+        setFormError('Please enter a subject before sending.');
+      }
+
+      if (nextFieldErrors.name) {
+        nameInputRef.current?.focus();
+      } else if (nextFieldErrors.email) {
+        emailInputRef.current?.focus();
+      } else if (nextFieldErrors.subject) {
+        subjectInputRef.current?.focus();
+      } else if (nextFieldErrors.message) {
+        messageInputRef.current?.focus();
+      }
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setFormError('Please enter a valid email address.');
-      return;
-    }
+
+    setFieldErrors({});
     setFormError(null);
 
     // Construct robust mailto link
-    const mailSubject = encodeURIComponent(subject || `Portfolio Message from ${name}`);
-    const mailBody = encodeURIComponent(`${message}\n\n— From: ${name} (${email})`);
+    const mailSubject = encodeURIComponent(trimmedSubject || `Portfolio Message from ${trimmedName}`);
+    const mailBody = encodeURIComponent(`${trimmedMessage}\n\n— From: ${trimmedName} (${trimmedEmail})`);
     
     // Open user's default email client
     window.location.href = `mailto:${PERSONAL_INFO.email}?subject=${mailSubject}&body=${mailBody}`;
@@ -329,6 +379,9 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
               <p className="text-xs font-mono text-white/60">
                 Choose a pre-filled template or write your custom message.
               </p>
+              <p className="text-[11px] font-mono text-white/75 mt-1.5">
+                All fields marked <span className="text-[#E11D48] font-bold" aria-hidden="true">*</span> are required.
+              </p>
 
               {/* Template chips */}
               <div className="flex flex-wrap gap-2 mt-3">
@@ -337,7 +390,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
                     key={tmpl.label}
                     onClick={() => handleApplyTemplate(tmpl)}
                     type="button"
-                    className="px-2.5 py-1 text-xs font-mono bg-white/5 hover:bg-[#E11D48] text-white/80 hover:text-white border border-white/15 transition-colors"
+                    className="px-2.5 py-1 text-xs font-mono bg-white/5 hover:bg-[#E11D48] text-white/80 hover:text-white border border-white/15 transition-colors cursor-pointer"
                   >
                     + {tmpl.label}
                   </button>
@@ -358,67 +411,119 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="contact-name" className="block text-white/70 uppercase font-bold mb-1">Your Name</label>
+                  <label htmlFor="contact-name" className="block text-white/80 uppercase font-bold mb-1">
+                    Your Name <span className="text-[#E11D48]" aria-hidden="true">*</span>
+                  </label>
                   <input
+                    ref={nameInputRef}
                     id="contact-name"
                     type="text"
                     required
-                    aria-invalid={Boolean(formError && !name.trim())}
+                    aria-invalid={Boolean(fieldErrors.name)}
+                    aria-describedby={fieldErrors.name ? 'contact-name-error' : undefined}
                     value={name}
                     onChange={(e) => {
                       setName(e.target.value);
+                      if (fieldErrors.name) setFieldErrors((prev) => ({ ...prev, name: undefined }));
                       if (formError) setFormError(null);
                     }}
                     placeholder="e.g. Maya Chen"
-                    className="w-full px-3 py-2.5 bg-[#121212] border border-white/20 text-white focus:outline-[#E11D48]"
+                    className={`w-full px-3 py-2.5 bg-[#121212] border text-white focus:outline-[#E11D48] ${
+                      fieldErrors.name ? 'border-rose-500' : 'border-white/20'
+                    }`}
                   />
+                  {fieldErrors.name && (
+                    <p id="contact-name-error" className="mt-1 text-[11px] text-rose-300">
+                      {fieldErrors.name}
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <label htmlFor="contact-email" className="block text-white/70 uppercase font-bold mb-1">Your Email</label>
+                  <label htmlFor="contact-email" className="block text-white/80 uppercase font-bold mb-1">
+                    Your Email <span className="text-[#E11D48]" aria-hidden="true">*</span>
+                  </label>
                   <input
+                    ref={emailInputRef}
                     id="contact-email"
                     type="email"
                     required
-                    aria-invalid={Boolean(formError && (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())))}
+                    aria-invalid={Boolean(fieldErrors.email)}
+                    aria-describedby={fieldErrors.email ? 'contact-email-error' : undefined}
                     value={email}
                     onChange={(e) => {
                       setEmail(e.target.value);
+                      if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: undefined }));
                       if (formError) setFormError(null);
                     }}
                     placeholder="e.g. maya@company.com"
-                    className="w-full px-3 py-2.5 bg-[#121212] border border-white/20 text-white focus:outline-[#E11D48]"
+                    className={`w-full px-3 py-2.5 bg-[#121212] border text-white focus:outline-[#E11D48] ${
+                      fieldErrors.email ? 'border-rose-500' : 'border-white/20'
+                    }`}
                   />
+                  {fieldErrors.email && (
+                    <p id="contact-email-error" className="mt-1 text-[11px] text-rose-300">
+                      {fieldErrors.email}
+                    </p>
+                  )}
                 </div>
               </div>
 
               <div>
-                <label htmlFor="contact-subject" className="block text-white/70 uppercase font-bold mb-1">Subject</label>
+                <label htmlFor="contact-subject" className="block text-white/80 uppercase font-bold mb-1">
+                  Subject <span className="text-[#E11D48]" aria-hidden="true">*</span>
+                </label>
                 <input
+                  ref={subjectInputRef}
                   id="contact-subject"
                   type="text"
                   required
+                  aria-invalid={Boolean(fieldErrors.subject)}
+                  aria-describedby={fieldErrors.subject ? 'contact-subject-error' : undefined}
                   value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
+                  onChange={(e) => {
+                    setSubject(e.target.value);
+                    if (fieldErrors.subject) setFieldErrors((prev) => ({ ...prev, subject: undefined }));
+                    if (formError) setFormError(null);
+                  }}
                   placeholder="Subject of message..."
-                  className="w-full px-3 py-2.5 bg-[#121212] border border-white/20 text-white focus:outline-[#E11D48]"
+                  className={`w-full px-3 py-2.5 bg-[#121212] border text-white focus:outline-[#E11D48] ${
+                    fieldErrors.subject ? 'border-rose-500' : 'border-white/20'
+                  }`}
                 />
+                {fieldErrors.subject && (
+                  <p id="contact-subject-error" className="mt-1 text-[11px] text-rose-300">
+                    {fieldErrors.subject}
+                  </p>
+                )}
               </div>
 
               <div>
-                <label htmlFor="contact-message" className="block text-white/70 uppercase font-bold mb-1">Message</label>
+                <label htmlFor="contact-message" className="block text-white/80 uppercase font-bold mb-1">
+                  Message <span className="text-[#E11D48]" aria-hidden="true">*</span>
+                </label>
                 <textarea
+                  ref={messageInputRef}
                   id="contact-message"
                   required
-                  aria-invalid={Boolean(formError && !message.trim())}
+                  aria-invalid={Boolean(fieldErrors.message)}
+                  aria-describedby={fieldErrors.message ? 'contact-message-error' : undefined}
                   rows={5}
                   value={message}
                   onChange={(e) => {
                     setMessage(e.target.value);
+                    if (fieldErrors.message) setFieldErrors((prev) => ({ ...prev, message: undefined }));
                     if (formError) setFormError(null);
                   }}
                   placeholder="Type your message here..."
-                  className="w-full p-3 bg-[#121212] border border-white/20 text-white focus:outline-[#E11D48] leading-relaxed"
+                  className={`w-full p-3 bg-[#121212] border text-white focus:outline-[#E11D48] leading-relaxed ${
+                    fieldErrors.message ? 'border-rose-500' : 'border-white/20'
+                  }`}
                 />
+                {fieldErrors.message && (
+                  <p id="contact-message-error" className="mt-1 text-[11px] text-rose-300">
+                    {fieldErrors.message}
+                  </p>
+                )}
               </div>
 
               <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Github, ArrowUpRight, ArrowRight } from 'lucide-react';
+import { Github, ArrowUpRight, ArrowRight, Lock } from 'lucide-react';
 import { ProjectItem } from '../types/portfolio';
+import { extractGitHubRepoSlug } from '../utils/projectInsights';
 
 export interface ProjectCardProps {
   project: ProjectItem;
@@ -17,6 +18,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 }) => {
   const formattedIndex = String(index + 1).padStart(2, '0');
   const isWide = variant === 'wide';
+  const hasRepoSlug = Boolean(extractGitHubRepoSlug(project.githubUrl));
 
   return (
     <article className="project-card-item group relative flex flex-col justify-between h-full bg-[var(--bg-card)] border border-[var(--border-color)] shadow-sm hover:border-[var(--accent)] transition-all duration-200 rounded-xs overflow-hidden">
@@ -103,18 +105,28 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                 </a>
               )}
 
-              <a
-                href={project.githubUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                data-project-id={project.id}
-                data-link-role="project_repo"
-                aria-label={`View GitHub repository for ${project.title}`}
-                title="View source on GitHub"
-                className="inline-flex items-center justify-center p-1.5 bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-main)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors rounded-xs shrink-0"
-              >
-                <Github className="w-3.5 h-3.5" />
-              </a>
+              {hasRepoSlug ? (
+                <a
+                  href={project.githubUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-project-id={project.id}
+                  data-link-role="project_repo"
+                  aria-label={`View GitHub repository for ${project.title}`}
+                  title="View source on GitHub"
+                  className="inline-flex items-center justify-center p-1.5 bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-main)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors rounded-xs shrink-0"
+                >
+                  <Github className="w-3.5 h-3.5" />
+                </a>
+              ) : (
+                <span
+                  title="Project-specific source repository link unavailable — open Details for case study"
+                  className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-muted)] text-[10px] font-mono rounded-xs shrink-0"
+                >
+                  <Lock className="w-3 h-3" aria-hidden="true" />
+                  <span>Source Unavailable</span>
+                </span>
+              )}
             </div>
           </div>
         </div>
