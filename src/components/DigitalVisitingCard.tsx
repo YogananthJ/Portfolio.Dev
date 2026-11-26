@@ -301,7 +301,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
         'URL;TYPE=LINKEDIN:https://www.linkedin.com/in/yogananth-j-653400307/',
         'URL;TYPE=GITHUB:https://github.com/YogananthJ',
         'ADR;TYPE=WORK:;;Gobichettipalayam;Erode;Tamil Nadu;;India',
-        'NOTE:B.Tech in Artificial Intelligence & Data Science / ML | Specializing in Multi-Agent Orchestration, Hybrid Vector RAG, and Modern Full-Stack Platforms.',
+        'NOTE:B.Tech in Artificial Intelligence and Machine Learning | Specializing in Multi-Agent Orchestration, Hybrid Vector RAG, and Modern Full-Stack Platforms.',
         'REV:2026-11-04T05:40:00Z',
         'END:VCARD'
       ].join('\r\n');
@@ -421,7 +421,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                   AI Engineer · Full-Stack Developer
                 </div>
                 <div style="font-size: 10px; color: rgba(255,255,255,0.9); margin-top: 6px; border-left: 2px solid #F43F5E; padding-left: 8px; line-height: 1.35;">
-                  B.Tech in Artificial Intelligence &amp; Data Science / ML
+                  B.Tech in Artificial Intelligence and Machine Learning
                 </div>
               </div>
             </div>
@@ -1046,7 +1046,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                 {/* Degree / Qualification */}
                 <div className="font-mono text-[8px] sm:text-[9px] text-white/80 leading-snug border-l-2 border-rose-500/70 pl-2 py-0.5 bg-white/[0.02]">
                   <span className="text-white/45 block text-[6.5px] sm:text-[7px] uppercase font-bold tracking-wider">Qualification</span>
-                  B.Tech in Artificial Intelligence &amp; Data Science / ML
+                  B.Tech in Artificial Intelligence and Machine Learning
                 </div>
 
                 {/* Open to Opportunities Status */}

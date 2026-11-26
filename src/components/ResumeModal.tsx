@@ -124,7 +124,7 @@ VERIFIED PROJECTS & ENGINEERING BUILDS
 ------------------------------------------------------------
 ACADEMIC EDUCATION
 ------------------------------------------------------------
-* Bachelor of Engineering in Computer Science & Engineering
+* B.Tech in Artificial Intelligence and Machine Learning
   Rigorous foundation in Data Structures, Algorithms, Distributed Systems, Database Engineering, and Machine Learning.
 `;
   };
@@ -470,7 +470,7 @@ ACADEMIC EDUCATION
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <div className="text-[10px] uppercase text-zinc-400">Academic Degree</div>
-                  <div className="font-bold text-white text-sm">Bachelor of Engineering in Computer Science &amp; Engineering</div>
+                  <div className="font-bold text-white text-sm">B.Tech in Artificial Intelligence and Machine Learning</div>
                   <div className="text-[11px] text-zinc-400">Coursework: Data Structures, Algorithms, Distributed Systems, Deep Learning, Database Systems</div>
                 </div>
                 <div className="sm:text-right">

@@ -142,12 +142,13 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
 
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors);
-      if (!trimmedName || !trimmedEmail || !trimmedMessage) {
-        setFormError('Please enter your name, email address, and message before sending.');
-      } else if (nextFieldErrors.email) {
+      const errorMessages = Object.values(nextFieldErrors);
+      if (errorMessages.length === 1 && errorMessages[0]) {
+        setFormError(errorMessages[0]);
+      } else if (nextFieldErrors.email && !nextFieldErrors.name && !nextFieldErrors.message) {
         setFormError('Please enter a valid email address.');
       } else {
-        setFormError('Please enter a subject before sending.');
+        setFormError('Please enter your name, email address, and message before sending.');
       }
 
       if (nextFieldErrors.name) {

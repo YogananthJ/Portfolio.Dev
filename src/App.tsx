@@ -132,17 +132,42 @@ function PortfolioMainContent() {
     isModalOpen: isAnyModalOpen,
   });
 
+  const getSectionDocumentTop = (el: HTMLElement): number => {
+    let checkNode: HTMLElement | null = el;
+    let hasTransformAncestor = false;
+    while (checkNode && checkNode !== document.body) {
+      if (window.getComputedStyle(checkNode).transform !== 'none') {
+        hasTransformAncestor = true;
+        break;
+      }
+      checkNode = checkNode.parentElement;
+    }
+    if (hasTransformAncestor) {
+      let top = 0;
+      let curr: HTMLElement | null = el;
+      while (curr) {
+        top += curr.offsetTop;
+        curr = curr.offsetParent as HTMLElement | null;
+      }
+      return top;
+    }
+    return el.getBoundingClientRect().top + window.scrollY;
+  };
+
   const scrollToSectionId = (sectionId: string, behavior: ScrollBehavior = 'smooth') => {
     if (typeof window === 'undefined') return;
     const domId = toDomSectionId(sectionId);
-    const resolvedBehavior: ScrollBehavior = shouldReduceMotion ? 'auto' : behavior;
+    const resolvedBehavior: ScrollBehavior =
+      shouldReduceMotion || behavior === 'auto'
+        ? ('instant' as ScrollBehavior)
+        : behavior;
     if (domId === 'overview') {
       window.scrollTo({ top: 0, behavior: resolvedBehavior });
       return;
     }
     const el = document.getElementById(domId);
     if (el) {
-      const top = Math.max(0, el.getBoundingClientRect().top + window.scrollY - 64);
+      const top = Math.max(0, getSectionDocumentTop(el) - 64);
       window.scrollTo({ top, behavior: resolvedBehavior });
     }
   };
@@ -160,7 +185,7 @@ function PortfolioMainContent() {
     lastSpiedSectionRef.current = domId;
     programmaticScrollRef.current = {
       targetId: domId,
-      until: Date.now() + 950,
+      until: Date.now() + 2000,
     };
 
     trackSectionNavigation(domId, {
@@ -185,7 +210,7 @@ function PortfolioMainContent() {
       lastSpiedSectionRef.current = domId;
       programmaticScrollRef.current = {
         targetId: domId,
-        until: Date.now() + 950,
+        until: Date.now() + 2000,
       };
       if (hasExplicitSection) {
         trackSectionNavigation(domId, {
@@ -271,19 +296,42 @@ function PortfolioMainContent() {
 
       if (!hasRestoredInitialUrlRef.current && domId !== 'overview' && !getCurrentUrlParam('project')) {
         hasRestoredInitialUrlRef.current = true;
+        if ('scrollRestoration' in window.history) {
+          window.history.scrollRestoration = 'manual';
+        }
         programmaticScrollRef.current = {
           targetId: domId,
-          until: Date.now() + 950,
+          until: Date.now() + 2500,
         };
-        const timer1 = window.setTimeout(() => {
-          scrollToSectionId(domId, 'auto');
-        }, 50);
-        const timer2 = window.setTimeout(() => {
-          scrollToSectionId(domId, 'auto');
-        }, 220);
+        let cancelledByUser = false;
+        const cancelInitialAlign = () => {
+          cancelledByUser = true;
+        };
+        window.addEventListener('wheel', cancelInitialAlign, { passive: true, once: true });
+        window.addEventListener('touchstart', cancelInitialAlign, { passive: true, once: true });
+
+        const alignTarget = () => {
+          if (!cancelledByUser) {
+            scrollToSectionId(domId, 'instant' as ScrollBehavior);
+          }
+        };
+
+        const timer1 = window.setTimeout(alignTarget, 60);
+        const timer2 = window.setTimeout(alignTarget, 260);
+        const timer3 = window.setTimeout(alignTarget, 600);
+        const handleWindowLoad = () => alignTarget();
+        window.addEventListener('load', handleWindowLoad, { once: true });
+        if (document.fonts && document.fonts.ready) {
+          document.fonts.ready.then(alignTarget).catch(() => {});
+        }
         return () => {
+          cancelledByUser = true;
           window.clearTimeout(timer1);
           window.clearTimeout(timer2);
+          window.clearTimeout(timer3);
+          window.removeEventListener('load', handleWindowLoad);
+          window.removeEventListener('wheel', cancelInitialAlign);
+          window.removeEventListener('touchstart', cancelInitialAlign);
         };
       }
       hasRestoredInitialUrlRef.current = true;
@@ -343,7 +391,7 @@ function PortfolioMainContent() {
         } else {
           const targetEl = document.getElementById(lock.targetId);
           if (targetEl) {
-            const targetTop = Math.max(0, targetEl.getBoundingClientRect().top + window.scrollY - 64);
+            const targetTop = Math.max(0, getSectionDocumentTop(targetEl) - 64);
             if (Math.abs(window.scrollY - targetTop) > 48) {
               return;
             }
