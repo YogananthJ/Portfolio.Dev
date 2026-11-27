@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { TIMELINE, CERTIFICATIONS } from '../data/portfolioData';
-import { Calendar, CheckCircle2, Award, ExternalLink, BookOpen, Trophy, ChevronDown, ChevronUp, Sparkles, Terminal } from 'lucide-react';
+import { TIMELINE, CERTIFICATIONS, EDUCATION } from '../data/portfolioData';
+import { Calendar, CheckCircle2, Award, ExternalLink, BookOpen, Trophy, ChevronDown, ChevronUp } from 'lucide-react';
 
 export const ExperienceSection: React.FC = () => {
   const [expandedTimelineIndex, setExpandedTimelineIndex] = useState<number | null>(0);
@@ -28,6 +28,55 @@ export const ExperienceSection: React.FC = () => {
           <p className="max-w-md text-xs sm:text-sm text-[var(--text-muted)] font-medium font-mono leading-relaxed">
             Academic computer science coursework, hackathon achievements (Top 60 Finalist at Vibeathon 6.0), verified industry certifications from Anthropic and MongoDB, and open-source systems.
           </p>
+        </div>
+
+        {/* Academic Transcript — Education */}
+        <div id="education" className="@container mb-16">
+          <div className="mb-5">
+            <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-[var(--text-main)]">
+              Education
+            </h3>
+            <div className="w-10 h-0.5 bg-[var(--accent)] mt-2" aria-hidden="true" />
+          </div>
+
+          <ol
+            aria-label="Academic transcript"
+            className="w-full border-t border-b border-[var(--border-color)]/25 dark:border-[var(--border-color)] divide-y divide-[var(--border-color)]/25 dark:divide-[var(--border-color)]"
+          >
+            {EDUCATION.map((entry) => (
+              <li
+                key={entry.period}
+                className={
+                  entry.isLatest
+                    ? 'pt-5 pb-6 @[640px]:pt-6 @[640px]:pb-7'
+                    : 'py-4 @[640px]:py-5'
+                }
+              >
+                <div className="grid grid-cols-[1fr_auto] @[640px]:grid-cols-[8.5rem_minmax(0,1fr)_auto] items-baseline gap-x-4 gap-y-1.5 @[640px]:gap-x-8 @[640px]:gap-y-1">
+                  <span className="col-start-1 row-start-1 font-mono text-xs sm:text-[13px] font-medium tabular-nums tracking-wide text-[var(--text-muted)]">
+                    {entry.period}
+                  </span>
+
+                  <div className="col-span-2 col-start-1 row-start-2 @[640px]:col-span-1 @[640px]:col-start-2 @[640px]:row-start-1 min-w-0">
+                    <h4
+                      className={`font-sans font-bold tracking-tight text-[var(--text-main)] leading-snug ${
+                        entry.isLatest ? 'text-base sm:text-lg' : 'text-[15px] sm:text-base'
+                      }`}
+                    >
+                      {entry.qualification}
+                    </h4>
+                    <p className="text-xs sm:text-sm font-medium text-[var(--text-muted)] mt-0.5 leading-relaxed">
+                      {entry.institution}
+                    </p>
+                  </div>
+
+                  <span className="col-start-2 row-start-1 justify-self-end @[640px]:col-start-3 @[640px]:row-start-1 font-mono text-xs sm:text-[13px] font-bold tabular-nums text-right text-[var(--text-main)] whitespace-nowrap">
+                    {entry.result}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ol>
         </div>
 
         {/* Verified Industry Certifications Showcase */}

@@ -1,4 +1,4 @@
-import { ProjectItem, SkillCategoryItem, CertificationItem, MilestoneItem } from '../types/portfolio';
+import { ProjectItem, SkillCategoryItem, CertificationItem, EducationItem, MilestoneItem } from '../types/portfolio';
 
 export const PERSONAL_INFO = {
   name: 'Yogananth J',
@@ -18,6 +18,28 @@ export const PERSONAL_INFO = {
     { label: 'Core Stack', value: 'Python · TS · Agents' },
   ],
 };
+
+export const EDUCATION: EducationItem[] = [
+  {
+    period: '2023–2026',
+    qualification: 'B.Tech in Artificial Intelligence and Machine Learning',
+    institution: 'Kongu Engineering College',
+    result: 'CGPA 7.02',
+    isLatest: true,
+  },
+  {
+    period: '2020–2023',
+    qualification: 'Diploma in Mechatronics Engineering',
+    institution: 'Kongu Polytechnic College',
+    result: '88%',
+  },
+  {
+    period: '2019–2020',
+    qualification: 'SSLC',
+    institution: 'M.R.S Matric Hr Sec School',
+    result: '65%',
+  },
+];
 
 export const CERTIFICATIONS: CertificationItem[] = [
   {

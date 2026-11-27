@@ -65,6 +65,14 @@ export interface CertificationItem {
   badgeCode: string;
 }
 
+export interface EducationItem {
+  period: string;
+  qualification: string;
+  institution: string;
+  result: string;
+  isLatest?: boolean;
+}
+
 export interface MilestoneItem {
   period: string;
   type: 'academic' | 'personal' | 'hackathon' | 'learning' | 'certification';
