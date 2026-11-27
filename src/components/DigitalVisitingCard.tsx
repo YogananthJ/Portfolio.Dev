@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { soundFX } from '../utils/soundEffects';
 import { trackVisitingCardExport } from '../utils/ga4';
+import { useLazyImage } from '../hooks/useLazyImage';
 
 interface DigitalVisitingCardProps {
   className?: string;
@@ -51,7 +52,15 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
   const [normalizedPos, setNormalizedPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isHovered, setIsHovered] = useState<boolean>(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(false);
-  const [avatarError, setAvatarError] = useState<boolean>(false);
+  const frontAvatar = useLazyImage<HTMLDivElement>({
+    rootMargin: '50px 0px',
+    threshold: 0.01,
+  });
+  const backAvatar = useLazyImage<HTMLDivElement>({
+    rootMargin: '50px 0px',
+    threshold: 0.01,
+    enabled: isFlipped,
+  });
 
   useEffect(() => {
     isFlippedRef.current = isFlipped;
@@ -693,9 +702,27 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                   </span>
                 </div>
 
-                {/* CENTER: Optimized Character Illustration (26KB WebP + PNG fallback) */}
-                <div className="relative z-10 w-full flex-1 flex items-end justify-center px-4 pt-8 pb-5 overflow-hidden pointer-events-none">
-                  {avatarError ? (
+                {/* CENTER: Lazy-Loaded Character Illustration with Layout-Stable CSS Placeholder */}
+                <div
+                  ref={frontAvatar.containerRef}
+                  className="relative z-10 w-full flex-1 flex items-end justify-center px-4 pt-8 pb-5 overflow-hidden pointer-events-none"
+                >
+                  {!frontAvatar.hasError && (
+                    <div
+                      data-testid="avatar-placeholder-front"
+                      aria-hidden="true"
+                      className={`absolute inset-x-4 top-8 bottom-5 flex items-end justify-center pointer-events-none transition-opacity duration-200 ${
+                        frontAvatar.isLoaded ? 'opacity-0' : 'opacity-100'
+                      }`}
+                    >
+                      <div className="avatar-placeholder-shimmer w-[78%] h-[88%] rounded-t-[44%] rounded-b-sm border border-black/15 bg-black/[0.06] flex flex-col items-center justify-end pt-5">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-black/[0.1] mb-2" />
+                        <div className="w-[78%] h-[42%] rounded-t-[48%] bg-black/[0.1]" />
+                      </div>
+                    </div>
+                  )}
+
+                  {frontAvatar.hasError ? (
                     <div
                       className="w-36 h-36 sm:w-40 sm:h-40 rounded-lg border-2 border-black bg-[#141418] text-white flex flex-col items-center justify-center mb-4 shadow-md font-display"
                       role="img"
@@ -705,20 +732,24 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                       <span className="text-[9px] font-mono uppercase tracking-widest text-zinc-400 mt-1">AI Engineer</span>
                     </div>
                   ) : (
-                    <picture className="w-full h-full flex items-end justify-center">
-                      <source srcSet="/assets/aistudio/avatar_portrait_640.webp" type="image/webp" />
-                      <img
-                        src="/assets/aistudio/avatar_portrait_640.png"
-                        alt="Yogananth J — AI Engineer and Full-Stack Developer portrait illustration"
-                        width={320}
-                        height={320}
-                        onError={() => setAvatarError(true)}
-                        className="w-full h-full object-contain object-bottom select-none group-hover/front:scale-104 transition-transform duration-200"
-                        loading="eager"
-                        decoding="async"
-                        fetchPriority="high"
-                      />
-                    </picture>
+                    frontAvatar.shouldLoad && (
+                      <picture className="relative z-10 w-full h-full flex items-end justify-center">
+                        <source srcSet="/assets/aistudio/avatar_portrait_640.webp" type="image/webp" />
+                        <img
+                          ref={frontAvatar.imgRef}
+                          src="/assets/aistudio/avatar_portrait_640.png"
+                          alt="Yogananth J — AI Engineer and Full-Stack Developer portrait illustration"
+                          width={320}
+                          height={320}
+                          onLoad={frontAvatar.handleLoad}
+                          onError={frontAvatar.handleError}
+                          className={`w-full h-full object-contain object-bottom select-none group-hover/front:scale-104 transition-[opacity,transform] duration-200 ${
+                            frontAvatar.isLoaded ? 'opacity-100' : 'opacity-0'
+                          }`}
+                          decoding="async"
+                        />
+                      </picture>
+                    )
                   )}
                 </div>
 
@@ -994,24 +1025,48 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
               {/* Left Column (Col 7): Identity, Avatar Thumbnail, Degree & Status */}
               <div className="col-span-7 flex flex-col justify-between gap-2">
                 <div className="flex items-center gap-2.5">
-                  {/* Clean Avatar Thumbnail */}
-                  <div className="w-13 h-13 sm:w-15 sm:h-15 rounded-md border-2 border-rose-500 bg-white p-0.5 shrink-0 overflow-hidden shadow-sm flex items-center justify-center">
-                    {avatarError ? (
+                  {/* Clean Avatar Thumbnail (Lazy-Loaded via IntersectionObserver + CSS Placeholder) */}
+                  <div
+                    ref={backAvatar.containerRef}
+                    className="relative w-13 h-13 sm:w-15 sm:h-15 rounded-md border-2 border-rose-500 bg-white p-0.5 shrink-0 overflow-hidden shadow-sm flex items-center justify-center"
+                  >
+                    {!backAvatar.hasError && (
+                      <div
+                        data-testid="avatar-placeholder-back"
+                        aria-hidden="true"
+                        className={`avatar-placeholder-shimmer absolute inset-0.5 rounded-xs bg-zinc-200 flex flex-col items-center justify-end pointer-events-none transition-opacity duration-200 ${
+                          backAvatar.isLoaded ? 'opacity-0' : 'opacity-100'
+                        }`}
+                      >
+                        <div className="w-4 h-4 rounded-full bg-zinc-300 mb-0.5" />
+                        <div className="w-7 h-3.5 rounded-t-full bg-zinc-300" />
+                      </div>
+                    )}
+
+                    {backAvatar.hasError ? (
                       <span className="font-display font-black text-base text-[#121216]" aria-hidden="true">
                         YJ
                       </span>
                     ) : (
-                      <img
-                        src="/assets/aistudio/favicon_507da8ac.png"
-                        alt=""
-                        aria-hidden="true"
-                        width={60}
-                        height={60}
-                        loading="lazy"
-                        decoding="async"
-                        onError={() => setAvatarError(true)}
-                        className="w-full h-full object-contain object-bottom pointer-events-none"
-                      />
+                      backAvatar.shouldLoad && (
+                        <picture className="relative z-10 w-full h-full flex items-end justify-center">
+                          <source srcSet="/assets/aistudio/avatar_portrait_640.webp" type="image/webp" />
+                          <img
+                            ref={backAvatar.imgRef}
+                            src="/assets/aistudio/avatar_portrait_640.png"
+                            alt=""
+                            aria-hidden="true"
+                            width={60}
+                            height={60}
+                            decoding="async"
+                            onLoad={backAvatar.handleLoad}
+                            onError={backAvatar.handleError}
+                            className={`w-full h-full object-contain object-bottom pointer-events-none transition-opacity duration-200 ${
+                              backAvatar.isLoaded ? 'opacity-100' : 'opacity-0'
+                            }`}
+                          />
+                        </picture>
+                      )
                     )}
                   </div>
 

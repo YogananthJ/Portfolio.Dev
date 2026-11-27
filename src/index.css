@@ -221,6 +221,45 @@
   .expandable-icon-label {
     transition-duration: 0.01ms !important;
   }
+
+  .avatar-placeholder-shimmer::after {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+}
+
+/* ==========================================================================
+   LAZY AVATAR CSS PLACEHOLDER SHIMMER
+   GPU-composited sweep for image placeholders while assets download.
+   ========================================================================== */
+@keyframes avatar-placeholder-sweep {
+  0% {
+    transform: translate3d(-100%, 0, 0);
+  }
+  100% {
+    transform: translate3d(100%, 0, 0);
+  }
+}
+
+.avatar-placeholder-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.avatar-placeholder-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 80%
+  );
+  transform: translate3d(-100%, 0, 0);
+  animation: avatar-placeholder-sweep 1.4s ease-in-out infinite;
+  will-change: transform;
+  pointer-events: none;
 }
 
 /* ==========================================================================
