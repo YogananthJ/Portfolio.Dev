@@ -75,22 +75,22 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header Bar */}
-        <div className="flex items-center justify-between px-6 py-4 bg-[var(--bg-surface)] text-[var(--text-main)] border-b border-[var(--border-color)]">
-          <div className="flex items-center gap-3">
-            <span className="px-2.5 py-0.5 text-xs font-mono font-bold uppercase tracking-wider bg-[var(--accent)] text-white">
+        <div className="flex items-center justify-between gap-2 px-3.5 sm:px-6 py-3 sm:py-4 bg-[var(--bg-surface)] text-[var(--text-main)] border-b border-[var(--border-color)]">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 overflow-hidden">
+            <span className="px-2 sm:px-2.5 py-0.5 text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider bg-[var(--accent)] text-white shrink-0">
               {project.categoryLabel}
             </span>
+            <span className="hidden sm:inline text-[var(--text-muted)] font-mono text-xs">/</span>
+            <span className="hidden sm:inline text-[var(--text-muted)] font-mono text-xs uppercase truncate">{project.projectKind}</span>
             <span className="text-[var(--text-muted)] font-mono text-xs">/</span>
-            <span className="text-[var(--text-muted)] font-mono text-xs uppercase">{project.projectKind}</span>
-            <span className="text-[var(--text-muted)] font-mono text-xs">/</span>
-            <span className="text-[var(--text-muted)] font-mono text-xs">{project.year}</span>
+            <span className="text-[var(--text-muted)] font-mono text-xs shrink-0">{project.year}</span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               onClick={handleCopyLink}
               type="button"
-              className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono transition-all rounded-xs border cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 min-h-[38px] text-xs font-mono transition-all duration-150 active:scale-[0.97] rounded-xs border cursor-pointer ${
                 copied
                   ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50'
                   : 'bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-color)] hover:text-[var(--text-main)] hover:border-[var(--accent)]'
@@ -114,7 +114,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
             <button
               onClick={onClose}
               type="button"
-              className="p-1 text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors cursor-pointer"
+              className="min-w-[40px] min-h-[40px] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--accent)] transition-all duration-150 active:scale-95 cursor-pointer"
               aria-label="Close modal"
             >
               <X className="w-5 h-5" />

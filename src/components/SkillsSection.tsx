@@ -44,7 +44,6 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ onSelectProjectTag
 
   return (
     <section
-      id="skills"
       className="py-24 border-t border-[var(--border-color)] bg-[var(--bg-canvas)] relative"
     >
       <div className="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
@@ -98,10 +97,9 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ onSelectProjectTag
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Category Tabs (Left - Slide from Left) */}
           <motion.div
-            initial={shouldReduceMotion ? false : { opacity: 0, x: -28 }}
-            whileInView={shouldReduceMotion ? undefined : { opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.08 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            initial={false}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: shouldReduceMotion ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] }}
             className="lg:col-span-4 space-y-2"
           >
             <div className="text-xs font-mono uppercase tracking-wider text-[var(--text-muted)] font-bold mb-3 px-1">
@@ -149,10 +147,9 @@ export const SkillsSection: React.FC<SkillsSectionProps> = ({ onSelectProjectTag
 
           {/* Active Skills Table & Tags (Right - Slide from Right) */}
           <motion.div
-            initial={shouldReduceMotion ? false : { opacity: 0, x: 28 }}
-            whileInView={shouldReduceMotion ? undefined : { opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.08 }}
-            transition={{ duration: 0.5, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+            initial={false}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: shouldReduceMotion ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] }}
             className="lg:col-span-8 bg-[var(--bg-card)] border border-[var(--border-color)] p-6 sm:p-7 shadow-sm rounded-xs"
           >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--border-color)] mb-6">

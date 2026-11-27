@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import QRCode from 'qrcode';
 import { 
   Mail, 
   Linkedin, 
@@ -128,47 +127,22 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
   const glowShiftXBack = normalizedPos.x * 110;
   const glowShiftYBack = -normalizedPos.y * 75;
 
-  const [avatarBase64, setAvatarBase64] = useState<string>('');
-
-  // Preload and convert avatar image to base64 Data URI on mount
-  // Guarantees synchronous, error-free rendering in html2canvas exports without network dependencies
+  // Dynamically generate QR Code only when card flips or when exporting
   useEffect(() => {
+    if (!isFlipped || qrCodeUrl) return;
     let isMounted = true;
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.src = '/assets/aistudio/favicon_507da8ac.png';
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth || img.width;
-        canvas.height = img.naturalHeight || img.height;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(img, 0, 0);
-          const dataUri = canvas.toDataURL('image/png');
-          if (isMounted) setAvatarBase64(dataUri);
-        }
-      } catch {
-        // Fallback to direct path if canvas export fails
-      }
-    };
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  // Generate scannable QR Code on mount pointing to portfolio URL
-  useEffect(() => {
-    let isMounted = true;
-    QRCode.toDataURL('https://iam-mjyogananth.pages.dev', {
-      width: 240,
-      margin: 1,
-      color: {
-        dark: '#FFFFFF',
-        light: '#0D111A'
-      },
-      errorCorrectionLevel: 'M'
-    })
+    import('qrcode')
+      .then(({ default: QRCode }) =>
+        QRCode.toDataURL('https://iam-mjyogananth.pages.dev', {
+          width: 240,
+          margin: 1,
+          color: {
+            dark: '#FFFFFF',
+            light: '#0D111A'
+          },
+          errorCorrectionLevel: 'M'
+        })
+      )
       .then((url) => {
         if (isMounted) setQrCodeUrl(url);
       })
@@ -179,7 +153,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [isFlipped, qrCodeUrl]);
 
   // Shared Flip Toggle Handler: Toggles state in both directions
   const handleToggleFlip = (shouldMoveFocus = true) => {
@@ -344,6 +318,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
     let qr = qrCodeUrl;
     if (!qr) {
       try {
+        const { default: QRCode } = await import('qrcode');
         qr = await QRCode.toDataURL('https://iam-mjyogananth.pages.dev', {
           width: 240,
           margin: 1,
@@ -365,22 +340,32 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
     wrapper.style.pointerEvents = 'none';
     wrapper.style.zIndex = '-99999';
 
-    let avatarSrc = avatarBase64 || '/assets/aistudio/favicon_507da8ac.png';
-    if (!avatarBase64 && typeof window !== 'undefined') {
+    let avatarSrc = '/assets/aistudio/avatar_portrait_640.png';
+    if (typeof window !== 'undefined') {
       try {
-        const preImg = new Image();
-        preImg.crossOrigin = 'anonymous';
-        preImg.src = '/assets/aistudio/favicon_507da8ac.png';
-        if (preImg.complete && preImg.naturalWidth > 0) {
-          const c = document.createElement('canvas');
-          c.width = preImg.naturalWidth;
-          c.height = preImg.naturalHeight;
-          const cx = c.getContext('2d');
-          if (cx) {
-            cx.drawImage(preImg, 0, 0);
-            avatarSrc = c.toDataURL('image/png');
-          }
-        }
+        const loadedAvatar = await new Promise<string | null>((resolve) => {
+          const preImg = new Image();
+          preImg.crossOrigin = 'anonymous';
+          preImg.onload = () => {
+            try {
+              const c = document.createElement('canvas');
+              c.width = preImg.naturalWidth || preImg.width;
+              c.height = preImg.naturalHeight || preImg.height;
+              const cx = c.getContext('2d');
+              if (cx) {
+                cx.drawImage(preImg, 0, 0);
+                resolve(c.toDataURL('image/png'));
+                return;
+              }
+            } catch {
+              // ignore
+            }
+            resolve(null);
+          };
+          preImg.onerror = () => resolve(null);
+          preImg.src = '/assets/aistudio/avatar_portrait_640.png';
+        });
+        if (loadedAvatar) avatarSrc = loadedAvatar;
       } catch {
         // Fallback to direct path
       }
@@ -676,7 +661,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
             }}
           >
             {/* Square 1:1 Photo Cover Card Frame */}
-            <div className="relative w-[285px] h-[285px] sm:w-[305px] sm:h-[305px] md:w-[320px] md:h-[320px] aspect-square">
+            <div className="relative w-[270px] h-[270px] sm:w-[305px] sm:h-[305px] md:w-[320px] md:h-[320px] aspect-square">
               {/* Overlapping Top-Right Badge: "AI & WEB DEV" (pops outside top/right border) */}
               <div className="absolute -top-3.5 -right-2.5 z-30 pointer-events-none">
                 <span className="inline-block bg-[#E11D48] text-white font-mono font-black text-[10px] sm:text-[11px] px-3 py-1 border-2 border-black tracking-widest uppercase shadow-[2.5px_2.5px_0px_#000000]">
@@ -708,7 +693,7 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                   </span>
                 </div>
 
-                {/* CENTER: Exact Character Illustration (/assets/aistudio/favicon_507da8ac.png) */}
+                {/* CENTER: Optimized Character Illustration (26KB WebP + PNG fallback) */}
                 <div className="relative z-10 w-full flex-1 flex items-end justify-center px-4 pt-8 pb-5 overflow-hidden pointer-events-none">
                   {avatarError ? (
                     <div
@@ -720,17 +705,20 @@ export const DigitalVisitingCard: React.FC<DigitalVisitingCardProps> = ({ classN
                       <span className="text-[9px] font-mono uppercase tracking-widest text-zinc-400 mt-1">AI Engineer</span>
                     </div>
                   ) : (
-                    <img
-                      src="/assets/aistudio/favicon_507da8ac.png"
-                      alt="Yogananth J — AI Engineer and Full-Stack Developer portrait illustration"
-                      width={320}
-                      height={320}
-                      onError={() => setAvatarError(true)}
-                      className="w-full h-full object-contain object-bottom select-none group-hover/front:scale-104 transition-transform duration-300"
-                      loading="eager"
-                      decoding="async"
-                      fetchPriority="high"
-                    />
+                    <picture className="w-full h-full flex items-end justify-center">
+                      <source srcSet="/assets/aistudio/avatar_portrait_640.webp" type="image/webp" />
+                      <img
+                        src="/assets/aistudio/avatar_portrait_640.png"
+                        alt="Yogananth J — AI Engineer and Full-Stack Developer portrait illustration"
+                        width={320}
+                        height={320}
+                        onError={() => setAvatarError(true)}
+                        className="w-full h-full object-contain object-bottom select-none group-hover/front:scale-104 transition-transform duration-200"
+                        loading="eager"
+                        decoding="async"
+                        fetchPriority="high"
+                      />
+                    </picture>
                   )}
                 </div>
 

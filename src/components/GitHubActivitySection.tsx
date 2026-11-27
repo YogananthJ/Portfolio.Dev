@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { soundFX } from '../utils/soundEffects';
 import { trackPortfolioExport } from '../utils/ga4';
+import { useDialogA11y } from '../hooks/useDialogA11y';
 
 interface GitHubRepo {
   id: number;
@@ -140,33 +141,15 @@ export const CONTRIBUTION_LEVEL_STYLES: Record<0 | 1 | 2 | 3 | 4, LevelStyle> = 
   },
 };
 
-// Framer Motion staggered scanning entrance animation variants
+// Non-blocking entrance variants keeping grid immediately visible
 const scanningGridVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: (shouldReduce: boolean) => ({
-    opacity: 1,
-    transition: {
-      staggerChildren: shouldReduce ? 0 : 0.015,
-      delayChildren: 0.05,
-    },
-  }),
+  hidden: { opacity: 1 },
+  visible: { opacity: 1 },
 };
 
 const weekColumnVariants: Variants = {
-  hidden: (shouldReduce: boolean) => ({
-    opacity: shouldReduce ? 1 : 0,
-    y: shouldReduce ? 0 : 8,
-    scaleY: shouldReduce ? 1 : 0.8,
-  }),
-  visible: {
-    opacity: 1,
-    y: 0,
-    scaleY: 1,
-    transition: {
-      duration: 0.28,
-      ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
-    },
-  },
+  hidden: { opacity: 1, y: 0, scaleY: 1 },
+  visible: { opacity: 1, y: 0, scaleY: 1 },
 };
 
 const GITHUB_USERNAME = 'YogananthJ';
@@ -222,7 +205,13 @@ const AnimatedCounter: React.FC<{ value: number; duration?: number }> = ({ value
   return <span ref={ref}>{displayValue}</span>;
 };
 
-export const GitHubActivitySection: React.FC = () => {
+interface GitHubActivitySectionProps {
+  onExportModalOpenChange?: (isOpen: boolean) => void;
+}
+
+export const GitHubActivitySection: React.FC<GitHubActivitySectionProps> = ({
+  onExportModalOpenChange,
+}) => {
   const shouldReduceMotion = Boolean(useReducedMotion());
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
   const [events, setEvents] = useState<GitHubEvent[]>([]);
@@ -240,6 +229,13 @@ export const GitHubActivitySection: React.FC = () => {
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   const lastRefreshTimeRef = useRef<number>(0);
+  const exportModalRef = useRef<HTMLDivElement | null>(null);
+
+  useDialogA11y(isExportModalOpen, exportModalRef, () => setIsExportModalOpen(false));
+
+  useEffect(() => {
+    onExportModalOpenChange?.(isExportModalOpen);
+  }, [isExportModalOpen, onExportModalOpenChange]);
 
   const formatRelativeTime = (isoString: string): string => {
     try {
@@ -274,18 +270,21 @@ export const GitHubActivitySection: React.FC = () => {
   };
 
   // Robust GitHub API fetching with CORS-compliant headers, pagination, rate limit tracking, and safe fallbacks
-  const fetchGitHubData = async (forceBypassCache = false) => {
+  const fetchGitHubData = async (forceBypassCache = false, bypassCooldown = false) => {
     if (isRefreshing) return;
 
     // Throttle manual refreshes to protect unauthenticated GitHub API quota (60 req/hr)
     const now = Date.now();
     if (forceBypassCache) {
-      if (now - lastRefreshTimeRef.current < 4000) {
+      if (!bypassCooldown && now - lastRefreshTimeRef.current < 4000) {
         setErrorMsg('Please wait a few seconds before refreshing again to protect your GitHub API quota.');
         return;
       }
       lastRefreshTimeRef.current = now;
       setIsRefreshing(true);
+      if (repos.length === 0) {
+        setIsLoading(true);
+      }
     } else {
       setIsLoading(true);
     }
@@ -745,6 +744,11 @@ export const GitHubActivitySection: React.FC = () => {
     fetchGitHubData(true);
   };
 
+  const handleRetryFetch = () => {
+    soundFX.playClick();
+    fetchGitHubData(true, true);
+  };
+
   const handleTriggerPrint = () => {
     soundFX.playClick();
     trackPortfolioExport('github_report_print', 'github-activity');
@@ -785,7 +789,6 @@ export const GitHubActivitySection: React.FC = () => {
 
   return (
     <section
-      id="github-activity"
       className="py-20 border-t border-[var(--border-color)] bg-[var(--bg-canvas)] relative overflow-hidden"
     >
       {/* Background cyber grid */}
@@ -862,32 +865,42 @@ export const GitHubActivitySection: React.FC = () => {
 
         {/* Error Notice (if rate limited or error) */}
         {errorMsg && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8 p-3.5 bg-amber-500/10 border border-amber-500/30 text-amber-500 text-xs font-mono rounded-xs flex items-center justify-between gap-2.5"
+          <div
+            role="alert"
+            className="mb-8 p-3.5 bg-amber-500/10 border border-amber-500/30 text-amber-500 text-xs font-mono rounded-xs flex flex-wrap items-center justify-between gap-2.5"
           >
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{errorMsg}</span>
             </div>
-            <button
-              onClick={() => setErrorMsg(null)}
-              className="p-1 hover:text-white transition-colors cursor-pointer"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </motion.div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleRetryFetch}
+                disabled={isRefreshing}
+                className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 hover:text-white font-bold uppercase tracking-wider rounded-xs transition-all duration-150 active:scale-[0.97] cursor-pointer disabled:opacity-50"
+              >
+                {isRefreshing ? 'Retrying...' : 'Retry'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setErrorMsg(null)}
+                aria-label="Dismiss GitHub error notice"
+                className="p-1.5 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
         )}
 
         {/* 1. Statistics Cards Strip */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 font-mono">
           {/* Card 1: Public Repos */}
           <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4 }}
+            initial={false}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.18 }}
             className="p-5 bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-[var(--accent)]/50 transition-colors rounded-xs shadow-xs group"
           >
             <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)] mb-2 uppercase">
@@ -911,10 +924,9 @@ export const GitHubActivitySection: React.FC = () => {
 
           {/* Card 2: Total Stars */}
           <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4, delay: 0.08 }}
+            initial={false}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.18 }}
             className="p-5 bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-amber-400/50 transition-colors rounded-xs shadow-xs group"
           >
             <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)] mb-2 uppercase">
@@ -938,10 +950,9 @@ export const GitHubActivitySection: React.FC = () => {
 
           {/* Card 3: Top Dominant Language */}
           <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4, delay: 0.16 }}
+            initial={false}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.18 }}
             className="p-5 bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-blue-400/50 transition-colors rounded-xs shadow-xs group"
           >
             <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)] mb-2 uppercase">
@@ -967,10 +978,9 @@ export const GitHubActivitySection: React.FC = () => {
 
           {/* Card 4: Verified 1-Year Contributions */}
           <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4, delay: 0.24 }}
+            initial={false}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.18 }}
             className="p-5 bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-[var(--accent)]/50 transition-colors rounded-xs shadow-xs group"
           >
             <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)] mb-2 uppercase">
@@ -995,10 +1005,9 @@ export const GitHubActivitySection: React.FC = () => {
 
         {/* 2. Interactive Contribution Activity Heat Map */}
         <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.45 }}
+          initial={false}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.18 }}
           className="mb-8 p-4 sm:p-6 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xs shadow-xs font-mono relative overflow-hidden"
         >
           {/* Heat Map Header */}
@@ -1103,14 +1112,13 @@ export const GitHubActivitySection: React.FC = () => {
                   <div className="h-[12px] leading-[12px] opacity-0">Sat</div>
                 </div>
 
-                {/* Heat Map Columns (Weeks) with Staggered Framer Motion Scanning Reveal */}
+                {/* Heat Map Columns (Weeks) */}
                 <motion.div
                   key={heatMapRange}
                   custom={shouldReduceMotion}
                   variants={scanningGridVariants}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true, margin: '-20px' }}
+                  initial={false}
+                  animate="visible"
                   className="flex gap-[3px]"
                   role="grid"
                   aria-label="GitHub contribution calendar"
@@ -1285,10 +1293,9 @@ export const GitHubActivitySection: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left Column (5 cols): Top 5 Programming Languages Breakdown */}
           <motion.div
-            initial={{ opacity: 0, x: -15 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.45 }}
+            initial={false}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.18 }}
             className="lg:col-span-5 p-6 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xs shadow-xs font-mono space-y-5"
           >
             <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
@@ -1356,10 +1363,9 @@ export const GitHubActivitySection: React.FC = () => {
 
           {/* Right Column (7 cols): Recent Public GitHub Activity Stream */}
           <motion.div
-            initial={{ opacity: 0, x: 15 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.45 }}
+            initial={false}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.18 }}
             className="lg:col-span-7 p-6 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xs shadow-xs font-mono space-y-4"
           >
             <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-3">
@@ -1392,13 +1398,9 @@ export const GitHubActivitySection: React.FC = () => {
                   const commitSha = evt.payload?.commits?.[0]?.sha?.slice(0, 7);
 
                   return (
-                    <motion.div
+                    <div
                       key={evt.id || idx}
-                      initial={{ opacity: 0, y: 10 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.3, delay: idx * 0.05 }}
-                      className="p-3 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--accent)]/50 transition-all rounded-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 group"
+                      className="p-3 bg-[var(--bg-surface)] border border-[var(--border-color)] hover:border-[var(--accent)]/50 transition-all duration-150 rounded-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 group"
                     >
                       <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2">
@@ -1429,7 +1431,7 @@ export const GitHubActivitySection: React.FC = () => {
                         )}
                         <span>{formatRelativeTime(evt.created_at)}</span>
                       </div>
-                    </motion.div>
+                    </div>
                   );
                 })}
               </div>
@@ -1460,27 +1462,33 @@ export const GitHubActivitySection: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto"
+            className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto"
             onClick={() => setIsExportModalOpen(false)}
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
+              ref={exportModalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="github-export-modal-title"
+              tabIndex={-1}
+              initial={{ scale: 0.96, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              transition={{ duration: 0.18 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-[#0A0D14] border border-[var(--border-color)] w-full max-w-3xl rounded-xs shadow-2xl p-6 font-mono text-zinc-200 space-y-6 my-8 max-h-[90vh] overflow-y-auto"
+              className="bg-[#0A0D14] border border-[var(--border-color)] w-full max-w-3xl rounded-xs shadow-2xl p-4 sm:p-6 font-mono text-zinc-200 space-y-6 my-8 max-h-[90vh] overflow-y-auto focus:outline-none"
             >
               {/* Modal Header */}
-              <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xs bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+              <div className="flex items-center justify-between gap-2 border-b border-zinc-800 pb-4">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="w-8 h-8 rounded-xs bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0">
                     <FileDown className="w-4 h-4 text-emerald-400" />
                   </div>
-                  <div>
-                    <h2 id="github-export-modal-title" className="font-bold text-base text-white uppercase">
+                  <div className="min-w-0">
+                    <h2 id="github-export-modal-title" className="font-bold text-sm sm:text-base text-white uppercase truncate">
                       Executive GitHub Telemetry Report
                     </h2>
-                    <p className="text-xs text-zinc-400">
+                    <p className="text-xs text-zinc-400 truncate">
                       High-quality vector report card ready for print &amp; PDF export
                     </p>
                   </div>
@@ -1489,7 +1497,8 @@ export const GitHubActivitySection: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsExportModalOpen(false)}
-                  className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xs transition-colors cursor-pointer"
+                  aria-label="Close GitHub telemetry report modal"
+                  className="min-w-[40px] min-h-[40px] flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-xs transition-colors cursor-pointer shrink-0"
                 >
                   <X className="w-5 h-5" />
                 </button>

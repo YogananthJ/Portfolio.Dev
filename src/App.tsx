@@ -2,13 +2,6 @@ import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { ProjectShowcase } from './components/ProjectShowcase';
-import { SkillsSection } from './components/SkillsSection';
-import { GitHubActivitySection } from './components/GitHubActivitySection';
-import { ExperienceSection } from './components/ExperienceSection';
-import { ContactSection } from './components/ContactSection';
-import { Footer } from './components/Footer';
-import { LayoutController } from './components/LayoutController';
-import { WorkspaceSidebar } from './components/WorkspaceSidebar';
 import { LayoutProvider, useLayout } from './context/LayoutContext';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ProjectItem } from './types/portfolio';
@@ -36,6 +29,124 @@ import { ErrorBoundary } from './components/errors/ErrorBoundary';
 import { SectionErrorBoundary } from './components/errors/SectionErrorBoundary';
 import { OfflineBanner } from './components/errors/OfflineBanner';
 import { AppExceptionPage } from './components/errors/pages/AppExceptionPage';
+
+const loadSkillsSection = () => import('./components/SkillsSection');
+const loadGitHubActivitySection = () => import('./components/GitHubActivitySection');
+const loadExperienceSection = () => import('./components/ExperienceSection');
+const loadContactSection = () => import('./components/ContactSection');
+const loadFooter = () => import('./components/Footer');
+const loadWorkspaceSidebar = () => import('./components/WorkspaceSidebar');
+const loadLayoutController = () => import('./components/LayoutController');
+
+const SkillsSection = lazy(() =>
+  loadSkillsSection().then((m) => ({ default: m.SkillsSection }))
+);
+const GitHubActivitySection = lazy(() =>
+  loadGitHubActivitySection().then((m) => ({ default: m.GitHubActivitySection }))
+);
+const ExperienceSection = lazy(() =>
+  loadExperienceSection().then((m) => ({ default: m.ExperienceSection }))
+);
+const ContactSection = lazy(() =>
+  loadContactSection().then((m) => ({ default: m.ContactSection }))
+);
+const Footer = lazy(() =>
+  loadFooter().then((m) => ({ default: m.Footer }))
+);
+const WorkspaceSidebar = lazy(() =>
+  loadWorkspaceSidebar().then((m) => ({ default: m.WorkspaceSidebar }))
+);
+const LayoutController = lazy(() =>
+  loadLayoutController().then((m) => ({ default: m.LayoutController }))
+);
+
+const SECTION_LOAD_ORDER = ['overview', 'projects', 'skills', 'github-activity', 'experience', 'contact'] as const;
+
+function getSectionOrderIndex(domId: string): number {
+  const idx = SECTION_LOAD_ORDER.indexOf(domId as (typeof SECTION_LOAD_ORDER)[number]);
+  return idx === -1 ? 1 : idx;
+}
+
+function preloadSectionsThrough(domId: string): Promise<void> {
+  const idx = getSectionOrderIndex(domId);
+  const promises: Promise<unknown>[] = [];
+  if (idx >= 2) promises.push(loadSkillsSection());
+  if (idx >= 3) promises.push(loadGitHubActivitySection());
+  if (idx >= 4) promises.push(loadExperienceSection());
+  if (idx >= 5) {
+    promises.push(loadContactSection());
+    promises.push(loadFooter());
+  }
+  return Promise.all(promises).then(() => undefined);
+}
+
+interface LazySectionSlotProps {
+  id: string;
+  forceMount: boolean;
+  minHeightClass?: string;
+  fallbackLabel: string;
+  children: React.ReactNode;
+}
+
+const LazySectionSlot: React.FC<LazySectionSlotProps> = ({
+  id,
+  forceMount,
+  minHeightClass = 'min-h-[360px]',
+  fallbackLabel,
+  children,
+}) => {
+  const slotRef = useRef<HTMLDivElement | null>(null);
+  const [hasEnteredNearViewport, setHasEnteredNearViewport] = useState<boolean>(forceMount);
+
+  useEffect(() => {
+    if (forceMount) {
+      setHasEnteredNearViewport(true);
+      return;
+    }
+    if (hasEnteredNearViewport) return;
+    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
+      setHasEnteredNearViewport(true);
+      return;
+    }
+    const el = slotRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setHasEnteredNearViewport(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '550px 0px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [forceMount, hasEnteredNearViewport]);
+
+  const shouldRender = forceMount || hasEnteredNearViewport;
+
+  return (
+    <div id={id} ref={slotRef} className="scroll-mt-16 w-full">
+      {shouldRender ? (
+        <Suspense
+          fallback={
+            <div className={`${minHeightClass} border-t border-[var(--border-color)] flex items-center justify-center font-mono text-xs text-[var(--text-muted)]`}>
+              {fallbackLabel}
+            </div>
+          }
+        >
+          {children}
+        </Suspense>
+      ) : (
+        <div
+          aria-hidden="true"
+          className={`${minHeightClass} border-t border-[var(--border-color)] bg-[var(--bg-canvas)]`}
+        />
+      )}
+    </div>
+  );
+};
 
 const ProjectModal = lazy(() =>
   import('./components/ProjectModal').then((m) => ({ default: m.ProjectModal }))
@@ -78,14 +189,21 @@ const GatewayTimeoutPage = lazy(() =>
 );
 
 function PortfolioMainContent() {
-  const { layoutMode, setLayoutMode, setActiveSimulatorId, isThemeTransitioning } = useLayout();
+  const { layoutMode, setLayoutMode, setActiveSimulatorId, isThemeTransitioning, sidebarOpen } = useLayout();
   const shouldReduceMotion = useReducedMotion();
   const [activeProject, setActiveProject] = useState<ProjectItem | null>(null);
   const [isTerminalOpen, setIsTerminalOpen] = useState<boolean>(false);
   const [isResumeModalOpen, setIsResumeModalOpen] = useState<boolean>(false);
+  const [isGitHubExportOpen, setIsGitHubExportOpen] = useState<boolean>(false);
   const [activeSection, setActiveSection] = useState<string>('overview');
   const [isErrorHubOpen, setIsErrorHubOpen] = useState<boolean>(false);
   const [isSimulatedCrash, setIsSimulatedCrash] = useState<boolean>(false);
+  const [mountedThroughIndex, setMountedThroughIndex] = useState<number>(() => {
+    if (typeof window === 'undefined') return 1;
+    const { domId, hasExplicitSection } = resolveSectionFromUrl();
+    return hasExplicitSection ? getSectionOrderIndex(domId) : 1;
+  });
+  const [hasUserScrolled, setHasUserScrolled] = useState<boolean>(false);
   const { friendlyNotice, dismissNotice } = useErrorMonitoring();
   const lastSpiedSectionRef = useRef<string>('overview');
   const programmaticScrollRef = useRef<{ targetId: string; until: number } | null>(null);
@@ -124,7 +242,7 @@ function PortfolioMainContent() {
 
   const [route, setRoute] = useState<{ page: string }>(getRouteFromUrl);
   const isAnyModalOpen = Boolean(
-    activeProject || isResumeModalOpen || isErrorHubOpen || isTerminalOpen
+    activeProject || isResumeModalOpen || isErrorHubOpen || isTerminalOpen || isGitHubExportOpen
   );
 
   useUrlActivityTracking({
@@ -177,6 +295,9 @@ function PortfolioMainContent() {
     options: { pushHistory?: boolean; behavior?: ScrollBehavior } = {}
   ) => {
     const domId = toDomSectionId(sectionId);
+    const targetOrderIdx = getSectionOrderIndex(domId);
+    setMountedThroughIndex((prev) => Math.max(prev, targetOrderIdx));
+
     const prevLayout = layoutMode;
     if (prevLayout === 'split') {
       setLayoutMode('standard');
@@ -185,7 +306,7 @@ function PortfolioMainContent() {
     lastSpiedSectionRef.current = domId;
     programmaticScrollRef.current = {
       targetId: domId,
-      until: Date.now() + 2000,
+      until: Date.now() + 2400,
     };
 
     trackSectionNavigation(domId, {
@@ -196,6 +317,17 @@ function PortfolioMainContent() {
     const delay = prevLayout === 'split' ? 80 : 0;
     window.setTimeout(() => {
       scrollToSectionId(domId, options.behavior ?? 'smooth');
+      if (targetOrderIdx >= 2) {
+        preloadSectionsThrough(domId)
+          .then(() => {
+            window.requestAnimationFrame(() => {
+              if (programmaticScrollRef.current?.targetId === domId) {
+                scrollToSectionId(domId, options.behavior ?? 'smooth');
+              }
+            });
+          })
+          .catch(() => {});
+      }
     }, delay);
   };
 
@@ -206,11 +338,13 @@ function PortfolioMainContent() {
       if (nextRoute.page !== 'home') return;
 
       const { domId, hasExplicitSection } = resolveSectionFromUrl();
+      const targetOrderIdx = getSectionOrderIndex(domId);
+      setMountedThroughIndex((prev) => Math.max(prev, targetOrderIdx));
       setActiveSection(domId);
       lastSpiedSectionRef.current = domId;
       programmaticScrollRef.current = {
         targetId: domId,
-        until: Date.now() + 2000,
+        until: Date.now() + 2400,
       };
       if (hasExplicitSection) {
         trackSectionNavigation(domId, {
@@ -221,6 +355,17 @@ function PortfolioMainContent() {
       }
       window.requestAnimationFrame(() => {
         scrollToSectionId(domId, 'smooth');
+        if (targetOrderIdx >= 2) {
+          preloadSectionsThrough(domId)
+            .then(() => {
+              window.requestAnimationFrame(() => {
+                if (programmaticScrollRef.current?.targetId === domId) {
+                  scrollToSectionId(domId, 'smooth');
+                }
+              });
+            })
+            .catch(() => {});
+        }
       });
     };
 
@@ -287,6 +432,8 @@ function PortfolioMainContent() {
     const { domId, hasExplicitSection } = resolveSectionFromUrl();
 
     if (hasExplicitSection) {
+      const targetOrderIdx = getSectionOrderIndex(domId);
+      setMountedThroughIndex((prev) => Math.max(prev, targetOrderIdx));
       lastSpiedSectionRef.current = domId;
       setActiveSection(domId);
       trackSectionNavigation(domId, {
@@ -302,7 +449,7 @@ function PortfolioMainContent() {
         }
         programmaticScrollRef.current = {
           targetId: domId,
-          until: Date.now() + 2500,
+          until: Date.now() + 2800,
         };
         let cancelledByUser = false;
         const cancelInitialAlign = () => {
@@ -317,9 +464,15 @@ function PortfolioMainContent() {
           }
         };
 
+        preloadSectionsThrough(domId)
+          .then(() => {
+            window.requestAnimationFrame(alignTarget);
+          })
+          .catch(() => {});
+
         const timer1 = window.setTimeout(alignTarget, 60);
         const timer2 = window.setTimeout(alignTarget, 260);
-        const timer3 = window.setTimeout(alignTarget, 600);
+        const timer3 = window.setTimeout(alignTarget, 650);
         const handleWindowLoad = () => alignTarget();
         window.addEventListener('load', handleWindowLoad, { once: true });
         if (document.fonts && document.fonts.ready) {
@@ -379,12 +532,17 @@ function PortfolioMainContent() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Active section scroll spy (standard layout)
+  // Active section scroll spy (standard layout, rAF throttled)
   useEffect(() => {
     if (layoutMode !== 'standard' || route.page !== 'home') return;
     const sectionIds = ['overview', 'projects', 'skills', 'github-activity', 'experience', 'contact'];
+    let rafId: number | null = null;
 
-    const handleScroll = () => {
+    const runScrollSpy = () => {
+      rafId = null;
+      if (window.scrollY > 40) {
+        setHasUserScrolled(true);
+      }
       const lock = programmaticScrollRef.current;
       if (lock && Date.now() < lock.until) {
         if (lock.targetId === 'overview') {
@@ -432,8 +590,18 @@ function PortfolioMainContent() {
       }
     };
 
+    const handleScroll = () => {
+      if (rafId !== null) return;
+      rafId = window.requestAnimationFrame(runScrollSpy);
+    };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+      }
+    };
   }, [layoutMode, route.page, isAnyModalOpen]);
 
   // Check for project deep-link in URL search params (?project=...) or hash (#project-...)
@@ -529,16 +697,20 @@ function PortfolioMainContent() {
         onOpenResume={handleOpenResumeModal}
       />
 
-      {/* Customizable Workspace Sidebar Drawer */}
-      <WorkspaceSidebar
-        onSelectProject={(id) => {
-          const proj = PROJECTS.find((p) => p.id === id);
-          if (proj) {
-            setActiveSimulatorId(id);
-            handleOpenProjectModal(proj);
-          }
-        }}
-      />
+      {/* Customizable Workspace Sidebar Drawer (lazy loaded when opened) */}
+      {sidebarOpen && (
+        <Suspense fallback={null}>
+          <WorkspaceSidebar
+            onSelectProject={(id) => {
+              const proj = PROJECTS.find((p) => p.id === id);
+              if (proj) {
+                setActiveSimulatorId(id);
+                handleOpenProjectModal(proj);
+              }
+            }}
+          />
+        </Suspense>
+      )}
 
       {/* Main Body: Error Page vs Detail Page vs Dual-Pane Split Workbench vs Standard Editorial Flow */}
       {route.page.startsWith('error-') ? (
@@ -593,41 +765,63 @@ function PortfolioMainContent() {
             </ScrollSectionReveal>
           </SectionErrorBoundary>
 
-          {/* Core Toolkit & Competencies */}
+          {/* Core Toolkit & Competencies (Lazy) */}
           <SectionErrorBoundary sectionName="Technical Skills">
-            <ScrollSectionReveal variant="slide-left" duration={0.64}>
+            <LazySectionSlot
+              id="skills"
+              forceMount={mountedThroughIndex >= 2}
+              fallbackLabel="Loading technical toolkit..."
+            >
               <SkillsSection />
-            </ScrollSectionReveal>
+            </LazySectionSlot>
           </SectionErrorBoundary>
 
-          {/* GitHub Activity & Open-Source Metrics */}
+          {/* GitHub Activity & Open-Source Metrics (Lazy) */}
           <SectionErrorBoundary sectionName="GitHub Activity">
-            <ScrollSectionReveal variant="zoom-emerge" duration={0.65}>
-              <GitHubActivitySection />
-            </ScrollSectionReveal>
+            <LazySectionSlot
+              id="github-activity"
+              forceMount={mountedThroughIndex >= 3}
+              minHeightClass="min-h-[480px]"
+              fallbackLabel="Loading GitHub activity..."
+            >
+              <GitHubActivitySection onExportModalOpenChange={setIsGitHubExportOpen} />
+            </LazySectionSlot>
           </SectionErrorBoundary>
 
-          {/* Verified Milestones & Certifications */}
+          {/* Verified Milestones & Certifications (Lazy) */}
           <SectionErrorBoundary sectionName="Experience & Milestones">
-            <ScrollSectionReveal variant="slide-right" duration={0.64}>
+            <LazySectionSlot
+              id="experience"
+              forceMount={mountedThroughIndex >= 4}
+              fallbackLabel="Loading milestones and education..."
+            >
               <ExperienceSection />
-            </ScrollSectionReveal>
+            </LazySectionSlot>
           </SectionErrorBoundary>
 
-          {/* Contact & Inquiries */}
+          {/* Contact & Inquiries (Lazy) */}
           <SectionErrorBoundary sectionName="Contact Section">
-            <ScrollSectionReveal variant="perspective-unfold" duration={0.68}>
+            <LazySectionSlot
+              id="contact"
+              forceMount={mountedThroughIndex >= 5}
+              fallbackLabel="Loading contact form..."
+            >
               <ContactSection onOpenResume={handleOpenResumeModal} />
-            </ScrollSectionReveal>
+            </LazySectionSlot>
           </SectionErrorBoundary>
         </main>
       )}
 
-      {/* Footer (shown in standard mode, hidden during dedicated error page experiences) */}
+      {/* Footer (lazy-loaded with section slots, hidden during dedicated error pages) */}
       {layoutMode === 'standard' && !route.page.startsWith('error-') && (
-        <ScrollSectionReveal variant="dock-up" duration={0.55}>
+        <LazySectionSlot
+          id="portfolio-footer-slot"
+          forceMount={mountedThroughIndex >= 5 || hasUserScrolled}
+          minHeightClass="min-h-[180px]"
+          fallbackLabel=""
+        >
           <Footer onNavigateTop={() => navigateToSection('overview')} />
-        </ScrollSectionReveal>
+        </LazySectionSlot>
       )}
 
       {/* Deep-Dive Project Modal with Interactive Simulator */}
@@ -714,17 +908,21 @@ function PortfolioMainContent() {
         </div>
       )}
 
-      {/* Global Floating Layout & Workspace Controller */}
-      <LayoutController />
+      {/* Floating workspace & navigation controls hidden when any modal/drawer/sidebar is open */}
+      {!isAnyModalOpen && !sidebarOpen && (
+        <>
+          <Suspense fallback={null}>
+            <LayoutController />
+          </Suspense>
 
-      {/* Floating Back To Top Button */}
-      <BackToTop onNavigateTop={() => navigateToSection('overview')} />
+          <BackToTop onNavigateTop={() => navigateToSection('overview')} />
 
-      {/* Expandable Quick Actions Menu in Bottom-Left Corner */}
-      <QuickActionsMenu
-        onOpenTerminal={() => setIsTerminalOpen(true)}
-        onNavigateSection={(sectionId) => navigateToSection(sectionId)}
-      />
+          <QuickActionsMenu
+            onOpenTerminal={() => setIsTerminalOpen(true)}
+            onNavigateSection={(sectionId) => navigateToSection(sectionId)}
+          />
+        </>
+      )}
 
       {/* Global Framer Motion Glassmorphism Theme Transition Overlay */}
       <ThemeTransitionOverlay />

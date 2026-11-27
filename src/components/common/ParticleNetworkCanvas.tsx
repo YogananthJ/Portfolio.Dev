@@ -129,7 +129,9 @@ export const ParticleNetworkCanvas: React.FC = () => {
     let isPageVisible = !document.hidden;
     let isCanvasInView = true;
     const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const coarsePointerQuery = window.matchMedia('(pointer: coarse)');
     let prefersReduced = motionQuery.matches;
+    const isTouchOptimized = coarsePointerQuery.matches || window.innerWidth < 768;
 
     let palette = readThemePalette();
     let logicalWidth = canvas.parentElement?.clientWidth || window.innerWidth;
@@ -138,7 +140,7 @@ export const ParticleNetworkCanvas: React.FC = () => {
     const applyCanvasDimensions = (w: number, h: number) => {
       logicalWidth = Math.max(320, w);
       logicalHeight = Math.max(320, h);
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const dpr = isTouchOptimized ? 1 : Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = Math.floor(logicalWidth * dpr);
       canvas.height = Math.floor(logicalHeight * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -177,13 +179,6 @@ export const ParticleNetworkCanvas: React.FC = () => {
       updatePointerFromClient(e.clientX, e.clientY);
     };
 
-    const onTouchMove = (e: TouchEvent) => {
-      const touch = e.touches[0];
-      if (touch) {
-        updatePointerFromClient(touch.clientX, touch.clientY);
-      }
-    };
-
     const clearPointer = () => {
       pointer.active = false;
       pointer.x = -1000;
@@ -203,11 +198,21 @@ export const ParticleNetworkCanvas: React.FC = () => {
     };
 
     let lastTimestamp = performance.now();
+    const minFrameIntervalMs = isTouchOptimized ? 33 : 0;
 
     const frame = (timestamp: number) => {
       if (isDisposed) return;
 
       const elapsedMs = timestamp - lastTimestamp;
+      if (minFrameIntervalMs > 0 && elapsedMs < minFrameIntervalMs) {
+        if (!prefersReduced && isPageVisible && isCanvasInView && !isDisposed) {
+          animationFrameId = requestAnimationFrame(frame);
+        } else {
+          animationFrameId = null;
+        }
+        return;
+      }
+
       lastTimestamp = timestamp;
       const dtFactor = Math.min(2.0, Math.max(0.5, elapsedMs / 16.6667));
 
@@ -292,13 +297,12 @@ export const ParticleNetworkCanvas: React.FC = () => {
       intersectionObserver.observe(canvas);
     }
 
-    window.addEventListener('mousemove', onMouseMove, { passive: true });
-    window.addEventListener('touchstart', onTouchMove, { passive: true });
-    window.addEventListener('touchmove', onTouchMove, { passive: true });
-    window.addEventListener('touchend', clearPointer, { passive: true });
-    window.addEventListener('blur', clearPointer);
-    window.addEventListener('resize', handleResize);
-    document.addEventListener('mouseleave', clearPointer);
+    if (!isTouchOptimized) {
+      window.addEventListener('mousemove', onMouseMove, { passive: true });
+      window.addEventListener('blur', clearPointer);
+      document.addEventListener('mouseleave', clearPointer);
+    }
+    window.addEventListener('resize', handleResize, { passive: true });
     document.addEventListener('visibilitychange', handleVisibilityChange);
     motionQuery.addEventListener('change', handleMotionChange);
 
@@ -312,13 +316,12 @@ export const ParticleNetworkCanvas: React.FC = () => {
       themeObserver.disconnect();
       resizeObserver?.disconnect();
       intersectionObserver?.disconnect();
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('touchstart', onTouchMove);
-      window.removeEventListener('touchmove', onTouchMove);
-      window.removeEventListener('touchend', clearPointer);
-      window.removeEventListener('blur', clearPointer);
+      if (!isTouchOptimized) {
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('blur', clearPointer);
+        document.removeEventListener('mouseleave', clearPointer);
+      }
       window.removeEventListener('resize', handleResize);
-      document.removeEventListener('mouseleave', clearPointer);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       motionQuery.removeEventListener('change', handleMotionChange);
     };

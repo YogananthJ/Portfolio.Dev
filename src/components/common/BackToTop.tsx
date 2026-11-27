@@ -96,10 +96,9 @@ export const BackToTop: React.FC<BackToTopProps> = ({ onNavigateTop }) => {
           style={{
             position: 'fixed',
             left: '50%',
-            bottom: '24px',
-            zIndex: 50,
+            zIndex: 30,
           }}
-          className="expandable-icon-btn expandable-icon-btn--floating fixed z-50 left-1/2 bottom-6 -translate-x-1/2 bg-[#0e0e0e]/90 hover:bg-[#181818] text-white border border-white/20 hover:border-[var(--accent)] rounded-xs shadow-xl backdrop-blur-md font-mono text-xs inline-flex group cursor-pointer select-none"
+          className="expandable-icon-btn expandable-icon-btn--floating fixed z-30 left-1/2 bottom-3 sm:bottom-5 -translate-x-1/2 bg-[#0e0e0e]/90 hover:bg-[#181818] text-white border border-white/20 hover:border-[var(--accent)] rounded-xs shadow-xl backdrop-blur-md font-mono text-xs inline-flex group cursor-pointer select-none"
         >
           <ArrowUp className="w-3.5 h-3.5 shrink-0 text-[var(--accent)] group-hover:-translate-y-0.5 transition-transform" />
           <ExpandableLabel className="text-[10px] uppercase font-bold tracking-wider">

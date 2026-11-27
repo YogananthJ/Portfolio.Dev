@@ -12,7 +12,7 @@ export const ExperienceSection: React.FC = () => {
   };
 
   return (
-    <section id="experience" className="py-24 border-t border-[var(--border-color)] bg-[var(--bg-canvas)]">
+    <section className="py-24 border-t border-[var(--border-color)] bg-[var(--bg-canvas)]">
       <div className="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-[var(--border-color)] mb-12">
@@ -89,23 +89,14 @@ export const ExperienceSection: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {CERTIFICATIONS.map((cert, idx) => (
+            {CERTIFICATIONS.map((cert) => (
               <motion.div
                 key={cert.id}
-                initial={
-                  shouldReduceMotion
-                    ? false
-                    : { opacity: 0, y: 26, scale: 0.96, rotateX: 10, transformPerspective: 1000 }
-                }
-                whileInView={
-                  shouldReduceMotion
-                    ? undefined
-                    : { opacity: 1, y: 0, scale: 1, rotateX: 0, transformPerspective: 1000 }
-                }
-                viewport={{ once: true, amount: 0.08 }}
-                transition={{ duration: 0.5, delay: shouldReduceMotion ? 0 : idx * 0.1, ease: [0.22, 1, 0.36, 1] }}
-                whileHover={shouldReduceMotion ? undefined : { y: -4 }}
-                className="p-5 bg-[var(--bg-card)] border border-[var(--border-color)] shadow-sm flex flex-col justify-between hover:border-[var(--accent)] transition-all rounded-xs relative group"
+                initial={false}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: shouldReduceMotion ? 0 : 0.18 }}
+                whileHover={shouldReduceMotion ? undefined : { y: -3 }}
+                className="p-5 bg-[var(--bg-card)] border border-[var(--border-color)] shadow-sm flex flex-col justify-between hover:border-[var(--accent)] transition-all duration-150 rounded-xs relative group"
               >
                 <div>
                   <div className="flex items-center justify-between mb-2.5">
@@ -161,17 +152,9 @@ export const ExperienceSection: React.FC = () => {
             {TIMELINE.map((item, index) => {
               const isExpanded = expandedTimelineIndex === index;
               return (
-                <motion.div
+                <div
                   key={index}
-                  initial={
-                    shouldReduceMotion
-                      ? false
-                      : { opacity: 0, x: index % 2 === 0 ? -24 : 24 }
-                  }
-                  whileInView={shouldReduceMotion ? undefined : { opacity: 1, x: 0 }}
-                  viewport={{ once: true, amount: 0.08 }}
-                  transition={{ duration: 0.45, delay: shouldReduceMotion ? 0 : index * 0.06, ease: [0.22, 1, 0.36, 1] }}
-                  className={`bg-[var(--bg-card)] border transition-all rounded-xs overflow-hidden ${
+                  className={`bg-[var(--bg-card)] border transition-all duration-150 rounded-xs overflow-hidden ${
                     isExpanded ? 'border-[var(--accent)] shadow-md' : 'border-[var(--border-color)] hover:border-[var(--text-main)]'
                   }`}
                 >
@@ -245,7 +228,7 @@ export const ExperienceSection: React.FC = () => {
                       </motion.div>
                     )}
                   </AnimatePresence>
-                </motion.div>
+                </div>
               );
             })}
           </div>

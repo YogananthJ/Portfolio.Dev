@@ -101,15 +101,15 @@ export function resolveResponsiveConfig(width: number, height: number): {
   let repulsionRadius: number;
 
   if (safeW < 640) {
-    particleCount = Math.max(24, Math.min(34, Math.floor(area / 16000)));
-    connectionDistance = 112;
-    repulsionRadius = 110;
+    particleCount = Math.max(12, Math.min(16, Math.floor(area / 32000)));
+    connectionDistance = 105;
+    repulsionRadius = 96;
   } else if (safeW < 1024) {
-    particleCount = Math.max(36, Math.min(48, Math.floor(area / 15500)));
-    connectionDistance = 132;
-    repulsionRadius = 130;
+    particleCount = Math.max(24, Math.min(34, Math.floor(area / 20000)));
+    connectionDistance = 128;
+    repulsionRadius = 125;
   } else {
-    particleCount = Math.max(48, Math.min(72, Math.floor(area / 15500)));
+    particleCount = Math.max(42, Math.min(60, Math.floor(area / 17000)));
     connectionDistance = 148;
     repulsionRadius = 148;
   }
@@ -119,7 +119,7 @@ export function resolveResponsiveConfig(width: number, height: number): {
     config: {
       connectionDistance,
       disconnectDistance: connectionDistance * 1.12,
-      maxConnectionsPerParticle: 4,
+      maxConnectionsPerParticle: safeW < 640 ? 3 : 4,
       repulsionRadius,
       maxRepelForce: 0.42,
       maxSpeed: 3.4,

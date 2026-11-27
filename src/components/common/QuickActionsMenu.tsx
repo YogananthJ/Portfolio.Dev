@@ -122,7 +122,7 @@ export const QuickActionsMenu: React.FC<QuickActionsMenuProps> = ({
     <aside
       ref={menuRef}
       aria-label="Quick Actions Navigation & Preferences"
-      className="fixed bottom-4 left-4 sm:bottom-5 sm:left-5 z-40 pointer-events-auto font-mono text-xs select-none"
+      className="fixed bottom-3 left-3 sm:bottom-5 sm:left-5 z-30 pointer-events-auto font-mono text-xs select-none"
     >
       {/* Expandable Menu Panel */}
       <AnimatePresence>

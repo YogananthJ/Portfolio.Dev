@@ -168,22 +168,22 @@ ACADEMIC EDUCATION
           className="relative w-full max-w-4xl bg-[#0F0F11] border border-white/20 rounded-xs shadow-2xl overflow-hidden my-6 max-h-[92vh] flex flex-col font-sans focus:outline-none"
         >
           {/* Modal Top Control Bar */}
-          <div className="flex items-center justify-between px-5 py-3.5 bg-[#18181B] border-b border-white/10 shrink-0 font-mono text-xs">
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-[var(--accent)]" />
-              <span className="font-bold text-white uppercase tracking-wider">
-                YOGANANTH J // OFFICIAL ENGINEERING RESUME
+          <div className="flex items-center justify-between gap-2 px-3 sm:px-5 py-3 bg-[#18181B] border-b border-white/10 shrink-0 font-mono text-xs">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <FileText className="w-4 h-4 text-[var(--accent)] shrink-0" />
+              <span className="font-bold text-white uppercase tracking-wider truncate">
+                YOGANANTH J // RESUME
               </span>
-              <span className="hidden sm:inline-block text-[10px] px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-semibold rounded-xs">
+              <span className="hidden md:inline-block shrink-0 text-[10px] px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-semibold rounded-xs">
                 VERIFIED 2026
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <button
                 onClick={handleCopy}
                 type="button"
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/10 rounded-xs transition-colors cursor-pointer"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/10 rounded-xs transition-all duration-150 active:scale-[0.97] cursor-pointer"
                 title="Copy ATS plaintext to clipboard"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -193,21 +193,23 @@ ACADEMIC EDUCATION
               <button
                 onClick={handleDownloadATS}
                 type="button"
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/10 rounded-xs transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 min-h-[38px] bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/10 rounded-xs transition-all duration-150 active:scale-[0.97] cursor-pointer"
                 title="Download ATS plaintext resume (.txt)"
               >
-                <Download className="w-3.5 h-3.5 text-blue-400" />
-                <span>ATS Text</span>
+                <Download className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                <span className="hidden min-[380px]:inline">ATS Text</span>
+                <span className="min-[380px]:hidden">ATS</span>
               </button>
 
               <button
                 onClick={handlePrint}
                 type="button"
-                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[var(--accent)] hover:opacity-90 text-white font-bold rounded-xs transition-colors cursor-pointer shadow-sm"
+                className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 min-h-[38px] bg-[var(--accent)] hover:opacity-90 text-white font-bold rounded-xs transition-all duration-150 active:scale-[0.97] cursor-pointer shadow-sm"
                 title="Print or save as PDF"
               >
-                <Printer className="w-3.5 h-3.5" />
-                <span>Print / PDF</span>
+                <Printer className="w-3.5 h-3.5 shrink-0" />
+                <span className="hidden min-[380px]:inline">Print / PDF</span>
+                <span className="min-[380px]:hidden">PDF</span>
               </button>
 
               <button
@@ -216,7 +218,7 @@ ACADEMIC EDUCATION
                   onClose();
                 }}
                 type="button"
-                className="p-1.5 text-zinc-400 hover:text-white hover:bg-white/10 rounded-xs transition-colors cursor-pointer ml-1"
+                className="min-w-[40px] min-h-[40px] flex items-center justify-center text-zinc-300 hover:text-white hover:bg-white/10 rounded-xs transition-all duration-150 active:scale-95 cursor-pointer"
                 aria-label="Close modal"
               >
                 <X className="w-5 h-5" />

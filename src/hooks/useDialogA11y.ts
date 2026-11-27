@@ -1,4 +1,4 @@
-import { useEffect, RefObject } from 'react';
+import { useEffect, useRef, RefObject } from 'react';
 
 const FOCUSABLE_SELECTOR = [
   'a[href]',
@@ -21,6 +21,11 @@ export function useDialogA11y(
   dialogRef: RefObject<HTMLElement | null>,
   onClose: () => void
 ): void {
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   useEffect(() => {
     if (!isOpen || typeof document === 'undefined') return;
 
@@ -30,14 +35,14 @@ export function useDialogA11y(
       const container = dialogRef.current;
       if (!container) return;
       if (!container.contains(document.activeElement)) {
-        container.focus();
+        container.focus({ preventScroll: true });
       }
     }, 20);
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
-        onClose();
+        onCloseRef.current();
         return;
       }
 
@@ -51,7 +56,7 @@ export function useDialogA11y(
 
       if (focusable.length === 0) {
         e.preventDefault();
-        container.focus();
+        container.focus({ preventScroll: true });
         return;
       }
 
@@ -75,8 +80,12 @@ export function useDialogA11y(
       window.clearTimeout(focusTimeout);
       window.removeEventListener('keydown', handleKeyDown);
       if (previousFocus && typeof previousFocus.focus === 'function') {
-        previousFocus.focus();
+        window.requestAnimationFrame(() => {
+          if (previousFocus.isConnected) {
+            previousFocus.focus({ preventScroll: true });
+          }
+        });
       }
     };
-  }, [isOpen, dialogRef, onClose]);
+  }, [isOpen, dialogRef]);
 }

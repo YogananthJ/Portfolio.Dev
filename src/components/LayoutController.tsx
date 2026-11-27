@@ -50,7 +50,7 @@ export const LayoutController: React.FC = () => {
   return (
     <aside
       aria-label="Layout & Workspace Controls"
-      className="fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-40 flex flex-col items-end max-w-[calc(100vw-2rem)] pointer-events-auto"
+      className="fixed bottom-3 right-3 sm:bottom-5 sm:right-5 z-30 flex flex-col items-end max-w-[calc(100vw-1.5rem)] pointer-events-auto"
     >
       {/* Expanded Controls Card */}
       {expanded && (

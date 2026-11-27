@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
-import QRCode from 'qrcode';
 import { PERSONAL_INFO } from '../data/portfolioData';
 import { Send, Github, Linkedin, Copy, CheckCircle2, ArrowUpRight, FileText, QrCode, Download, Smartphone } from 'lucide-react';
 
@@ -16,7 +14,6 @@ type ContactFieldErrors = {
 };
 
 export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) => {
-  const shouldReduceMotion = Boolean(useReducedMotion());
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [subject, setSubject] = useState('Full-Time Software / ML Engineer Inquiry');
@@ -50,15 +47,18 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
 
   useEffect(() => {
     let isMounted = true;
-    QRCode.toDataURL(vcardPayload, {
-      width: 240,
-      margin: 2,
-      color: {
-        dark: '#121212',
-        light: '#FFFFFF',
-      },
-      errorCorrectionLevel: 'M',
-    })
+    import('qrcode')
+      .then(({ default: QRCode }) =>
+        QRCode.toDataURL(vcardPayload, {
+          width: 240,
+          margin: 2,
+          color: {
+            dark: '#121212',
+            light: '#FFFFFF',
+          },
+          errorCorrectionLevel: 'M',
+        })
+      )
       .then((url) => {
         if (isMounted) setVcardQrDataUrl(url);
       })
@@ -178,16 +178,10 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
   };
 
   return (
-    <section id="contact" className="py-20 sm:py-28 bg-[#121212] text-[#F5F2EB] border-b-2 border-[#121212] relative paper-grid-dark">
+    <section className="py-20 sm:py-28 pb-24 sm:pb-28 bg-[#121212] text-[#F5F2EB] border-b-2 border-[#121212] relative paper-grid-dark">
       <div className="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
         {/* Section Header */}
-        <motion.div
-          initial={shouldReduceMotion ? false : { opacity: 0, y: -16 }}
-          whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.1 }}
-          transition={{ duration: 0.48, ease: [0.22, 1, 0.36, 1] }}
-          className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-white/15 mb-12"
-        >
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-white/15 mb-12">
           <div>
             <div className="text-xs font-mono font-bold tracking-widest text-[#E11D48] uppercase mb-2">
               05 — Initiation &amp; Inquiries
@@ -199,17 +193,11 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
           <p className="max-w-md text-sm text-white/70 font-medium">
             Open to full-time roles, ambitious software engineering opportunities, and technical collaborations.
           </p>
-        </motion.div>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           {/* Left Column: Direct Contacts & Status */}
-          <motion.div
-            initial={shouldReduceMotion ? false : { opacity: 0, x: -30 }}
-            whileInView={shouldReduceMotion ? undefined : { opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.08 }}
-            transition={{ duration: 0.54, ease: [0.22, 1, 0.36, 1] }}
-            className="lg:col-span-5 space-y-6"
-          >
+          <div className="lg:col-span-5 space-y-6">
             <div className="p-6 bg-[#1A1A1C] border border-white/10 space-y-4">
               <h3 className="font-display text-2xl font-black text-white uppercase tracking-tight">
                 Direct Channels
@@ -363,16 +351,10 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
                 Actively preparing for 2026 roles in AI, Machine Learning, and Full-Stack Engineering.
               </p>
             </div>
-          </motion.div>
+          </div>
 
           {/* Right Column: Functional Message Composer */}
-          <motion.div
-            initial={shouldReduceMotion ? false : { opacity: 0, x: 30, scale: 0.97 }}
-            whileInView={shouldReduceMotion ? undefined : { opacity: 1, x: 0, scale: 1 }}
-            viewport={{ once: true, amount: 0.08 }}
-            transition={{ duration: 0.56, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-            className="lg:col-span-7 bg-[#1C1C1E] border-2 border-white/20 p-6 sm:p-8 shadow-[6px_6px_0px_0px_#E11D48]"
-          >
+          <div className="lg:col-span-7 bg-[#1C1C1E] border-2 border-white/20 p-6 sm:p-8 shadow-[6px_6px_0px_0px_#E11D48]">
             <div className="mb-6">
               <h3 className="font-display text-2xl font-black text-white uppercase tracking-tight mb-2">
                 Send a Message
@@ -391,7 +373,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
                     key={tmpl.label}
                     onClick={() => handleApplyTemplate(tmpl)}
                     type="button"
-                    className="px-2.5 py-1 text-xs font-mono bg-white/5 hover:bg-[#E11D48] text-white/80 hover:text-white border border-white/15 transition-colors cursor-pointer"
+                    className="px-2.5 py-1 text-xs font-mono bg-white/5 hover:bg-[#E11D48] text-white/80 hover:text-white border border-white/15 transition-all duration-150 active:scale-[0.97] cursor-pointer"
                   >
                     + {tmpl.label}
                   </button>
@@ -530,7 +512,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
               <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <button
                   type="submit"
-                  className="flex items-center justify-center gap-2 px-6 py-3 text-xs font-bold uppercase tracking-wider text-white bg-[#E11D48] hover:bg-[#F20D26] transition-all shadow-[2px_2px_0px_0px_#ffffff] cursor-pointer"
+                  className="flex items-center justify-center gap-2 min-h-[44px] px-6 py-3 text-xs font-bold uppercase tracking-wider text-white bg-[#E11D48] hover:bg-[#F20D26] transition-all duration-150 active:scale-[0.98] shadow-[2px_2px_0px_0px_#ffffff] cursor-pointer"
                 >
                   <Send className="w-4 h-4" />
                   <span>Send via Email Client</span>
@@ -544,7 +526,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ onOpenResume }) 
                 )}
               </div>
             </form>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>

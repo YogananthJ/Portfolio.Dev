@@ -38,6 +38,7 @@ import { MatrixRainCanvas } from './MatrixRainCanvas';
 import { WhyHireCard } from './WhyHireCard';
 import { appendUtmSource } from '../utils/utmTracker';
 import { extractGitHubRepoSlug } from '../utils/projectInsights';
+import { useDialogA11y } from '../hooks/useDialogA11y';
 
 interface TerminalDrawerProps {
   isOpen: boolean;
@@ -85,12 +86,15 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+
+  useDialogA11y(isOpen, dialogRef, onClose);
 
   const themeConfig = TERMINAL_THEMES[currentTheme] || TERMINAL_THEMES.default;
 
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 100);
+      setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 40);
     }
   }, [isOpen]);
 
@@ -1502,9 +1506,11 @@ export const TerminalDrawer: React.FC<TerminalDrawerProps> = ({
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         className={`w-full ${
           isFullScreen ? 'max-w-full h-full' : 'max-w-4xl h-[620px]'
-        } ${themeConfig.bg} ${themeConfig.text} border-2 ${themeConfig.border} flex flex-col overflow-hidden transition-all duration-200`}
+        } ${themeConfig.bg} ${themeConfig.text} border-2 ${themeConfig.border} flex flex-col overflow-hidden transition-all duration-200 focus:outline-none`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Terminal Title Bar */}

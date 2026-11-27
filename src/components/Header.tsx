@@ -94,7 +94,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={toggleSidebar}
             type="button"
             aria-expanded={sidebarOpen}
-            className={`h-8 w-8 flex items-center justify-center border transition-colors cursor-pointer shrink-0 ${
+            className={`h-10 w-10 sm:h-8 sm:w-8 flex items-center justify-center border transition-all duration-150 active:scale-95 cursor-pointer shrink-0 ${
               sidebarOpen
                 ? 'bg-[var(--accent)] text-white border-[var(--accent)]'
                 : 'bg-[var(--bg-surface)] text-[var(--text-main)] border-[var(--border-color)] hover:border-[var(--text-main)]'
@@ -335,7 +335,7 @@ export const Header: React.FC<HeaderProps> = ({
             type="button"
             aria-expanded={mobileMenuOpen}
             aria-controls="mobile-nav-drawer"
-            className="flex lg:hidden h-8 w-8 items-center justify-center text-[var(--text-main)] hover:bg-[var(--bg-surface)] border border-[var(--border-color)] cursor-pointer shrink-0"
+            className="flex lg:hidden h-11 w-11 items-center justify-center text-[var(--text-main)] hover:bg-[var(--bg-surface)] border border-[var(--border-color)] transition-all duration-150 active:scale-95 cursor-pointer shrink-0"
             aria-label="Toggle navigation menu"
           >
             {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -377,11 +377,12 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={() => {
                   soundFX.playClick();
+                  mobileMenuBtnRef.current?.focus({ preventScroll: true });
                   setMobileMenuOpen(false);
                   onOpenResume();
                 }}
                 type="button"
-                className="py-2.5 px-3 text-xs font-bold uppercase bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] text-center flex items-center justify-center gap-2 cursor-pointer"
+                className="py-2.5 px-3 text-xs font-bold uppercase bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] text-center flex items-center justify-center gap-2 cursor-pointer transition-all duration-150 active:scale-[0.97]"
               >
                 <FileText className="w-4 h-4 text-amber-400" />
                 <span>Resume / CV</span>
@@ -390,11 +391,12 @@ export const Header: React.FC<HeaderProps> = ({
 
             <button
               onClick={() => {
+                mobileMenuBtnRef.current?.focus({ preventScroll: true });
                 setMobileMenuOpen(false);
                 onOpenTerminal();
               }}
               type="button"
-              className="py-2.5 px-3 text-xs font-bold uppercase bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] text-center flex items-center justify-center gap-2 cursor-pointer"
+              className="py-2.5 px-3 text-xs font-bold uppercase bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-main)] text-center flex items-center justify-center gap-2 cursor-pointer transition-all duration-150 active:scale-[0.97]"
             >
               <Terminal className="w-4 h-4 text-[var(--accent)]" />
               <span>Open Terminal (CLI)</span>
