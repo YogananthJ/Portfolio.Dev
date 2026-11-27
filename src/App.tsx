@@ -268,6 +268,7 @@ function PortfolioMainContent() {
     setMeta('name', 'robots', 'index, follow');
     setMeta('name', 'description', DEFAULT_DESC);
     if (canonicalEl) canonicalEl.setAttribute('href', `${BASE_URL}/`);
+    setMeta('property', 'og:site_name', 'Yogananth J');
     setMeta('property', 'og:title', DEFAULT_TITLE);
     setMeta('property', 'og:description', DEFAULT_DESC);
     setMeta('property', 'og:url', `${BASE_URL}/`);
